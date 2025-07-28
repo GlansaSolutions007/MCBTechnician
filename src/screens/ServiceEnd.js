@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import { useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -28,6 +28,10 @@ const initialServices = [
 ];
 
 export default function ServiceEnd() {
+  const navigation = useNavigation();
+  const CollectPayment = () => {
+    navigation.navigate("CollectPayment");
+  };
   const [reason, setReason] = useState("");
   const [selectedReason, setSelectedReason] = useState("Customer Delayed");
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
@@ -47,11 +51,7 @@ export default function ServiceEnd() {
     "Took Break",
     "Argument or Discussion",
   ];
-  const pendingservices = [
-    "1",
-    "2",
-    "3",
-  ];
+  const pendingservices = ["1", "2", "3"];
   return (
     <ScrollView style={globalStyles.bgcontainer}>
       <View style={[globalStyles.container]}>
@@ -292,8 +292,7 @@ export default function ServiceEnd() {
         </View>
 
         <TouchableOpacity
-          // onPress={() => setTimerCompleted(true)}
-
+          onPress={CollectPayment}
           style={globalStyles.blackButton}
         >
           <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>

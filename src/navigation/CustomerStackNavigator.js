@@ -12,6 +12,7 @@ import LeaveRequestList from "../screens/LeaveRequestList";
 import LiveTrackingMap from "../components/LiveTrackingMap";
 import ServiceStart from "../screens/ServiceStart";
 import ServiceEnd from "../screens/ServiceEnd";
+import CollectPayment from "../screens/CollectPayment";
 
 const Stack = createNativeStackNavigator();
 
@@ -80,6 +81,11 @@ export default function CustomerStackNavigator() {
         name="ServiceEnd"
         component={ServiceEnd}
         options={{ title: "Service End" }}
+      />
+      <Stack.Screen
+        name="CollectPayment"
+        component={CollectPayment}
+        options={{ title: "Collect Payment" }}
       />
     </Stack.Navigator>
   );
