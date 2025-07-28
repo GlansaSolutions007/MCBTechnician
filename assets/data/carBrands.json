@@ -1,0 +1,137 @@
+[
+  {
+    "brand": "Maruti Suzuki",
+    "logo": "https://imgd.aeplcdn.com/0X0/n/cw/ec/10/brands/logos/maruti-suzuki1647009823420.jpg?v=1647009823707&q=80",
+    "models": [
+      {
+        "name": "Alto K10",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "S-Presso",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "Swift",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "Baleno",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "Brezza",
+        "fuelTypes": ["Petrol", "CNG"]
+      },
+      {
+        "name": "Ertiga",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "Wagon R",
+        "fuelTypes": ["Petrol"]
+      },
+      {
+        "name": "Alto K10 CNG",
+        "fuelTypes": ["CNG"]
+      },
+      {
+        "name": "e Vitara",
+        "fuelTypes": ["Electric"]
+      }
+    ]
+  },
+  {
+    "brand": "Hyundai",
+    "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-7.jpeg",
+    "models": [
+      { "name": "i20", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Grand i10 Nios", "fuelTypes": ["Petrol", "CNG"] },
+      { "name": "Venue", "fuelTypes": ["Petrol", "Diesel", "CNG"] },
+      { "name": "Creta", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Alcazar", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Exter", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Creta Electric", "fuelTypes": ["Electric"] },
+      { "name": "Ioniq 5", "fuelTypes": ["Electric"] }
+    ]
+  },
+  {
+    "brand": "Tata Motors",
+    "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-14.jpeg",
+    "models": [
+      { "name": "Tiago", "fuelTypes": ["Petrol", "CNG"] },
+      { "name": "Tigor", "fuelTypes": ["Petrol", "CNG"] },
+      { "name": "Altroz", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Punch", "fuelTypes": ["Petrol", "CNG"] },
+      { "name": "Nexon", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Harrier", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Safari", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Tigor EV", "fuelTypes": ["Electric"] },
+      { "name": "Nexon EV", "fuelTypes": ["Electric"] }
+    ]
+  },
+  {
+    "brand": "Mahindra",
+    "logo": "https://imgd.aeplcdn.com/0X0/n/cw/ec/9/brands/logos/mahindra.jpg?v=1629973668273&q=80",
+    "models": [
+      { "name": "Thar", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Scorpio-N", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "XUV700", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "Bolero", "fuelTypes": ["Diesel"] },
+      { "name": "XUV3XO", "fuelTypes": ["Petrol", "Diesel"] },
+      { "name": "XUV400", "fuelTypes": ["Electric"] },
+      { "name": "BE.06", "fuelTypes": ["Electric"] }
+    ]
+  },
+  {
+    "brand": "Honda",
+    "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-6.jpeg",
+    "models": [
+      { "name": "City", "fuelTypes": ["Petrol", "CNG"] },
+      { "name": "Amaze", "fuelTypes": ["Petrol", "Diesel", "CNG"] },
+      { "name": "WR-V", "fuelTypes": ["Petrol"] },
+      { "name": "Elevate", "fuelTypes": ["Petrol"] }
+    ]
+  },
+  { "brand": "Ford", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-5.jpeg", "models": [] },
+  { "brand": "Volkswagen", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-16.jpeg", "models": [] },
+  { "brand": "Renault", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-12.jpeg", "models": [] },
+  { "brand": "Chevrolet", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-1.jpeg", "models": [] },
+  { "brand": "Toyota", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-15.jpeg", "models": [] },
+  { "brand": "Skoda", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-13.jpeg", "models": [] },
+  { "brand": "Nissan", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-11.jpeg", "models": [] },
+  { "brand": "Fiat", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-4.jpeg", "models": [] },
+  { "brand": "Datsun", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-3.jpeg", "models": [] },
+  { "brand": "BMW", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-20.jpeg", "models": [] },
+  { "brand": "Kia", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-38.jpeg", "models": [] },
+  { "brand": "Audi", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-18.jpeg", "models": [] },
+  { "brand": "Mercedes", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-26.jpeg", "models": [] },
+  { "brand": "Jeep", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-34.jpeg", "models": [] },
+  { "brand": "Mitsubishi", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-10.jpeg", "models": [] },
+  { "brand": "MG", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-37.jpeg", "models": [] },
+  { "brand": "Land Rover", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-24.jpeg", "models": [] },
+  { "brand": "Volvo", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-30.jpeg", "models": [] },
+  { "brand": "Jaguar", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-22.jpeg", "models": [] },
+  { "brand": "Ssangyong", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-36.jpeg", "models": [] },
+  { "brand": "Isuzu", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-32.jpeg", "models": [] },
+  { "brand": "Mini", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-27.jpeg", "models": [] },
+  { "brand": "Force", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-31.jpeg", "models": [] },
+  { "brand": "Opel", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-35.jpeg", "models": [] },
+  { "brand": "Porsche", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-28.jpeg", "models": [] },
+  { "brand": "Daewoo", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-2.jpeg", "models": [] },
+  { "brand": "Hindustan Motors", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-33.jpeg", "models": [] },
+  { "brand": "Aston Martin", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-17.jpeg", "models": [] },
+  { "brand": "Citroen", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-43.jpeg", "models": [] },
+  { "brand": "Lexus", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-42.jpeg", "models": [] },
+  { "brand": "Bentley", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-19.jpeg", "models": [] },
+  { "brand": "DC", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-41.jpeg", "models": [] },
+  { "brand": "Ferrari", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-21.jpeg", "models": [] },
+  { "brand": "Maserati", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-25.jpeg", "models": [] },
+  { "brand": "Lamborghini", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-23.jpeg", "models": [] },
+  { "brand": "Rolls Royce", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-29.jpeg", "models": [] },
+  { "brand": "Photon", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-39.jpeg", "models": [] },
+  { "brand": "Jayem", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-40.jpeg", "models": [] },
+  { "brand": "Premier", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-44.jpeg", "models": [] },
+  { "brand": "Hummer", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-45.jpeg", "models": [] },
+  { "brand": "BYD", "logo": "https://gomechprod.blob.core.windows.net/gm-retail-app/thumbnails/brand-46.jpeg", "models": [] }
+]
