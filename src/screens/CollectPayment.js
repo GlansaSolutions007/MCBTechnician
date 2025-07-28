@@ -4,25 +4,21 @@ import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { Ionicons } from "@expo/vector-icons";
 import QRImage from "../../assets/images/QRImage.png";
+import { color } from "../styles/theme";
 
 export default function CollectPayment() {
   return (
-    <ScrollView style={globalStyles.bgcontainer}>
+    <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
       <View style={[globalStyles.container, globalStyles.alineItemscenter]}>
         <CustomText
-          style={[
-            globalStyles.f16Medium,
-            globalStyles.textac,
-            globalStyles.mt4,
-          ]}
+          style={[globalStyles.f14Bold, globalStyles.textac, globalStyles.mt4]}
         >
           Collect
         </CustomText>
         <CustomText
           style={[
-            globalStyles.f28Bold,
+            globalStyles.f32Bold,
             globalStyles.textac,
-            globalStyles.mt1,
             globalStyles.black,
           ]}
         >
@@ -33,16 +29,16 @@ export default function CollectPayment() {
           style={[
             globalStyles.mt4,
             globalStyles.bgprimary,
-            globalStyles.p4,
-            globalStyles.radius,
+            globalStyles.p30,
+            globalStyles.borderRadiuslarge,
             globalStyles.mb6,
           ]}
         >
           <Image
             source={QRImage}
             style={{
-              width: 250,
-              height: 250,
+              width: 270,
+              height: 270,
             }}
             resizeMode="contain"
           />
@@ -65,13 +61,13 @@ export default function CollectPayment() {
             globalStyles.justifysb,
             globalStyles.alineItemscenter,
             globalStyles.p3,
-            { width: "100%" },
+            globalStyles.w100,
           ]}
         >
           <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
             <CustomText style={globalStyles.f16Regular}>Apple Pay</CustomText>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#333" />
+          <Ionicons name="chevron-forward" size={18} color={color.black} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -91,10 +87,10 @@ export default function CollectPayment() {
             /> */}
             <CustomText style={globalStyles.f16Regular}>Razor Pay</CustomText>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#333" />
+          <Ionicons name="chevron-forward" size={18} color={color.black} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[globalStyles.blackButton, { width: "100%" }]}>
+        <TouchableOpacity style={[globalStyles.blackButton, globalStyles.w100]}>
           <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
             Collect Cash
           </CustomText>

@@ -228,6 +228,7 @@ export default StyleSheet.create({
   p3: { padding: 12 },
   p4: { padding: 16 },
   p5: { padding: 20 },
+  p30: { padding: 30 },
   p40: { padding: 40 },
   // Top paddings
   pt0: { paddingTop: 0 },
