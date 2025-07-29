@@ -59,7 +59,7 @@ export default function ServiceStart() {
 
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 5));
+      setImages((prev) => [...prev, ...selected].slice(0, 6));
     }
   };
 
@@ -105,7 +105,7 @@ export default function ServiceStart() {
           <View
             style={[
               globalStyles.flexrow,
-              globalStyles.justifystart,
+              globalStyles.justifysb,
               globalStyles.mt3,
               { flexWrap: "wrap" },
             ]}
@@ -114,28 +114,28 @@ export default function ServiceStart() {
               <View
                 key={index}
                 style={{
-                  marginRight: 10,
+                  width: "32%",
                   marginBottom: 10,
                   position: "relative",
                 }}
               >
                 <Image
                   source={{ uri }}
-                  style={{ width: 70, height: 70, borderRadius: 10 }}
+                  style={{ width: 100, height: 100, borderRadius: 10 }}
                 />
                 <TouchableOpacity
                   onPress={() => removeImage(index)}
                   style={{
                     position: "absolute",
-                    top: -6,
-                    right: -6,
+                    top: 5,
+                    right: 18,
                     backgroundColor: "#000",
                     borderRadius: 10,
                     padding: 2,
                     zIndex: 1,
                   }}
                 >
-                  <Ionicons name="close" color="#fff" size={12} />
+                  <Ionicons name="close" color="#fff" size={15} />
                 </TouchableOpacity>
               </View>
             ))}

@@ -11,6 +11,7 @@ import globalStyles from "../styles/globalStyles";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -35,6 +36,25 @@ export default function ServiceEnd() {
   const [reason, setReason] = useState("");
   const [selectedReason, setSelectedReason] = useState("Customer Delayed");
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
+  const [images, setImages] = useState([]);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      const selected = result.assets.map((asset) => asset.uri);
+      setImages((prev) => [...prev, ...selected].slice(0, 6));
+    }
+  };
+
+  const removeImage = (index) => {
+    const filtered = images.filter((_, i) => i !== index);
+    setImages(filtered);
+  };
 
   const route = useRoute();
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
@@ -85,6 +105,71 @@ export default function ServiceEnd() {
               </CustomText>
             </View>
           ))}
+
+          <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>
+            Want to upload before service images?
+          </CustomText>
+          <CustomText
+            style={[
+              globalStyles.f10Light,
+              globalStyles.neutral500,
+              globalStyles.mt1,
+            ]}
+          >
+            My dear buddy, upload maximum 4-5 images
+          </CustomText>
+
+          <TouchableOpacity
+            style={[globalStyles.inputBox, globalStyles.mt3]}
+            onPress={pickImage}
+          >
+            <CustomText
+              style={[globalStyles.f16Light, globalStyles.neutral500]}
+            >
+              Choose Files
+            </CustomText>
+          </TouchableOpacity>
+
+          {images.length > 0 && (
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.mt3,
+                { flexWrap: "wrap" },
+              ]}
+            >
+              {images.map((uri, index) => (
+                <View
+                  key={index}
+                  style={{
+                    width: "32%",
+                    marginBottom: 10,
+                    position: "relative",
+                  }}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={{ width: 100, height: 100, borderRadius: 10 }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => removeImage(index)}
+                    style={{
+                      position: "absolute",
+                      top: 5,
+                      right: 18,
+                      backgroundColor: "#000",
+                      borderRadius: 10,
+                      padding: 2,
+                      zIndex: 1,
+                    }}
+                  >
+                    <Ionicons name="close" color="#fff" size={15} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View
             style={[
