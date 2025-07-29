@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Image,
+  Pressable,
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
@@ -19,6 +20,8 @@ import reportsicon from "../../assets/icons/Navigation/reports.png";
 import AvailabilityHeader from "../components/AvailabilityHeader";
 import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
 import { useNavigation } from "@react-navigation/native";
+import schedule from "../../assets/icons/Navigation/schedule.png";
+import reports from "../../assets/icons/Navigation/reports.png";
 
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
@@ -29,6 +32,9 @@ export default function Dashboard() {
   const LiveTrackingMap = () => {
     navigation.navigate("LiveTrackingMap");
   };
+  const Booking = () => {
+    navigation.navigate("Booking");
+  };
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
@@ -36,8 +42,187 @@ export default function Dashboard() {
     >
       <View style={[globalStyles.container]}>
         <AvailabilityHeader />
-
         <View
+          style={[
+            globalStyles.flexrow,
+            globalStyles.justifysb,
+            globalStyles.mt5,
+          ]}
+        >
+          <View style={{ width: "48%" }}>
+            <View
+              style={[
+                globalStyles.bgprimary,
+                globalStyles.borderRadiuslarge,
+                globalStyles.ph4,
+                globalStyles.pv2,
+                globalStyles.mb3,
+              ]}
+            >
+              <CustomText
+                style={[globalStyles.f16Bold, globalStyles.textWhite]}
+              >
+                Schedules
+              </CustomText>
+
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.alineItemscenter,
+                  globalStyles.mt3,
+                ]}
+              >
+                <Image
+                  source={schedule}
+                  style={{ width: 20, height: 20, tintColor: "#fff" }}
+                />
+                <CustomText
+                  style={[globalStyles.f32Bold, globalStyles.textWhite]}
+                >
+                  02
+                </CustomText>
+              </View>
+            </View>
+
+            <View
+              style={[
+                globalStyles.bgBlack,
+                globalStyles.borderRadiuslarge,
+                globalStyles.flexrow,
+                globalStyles.alineItemscenter,
+                globalStyles.justifysb,
+                globalStyles.ph4,
+                globalStyles.pv2,
+              ]}
+            >
+              <Image
+                source={schedule}
+                style={{ width: 20, height: 20, tintColor: "#fff" }}
+              />
+              <CustomText
+                style={[globalStyles.f32Bold, globalStyles.textWhite]}
+              >
+                2k
+              </CustomText>
+            </View>
+          </View>
+
+          <View
+            style={[
+              globalStyles.bgprimary,
+              globalStyles.borderRadiuslarge,
+              globalStyles.ph4,
+              globalStyles.pv2,
+              { width: "48%", justifyContent: "space-between" },
+            ]}
+          >
+            <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+              Tasks Assigned
+            </CustomText>
+
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Image
+                source={reports}
+                style={{ width: 20, height: 28, tintColor: "#fff" }}
+              />
+              <CustomText
+                style={[globalStyles.f40Bold, globalStyles.textWhite]}
+              >
+                08
+              </CustomText>
+            </View>
+          </View>
+        </View>
+        <View style={[globalStyles.mt3]}>
+          <CustomText style={[globalStyles.f14Bold]}>
+            Next Active Service
+          </CustomText>
+          <View
+            style={[
+              globalStyles.bgprimary,
+              globalStyles.p4,
+              globalStyles.card,
+              globalStyles.mt2,
+            ]}
+          >
+            <View style={[globalStyles.flexrow]}>
+              <Image source={profilepic} style={styles.avatar} />
+
+              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
+                  Jhon Dio
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                >
+                  Mobile: 7780290335
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f10Light, globalStyles.neutral100]}
+                >
+                  #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
+                  Vittal Rao Nagar Rd, Madhapur, Telangana 500081
+                </CustomText>
+              </View>
+            </View>
+
+            <View style={globalStyles.divider} />
+
+            <CustomText
+              style={[
+                globalStyles.f12Medium,
+                globalStyles.textWhite,
+                globalStyles.alineSelfcenter,
+                globalStyles.mb4,
+              ]}
+            >
+              <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
+              Leather Fabric Seat Polishing
+            </CustomText>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.alineItemscenter,
+                styles.card,
+              ]}
+            >
+              <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
+                00:02:01
+              </CustomText>
+
+              <TouchableOpacity>
+                <View
+                  style={{
+                    backgroundColor: color.black,
+                    borderRadius: 50,
+                    padding: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="navigate-outline"
+                    size={24}
+                    color={color.white}
+                  />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <Pressable
+          onPress={Booking}
           style={[
             globalStyles.card,
             globalStyles.cardwidth,
@@ -51,11 +236,13 @@ export default function Dashboard() {
               <Image source={Pcicon} style={[styles.Pcicons]} />
             </View>
             <View style={[globalStyles.ml50, globalStyles.flex1]}>
-              <Text style={[globalStyles.f16Bold, globalStyles.alineSelfend]}>
+              <CustomText
+                style={[globalStyles.f14Bold, globalStyles.alineSelfend]}
+              >
                 Todays Service Bookings
-              </Text>
+              </CustomText>
 
-              <Text
+              <CustomText
                 style={[
                   globalStyles.f44Bold,
                   globalStyles.primary,
@@ -64,7 +251,7 @@ export default function Dashboard() {
                 ]}
               >
                 04
-              </Text>
+              </CustomText>
             </View>
           </View>
 
@@ -75,23 +262,27 @@ export default function Dashboard() {
             <IconLabel icon="people-outline" label="2 customers" />
             <IconLabel icon="checkmark-circle-outline" label="2 Active" />
           </View>
-        </View>
+        </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <Text style={[globalStyles.f14Bold, globalStyles.mb2]}>
+          <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
             Next Active Service
-          </Text>
+          </CustomText>
 
-          <Text style={[globalStyles.f32Regular, globalStyles.neutral300]}>
+          <CustomText
+            style={[globalStyles.f28Regular, globalStyles.neutral300]}
+          >
             There are no{" "}
-          </Text>
+          </CustomText>
           <View style={[globalStyles.flexrow]}>
-            <Text style={[globalStyles.primary, globalStyles.f32Bold]}>
+            <CustomText style={[globalStyles.primary, globalStyles.f28Bold]}>
               active services{" "}
-            </Text>
-            <Text style={[globalStyles.f32Regular, , globalStyles.neutral200]}>
+            </CustomText>
+            <CustomText
+              style={[globalStyles.f28Regular, , globalStyles.neutral300]}
+            >
               yet....
-            </Text>
+            </CustomText>
           </View>
 
           {/* carddddd11111111111 */}
@@ -107,32 +298,38 @@ export default function Dashboard() {
               <Image source={profilepic} style={styles.avatar} />
 
               <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <Text style={[globalStyles.f28Bold, globalStyles.textWhite]}>
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
                   Jhon Dio
-                </Text>
-                <Text style={[globalStyles.f16Medium, globalStyles.textWhite]}>
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                >
                   Mobile: 7780290335
-                </Text>
-                <Text style={[globalStyles.f12Light, globalStyles.neutral100]}>
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f10Light, globalStyles.neutral100]}
+                >
                   #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
                   Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </Text>
+                </CustomText>
               </View>
             </View>
 
             <View style={globalStyles.divider} />
 
-            <Text
+            <CustomText
               style={[
-                globalStyles.f16Medium,
+                globalStyles.f12Medium,
                 globalStyles.textWhite,
                 globalStyles.alineSelfcenter,
                 globalStyles.mb35,
               ]}
             >
-              <Text style={globalStyles.f16Bold}>Service:</Text> Leather Fabric
-              Seat Polishing
-            </Text>
+              <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
+              Leather Fabric Seat Polishing
+            </CustomText>
           </View>
 
           <View
@@ -144,88 +341,25 @@ export default function Dashboard() {
               styles.service,
             ]}
           >
-            <TouchableOpacity onPress={LiveTrackingMap} style={styles.startButton}>
-              <Text style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+            <TouchableOpacity
+              onPress={LiveTrackingMap}
+              style={styles.startButton}
+            >
+              <CustomText
+                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+              >
                 Start The Service
-              </Text>
+              </CustomText>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.denyButton}>
-              <Text style={[globalStyles.f14Bold, globalStyles.black]}>
+              <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
                 Deny service
-              </Text>
+              </CustomText>
             </TouchableOpacity>
           </View>
 
           {/* carddddd2222222222222 */}
-
-          <View
-            style={[globalStyles.bgprimary, globalStyles.p4, globalStyles.card]}
-          >
-            <View style={[globalStyles.flexrow]}>
-              <Image source={profilepic} style={styles.avatar} />
-
-              <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <Text style={[globalStyles.f28Bold, globalStyles.textWhite]}>
-                  Jhon Dio
-                </Text>
-                <Text style={[globalStyles.f16Medium, globalStyles.textWhite]}>
-                  Mobile: 7780290335
-                </Text>
-                <Text style={[globalStyles.f12Light, globalStyles.neutral100]}>
-                  #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
-                  Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </Text>
-              </View>
-            </View>
-
-            <View style={globalStyles.divider} />
-
-            <Text
-              style={[
-                globalStyles.f16Medium,
-                globalStyles.textWhite,
-                globalStyles.alineSelfcenter,
-                globalStyles.mb4,
-              ]}
-            >
-              <Text style={globalStyles.f16Bold}>Service:</Text> Leather Fabric
-              Seat Polishing
-            </Text>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.alineItemscenter,
-                styles.card,
-              ]}
-            >
-              <View>
-                <Text style={[globalStyles.f16Bold]}>Est: 8hrs</Text>
-                <Text style={[globalStyles.f28Bold, globalStyles.primary]}>
-                  00:02:01
-                </Text>
-              </View>
-
-              <View style={[globalStyles.flexrow]}>
-                <TouchableOpacity
-                  style={[styles.pauseButton, globalStyles.mr2]}
-                >
-                  <Text style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-                    Pause
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.completedButton}>
-                  <Text style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-                    Completed
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* carddddd333333333333333 */}
 
           <View
             style={[
@@ -239,16 +373,22 @@ export default function Dashboard() {
               <Image source={profilepic} style={styles.avatar} />
 
               <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <Text style={[globalStyles.f28Bold, globalStyles.textWhite]}>
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
                   Jhon Dio
-                </Text>
-                <Text style={[globalStyles.f16Medium, globalStyles.textWhite]}>
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                >
                   Mobile: 7780290335
-                </Text>
-                <Text style={[globalStyles.f12Light, globalStyles.neutral100]}>
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f10Light, globalStyles.neutral100]}
+                >
                   #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
                   Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </Text>
+                </CustomText>
               </View>
             </View>
 
@@ -366,18 +506,22 @@ export default function Dashboard() {
 
               <View style={globalStyles.alineSelfend}>
                 <TouchableOpacity style={[styles.cancelButton]}>
-                  <Text style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                  <CustomText
+                    style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                  >
                     Cancel
-                  </Text>
+                  </CustomText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={customerInfo}
                   style={[styles.viewButton, globalStyles.mt3]}
                 >
-                  <Text style={[globalStyles.f14Bold, globalStyles.primary]}>
+                  <CustomText
+                    style={[globalStyles.f12Bold, globalStyles.primary]}
+                  >
                     View
-                  </Text>
+                  </CustomText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -397,7 +541,7 @@ function IconLabel({ icon, label }) {
         color={color.primary}
         style={{ marginRight: 5 }}
       />
-      <Text style={globalStyles.f14Bold}>{label}</Text>
+      <CustomText style={globalStyles.f14Bold}>{label}</CustomText>
     </View>
   );
 }

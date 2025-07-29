@@ -8,6 +8,7 @@ export const color = {
   red:"#fa7f7c",
   fullred:"#911719",
   fullredLight: "#FF6B6B",
+  redverulight: "#FDEAEA",
 
   // Backgrounds
   background: "#F3F3F3",

@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   cancelButton: {
-    backgroundColor: color.fullred,
+    backgroundColor: color.fullredLight,
     width: "46%",
     borderRadius: 10,
     alignItems: "center",

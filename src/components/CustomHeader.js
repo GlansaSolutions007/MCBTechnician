@@ -1,27 +1,47 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet, Pressable, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomText from "./CustomText";
 import globalStyles from "../styles/globalStyles";
+import { useNavigation } from "@react-navigation/native";
 
-export default function CustomHeader({ navigation }) {
-
+export default function CustomHeader() {
+  const navigation = useNavigation();
+  const Notifications = () => {
+    navigation.navigate("Notifications");
+  };
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.headerContainer,globalStyles.bgcontainer, { paddingTop: insets.top + 10 }]}>
+    <View
+      style={[
+        styles.headerContainer,
+        globalStyles.bgcontainer,
+        { paddingTop: insets.top + 10 },
+      ]}
+    >
       <View style={styles.topRow}>
         <View>
-          <CustomText style={[globalStyles.f14Bold,globalStyles.mt1]}>Hello User</CustomText>
+          <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
+            Hello User
+          </CustomText>
           <Pressable>
-            <CustomText style={[globalStyles.f10Regular,globalStyles.mt1]}>
+            <CustomText style={[globalStyles.f10Regular, globalStyles.mt1]}>
               Hyderabad, Telangana <Ionicons name="chevron-down" size={14} />
             </CustomText>
           </Pressable>
         </View>
 
-        <Pressable onPress={() => console.log("Notifications")}>
-          <Ionicons name="notifications-outline" size={24}  />
+        <Pressable onPress={Notifications}>
+          <Ionicons name="notifications-outline" size={24} />
         </Pressable>
       </View>
     </View>
@@ -44,7 +64,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-
 
   searchBox: {
     flexDirection: "row",

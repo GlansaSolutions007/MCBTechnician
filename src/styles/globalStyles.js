@@ -88,10 +88,13 @@ export default StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     justifyContent: "center",
-    marginBottom:8
+    marginBottom: 8,
   },
   bgcontainer: {
     backgroundColor: "#ededed",
+  },
+  bgredverulight: {
+    backgroundColor: color.redverulight,
   },
   radius: {
     borderRadius: 8,
@@ -117,6 +120,7 @@ export default StyleSheet.create({
   red: {
     color: color.red,
   },
+
   fullred: {
     color: color.fullred,
   },

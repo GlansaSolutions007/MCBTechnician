@@ -13,6 +13,8 @@ import LiveTrackingMap from "../components/LiveTrackingMap";
 import ServiceStart from "../screens/ServiceStart";
 import ServiceEnd from "../screens/ServiceEnd";
 import CollectPayment from "../screens/CollectPayment";
+import Bookings from "../screens/Bookings";
+import Notifications from "../screens/Notifications";
 
 const Stack = createNativeStackNavigator();
 
@@ -86,6 +88,16 @@ export default function CustomerStackNavigator() {
         name="CollectPayment"
         component={CollectPayment}
         options={{ title: "Collect Payment" }}
+      />
+      <Stack.Screen
+        name="Booking"
+        component={Bookings}
+        options={{ title: "Booking" }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={Notifications}
+        options={{ title: "Notifications" }}
       />
     </Stack.Navigator>
   );
