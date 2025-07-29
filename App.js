@@ -8,6 +8,7 @@ import RootNavigator from "./src/navigation/RootNavigator";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Text, TextInput } from "react-native";
+import AppLayout from "./src/components/AppLayout";
 
 if (Text.defaultProps == null) Text.defaultProps = {};
 Text.defaultProps.allowFontScaling = false;
@@ -35,7 +36,9 @@ export default function App() {
       <SafeAreaProvider>
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <AuthProvider>
-            <RootNavigator />
+            <AppLayout>
+              <RootNavigator />
+            </AppLayout>
           </AuthProvider>
         </View>
       </SafeAreaProvider>
