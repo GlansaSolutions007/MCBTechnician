@@ -27,6 +27,5 @@ export default function AppLayout({ children }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingBottom: 20,
   },
 });
