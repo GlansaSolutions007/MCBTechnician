@@ -36,9 +36,9 @@ export default function App() {
       <SafeAreaProvider>
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <AuthProvider>
-            <AppLayout>
+            {/* <AppLayout> */}
               <RootNavigator />
-            </AppLayout>
+            {/* </AppLayout> */}
           </AuthProvider>
         </View>
       </SafeAreaProvider>

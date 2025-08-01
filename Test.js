@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  Alert,
-  Image,
-  TouchableOpacity,
-} from "react-native";
+import { View, StyleSheet, Text, Alert, Image, TouchableOpacity } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import axios from "axios";
@@ -15,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 export default function LiveTrackingWithRoute() {
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
+  const [routeFetched, setRouteFetched] = useState(false);
   const mapRef = useRef(null);
 
   const destination = {
@@ -33,7 +27,7 @@ export default function LiveTrackingWithRoute() {
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
+          timeInterval: 1000,
           distanceInterval: 1,
         },
         async (loc) => {
@@ -50,7 +44,10 @@ export default function LiveTrackingWithRoute() {
             mapRef.current.animateToRegion(coords, 1000);
           }
 
-          fetchRoute(coords);
+          if (!routeFetched) {
+            fetchRoute(coords);
+            setRouteFetched(true);
+          }
         }
       );
     };
@@ -70,8 +67,8 @@ export default function LiveTrackingWithRoute() {
         },
         {
           headers: {
-            Authorization:"",
-            // Authorization:"eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjU5NTg4YmFhNjU0NDQ1NDE4M2M3ZDllYzhjODNjYWU2IiwiaCI6Im11cm11cjY0In0=",
+            Authorization: "YOUR_API_KEY_HERE", // Replace this!
+            "Content-Type": "application/json",
           },
         }
       );
@@ -92,71 +89,62 @@ export default function LiveTrackingWithRoute() {
     }));
   };
 
+  const centerMap = () => {
+    if (mapRef.current && location) {
+      mapRef.current.animateToRegion(location, 1000);
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {location ? (
-        <MapView ref={mapRef} style={styles.map} region={location}>
-          <Marker coordinate={location}>
-            <View style={styles.markerContainer}>
-              <Image
-                source={require("../../assets/images/custpic.jpg")}
-                style={styles.markerImage}
-              />
-            </View>
-          </Marker>
-          <Marker coordinate={destination}>
-            <View style={styles.markerContainer2}>
-              <Image
-                source={require("../../assets/images/carbuddy.png")}
-                style={styles.markerImage}
-              />
-            </View>
-          </Marker>
+        <>
+          <MapView ref={mapRef} style={styles.map} region={location}>
+            <Marker coordinate={location}>
+              <View style={styles.markerContainer}>
+                <Image
+                  source={require("../../assets/images/custpic.jpg")}
+                  style={styles.markerImage}
+                />
+              </View>
+            </Marker>
 
-          {routeCoords.length > 0 && (
-            <Polyline
-              coordinates={routeCoords}
-              strokeWidth={4}
-              strokeColor="blue"
-            />
-          )}
-        </MapView>
+            <Marker coordinate={destination}>
+              <View style={styles.markerContainer2}>
+                <Image
+                  source={require("../../assets/images/carbuddy.png")}
+                  style={styles.markerImage}
+                />
+              </View>
+            </Marker>
+
+            {routeCoords.length > 0 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeWidth={4}
+                strokeColor="blue"
+              />
+            )}
+          </MapView>
+
+          {/* Button to zoom to current location */}
+          <TouchableOpacity style={styles.centerButton} onPress={centerMap}>
+            <Ionicons name="locate" size={24} color="#fff" />
+          </TouchableOpacity>
+        </>
       ) : (
         <View style={styles.loading}>
           <Text>Getting location...</Text>
         </View>
       )}
-      <TouchableOpacity
-        style={styles.centerButton}
-        onPress={() => {
-          if (location && mapRef.current) {
-            mapRef.current.animateToRegion(location, 1000);
-          }
-        }}
-      >
-        <Ionicons name="locate" size={24} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  centerButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#2196F3",
-    padding: 12,
-    borderRadius: 30,
-    elevation: 5,
+  map: {
+    flex: 1,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
-  map: { flex: 1 },
   loading: {
     flex: 1,
     justifyContent: "center",
@@ -173,11 +161,19 @@ const styles = StyleSheet.create({
   markerContainer2: {
     width: 38,
     height: 18,
-    borderColor: "red",
     overflow: "hidden",
   },
   markerImage: {
     width: "100%",
     height: "100%",
+  },
+  centerButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: "#2196F3",
+    padding: 12,
+    borderRadius: 30,
+    elevation: 5,
   },
 });
