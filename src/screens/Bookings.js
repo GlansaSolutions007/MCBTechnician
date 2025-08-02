@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -6,43 +5,32 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   MaterialCommunityIcons,
   FontAwesome5,
   Ionicons,
   Entypo,
 } from "@expo/vector-icons";
-
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
 
 export default function Bookings() {
   const navigation = useNavigation();
-  const [bookings, setBookings] = useState([]);
-
-  useEffect(() => {
-    axios
-      .get(
-        "https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=73"
-      )
-      .then((res) => setBookings(res.data ?? []))
-      .catch((err) => console.error("Fetch error", err));
-  }, []);
-
-  const customerInfo = (booking) => {
-    navigation.navigate("customerInfo", { booking });
+  const route = useRoute();
+  const { bookings } = route.params;
+  const navigatin = useNavigation();
+  const customerInfo = () => {
+    navigatin.navigate("customerInfo",{bookings});
   };
-
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30 }}
     >
       <View style={globalStyles.container}>
-        {bookings.map((item,index) => (
+        {bookings.map((item, index) => (
           <View
             key={index}
             style={[
@@ -107,7 +95,7 @@ export default function Bookings() {
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                       {item.CustPhoneNumber}
+                      {item.CustPhoneNumber}
                     </CustomText>
                   </View>
 

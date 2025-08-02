@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Linking,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -16,10 +17,12 @@ import carpic from "../../assets/images/Group 420.png";
 import { color } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
 import SlideButton from "../components/SlideButton ";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function CustomerInfo() {
   const navigation = useNavigation();
+  const route = useRoute();
+  // const {bookings}=route.params;
   const ServiceStart = () => {
     navigation.navigate("ServiceStart");
   };
@@ -296,7 +299,17 @@ export default function CustomerInfo() {
               </CustomText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.callButton}>
+            <TouchableOpacity
+              style={styles.callButton}
+              onPress={() => {
+                const phoneNumber = 7702179904;
+                if (phoneNumber) {
+                  Linking.openURL(`tel:${phoneNumber}`);
+                } else {
+                  Alert.alert("Error", "Phone number not available");
+                }
+              }}
+            >
               <Ionicons
                 name="call"
                 size={25}

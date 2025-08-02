@@ -86,7 +86,7 @@ export default StyleSheet.create({
 
   container: {
     flex: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 20,
     justifyContent: "center",
     marginBottom: 8,
   },

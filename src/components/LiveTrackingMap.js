@@ -6,6 +6,7 @@ import {
   Alert,
   Image,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
@@ -18,8 +19,8 @@ export default function LiveTrackingWithRoute() {
   const mapRef = useRef(null);
 
   const destination = {
-    latitude: 17.36191607830754,
-    longitude: 78.47466965365447,
+    latitude: 17.4435, 
+    longitude: 78.4483, 
   };
 
   useEffect(() => {
@@ -60,36 +61,67 @@ export default function LiveTrackingWithRoute() {
 
   const fetchRoute = async (origin) => {
     try {
-      const res = await axios.post(
-        `https://api.openrouteservice.org/v2/directions/driving-car`,
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/directions/json`,
         {
-          coordinates: [
-            [origin.longitude, origin.latitude],
-            [destination.longitude, destination.latitude],
-          ],
-        },
-        {
-          headers: {
-            Authorization:"",
-            // Authorization:"eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjU5NTg4YmFhNjU0NDQ1NDE4M2M3ZDllYzhjODNjYWU2IiwiaCI6Im11cm11cjY0In0=",
+          params: {
+            origin: `${origin.latitude},${origin.longitude}`,
+            destination: `${destination.latitude},${destination.longitude}`,
+            key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
           },
         }
       );
 
-      const geometry = res.data.routes[0].geometry;
-      const decoded = decodePolyline(geometry);
+      const points = response.data.routes[0].overview_polyline.points;
+      const decoded = decodePolyline(points);
       setRouteCoords(decoded);
-    } catch (err) {
-      console.log("Failed to fetch route:", err.message);
+    } catch (error) {
+      console.error("Google Directions API error:", error.message);
     }
   };
 
-  const decodePolyline = (geometry) => {
-    const polyline = require("@mapbox/polyline");
-    return polyline.decode(geometry).map(([lat, lng]) => ({
-      latitude: lat,
-      longitude: lng,
-    }));
+  const decodePolyline = (t) => {
+    let points = [];
+    let index = 0,
+      len = t.length;
+    let lat = 0,
+      lng = 0;
+
+    while (index < len) {
+      let b,
+        shift = 0,
+        result = 0;
+      do {
+        b = t.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = t.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+      lng += dlng;
+
+      points.push({
+        latitude: lat / 1e5,
+        longitude: lng / 1e5,
+      });
+    }
+    return points;
+  };
+
+  const openGoogleMaps = () => {
+    if (location) {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+      Linking.openURL(url);
+    }
   };
 
   return (
@@ -126,6 +158,7 @@ export default function LiveTrackingWithRoute() {
           <Text>Getting location...</Text>
         </View>
       )}
+
       <TouchableOpacity
         style={styles.centerButton}
         onPress={() => {
@@ -136,26 +169,15 @@ export default function LiveTrackingWithRoute() {
       >
         <Ionicons name="locate" size={24} color="#fff" />
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.startButton} onPress={openGoogleMaps}>
+        <Text style={styles.startButtonText}>Start Navigation</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  centerButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: "#2196F3",
-    padding: 12,
-    borderRadius: 30,
-    elevation: 5,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
   map: { flex: 1 },
   loading: {
     flex: 1,
@@ -173,11 +195,35 @@ const styles = StyleSheet.create({
   markerContainer2: {
     width: 38,
     height: 18,
-    borderColor: "red",
     overflow: "hidden",
   },
   markerImage: {
     width: "100%",
     height: "100%",
+  },
+  centerButton: {
+    position: "absolute",
+    bottom: 90,
+    right: 20,
+    backgroundColor: "#2196F3",
+    padding: 12,
+    borderRadius: 30,
+    elevation: 5,
+  },
+  startButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "#28a745",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 5,
+  },
+  startButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

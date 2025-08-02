@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -19,6 +19,8 @@ import { useNavigation } from "@react-navigation/native";
 import schedule from "../../assets/icons/Navigation/schedule.png";
 import reports from "../../assets/icons/Navigation/reports.png";
 import MiniMapRoute from "../components/MiniMapRoute";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
@@ -30,8 +32,33 @@ export default function Dashboard() {
     navigation.navigate("LiveTrackingMap");
   };
   const Booking = () => {
-    navigation.navigate("Booking");
+    navigation.navigate("Booking", { bookings });
   };
+  const RouteMap = () => {
+    navigation.navigate("Routemap");
+  };
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const techId = await AsyncStorage.getItem("technicianId");
+        if (techId) {
+          const res = await axios.get(
+            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techId}`
+          );
+          setBookings(res.data ?? []);
+        } else {
+          console.warn("No technicianId found");
+        }
+      } catch (err) {
+        console.error("Fetch error", err);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
@@ -141,81 +168,101 @@ export default function Dashboard() {
           <CustomText style={[globalStyles.f14Bold]}>
             Next Active Service
           </CustomText>
-          <View
-            style={[
-              globalStyles.bgprimary,
-              globalStyles.p4,
-              globalStyles.card,
-              globalStyles.mt2,
-            ]}
-          >
-            <View style={[globalStyles.flexrow]}>
-              <Image source={profilepic} style={styles.avatar} />
+          <TouchableOpacity onPress={customerInfo}>
+            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
+              customerInfo
+            </CustomText>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={RouteMap}>
+            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
+              RouteMap
+            </CustomText>
+          </TouchableOpacity>
+          {bookings.map((item, index) => (
+            <View
+              key={index}
+              style={[
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.card,
+                globalStyles.mt2,
+              ]}
+            >
+              <View style={[globalStyles.flexrow]}>
+                <Image
+                  source={
+                    bookings
+                      ? {
+                          uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
+                        }
+                      : profilepic
+                  }
+                  style={styles.avatar}
+                />
 
-              <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  Jhon Dio
+                <View style={[globalStyles.ml3, { flex: 1 }]}>
+                  <CustomText
+                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                  >
+                    {item.CustFullName}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                  >
+                    Mobile: {item.CustPhoneNumber}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f10Light, globalStyles.neutral100]}
+                  >
+                    {item.FullAddress}
+                  </CustomText>
+                </View>
+              </View>
+
+              <View style={globalStyles.divider} />
+
+              <CustomText
+                style={[
+                  globalStyles.f12Medium,
+                  globalStyles.textWhite,
+                  globalStyles.alineSelfcenter,
+                  globalStyles.mb4,
+                ]}
+              >
+                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
+                Leather Fabric Seat Polishing
+              </CustomText>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.alineItemscenter,
+                  styles.card,
+                ]}
+              >
+                <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
+                  {item.TimeSlot}
                 </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                >
-                  Mobile: 7780290335
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.neutral100]}
-                >
-                  #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
-                  Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </CustomText>
+                <TouchableOpacity onPress={LiveTrackingMap}>
+                  <View
+                    style={{
+                      backgroundColor: color.black,
+                      borderRadius: 50,
+                      padding: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name="navigate-outline"
+                      size={24}
+                      color={color.white}
+                    />
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <View style={globalStyles.divider} />
-
-            <CustomText
-              style={[
-                globalStyles.f12Medium,
-                globalStyles.textWhite,
-                globalStyles.alineSelfcenter,
-                globalStyles.mb4,
-              ]}
-            >
-              <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-              Leather Fabric Seat Polishing
-            </CustomText>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.alineItemscenter,
-                styles.card,
-              ]}
-            >
-              <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
-                00:02:01
-              </CustomText>
-
-              <TouchableOpacity>
-                <View
-                  style={{
-                    backgroundColor: color.black,
-                    borderRadius: 50,
-                    padding: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="navigate-outline"
-                    size={24}
-                    color={color.white}
-                  />
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
+          ))}
         </View>
 
         <Pressable
@@ -464,54 +511,7 @@ const styles = StyleSheet.create({
     width: 11,
     height: 16,
   },
-  iconbg: {
-    padding: 6,
-    height: 30,
-    width: 30,
-    backgroundColor: color.white,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 5,
-  },
-  cardWrapper: {
-    borderRadius: 16,
-  },
 
-  timerCard: {
-    backgroundColor: color.white,
-    borderRadius: 16,
-    padding: 16,
-  },
-  pauseButton: {
-    backgroundColor: color.black,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-
-  completedButton: {
-    backgroundColor: color.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    backgroundColor: color.black,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  viewButton: {
-    backgroundColor: color.white,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   card: {
     borderRadius: 12,
     backgroundColor: color.white,

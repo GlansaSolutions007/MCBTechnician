@@ -24,31 +24,27 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    let isMounted = true;
     const fetchTechnicianDetails = async () => {
       try {
-        const storedTechId = await AsyncStorage.getItem("technicianid");
-        const techId = storedTechId || "78";
-
-        const fetchPromise = axios.get(
-          `https://api.mycarsbuddy.com/api/TechniciansDetails/technicianid?technicianid=${techId}`,
-          { timeout: 2000 }
-        );
-
-        const response = await fetchPromise;
-
-        if (isMounted && response.data?.status && response.data?.data) {
-          setProfileData(response.data.data);
+        const techId = await AsyncStorage.getItem("technicianId");
+        if (!techId) {
+          console.warn("No technicianId found");
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error("Failed to fetch technician details:", error);
+
+        const res = await axios.get(
+          `https://api.mycarsbuddy.com/api/TechniciansDetails/technicianid?technicianid=${techId}`
+        );
+        setProfileData(res.data.data?.[0] ?? null);
+      } catch (err) {
+        console.error("Fetch error", err);
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
     fetchTechnicianDetails();
-    return () => { isMounted = false; };
   }, []);
 
   const review = () => navigation.navigate("reviews");
@@ -63,7 +59,15 @@ export default function ProfileScreen() {
         ]}
       >
         <ActivityIndicator size="large" color={color.primary} />
-        <CustomText style={[globalStyles.mt3]}>Loading...</CustomText>
+        <CustomText style={globalStyles.mt3}>Loading...</CustomText>
+      </View>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <View style={[globalStyles.container, globalStyles.justifycenter]}>
+        <CustomText>No Profile Found</CustomText>
       </View>
     );
   }
@@ -80,33 +84,29 @@ export default function ProfileScreen() {
               globalStyles.mr4,
             ]}
           >
-            <Image
-              source={
-                  require("../../../assets/images/persontwo.jpg")
-              }
-              style={styles.avatar}
-            />
-            {/* <Image
-              source={
-                profileData?.ProfileImage
-                  ? {
-                      uri: `https://api.mycarsbuddy.com/${profileData.ProfileImage}`,
-                    }
-                  : require("../../../assets/images/persontwo.jpg")
-              }
-              style={styles.avatar}
-            /> */}
+          <Image
+  source={
+    profileData?.ProfileImage
+      ? {
+          uri: `https://api.mycarsbuddy.com/${encodeURI(profileData.ProfileImage)}`,
+        }
+      : require("../../../assets/images/persontwo.jpg")
+  }
+  style={styles.avatar}
+/>
+
           </View>
           <View>
             <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
-              {profileData?.TechnicianName ?? "Name Unavailable"}
+              {profileData.TechnicianName}
             </CustomText>
-            <CustomText style={[globalStyles.f12Medium]}>
-              Mobile: {profileData?.PhoneNumber ?? "-"}
+            <CustomText style={globalStyles.f12Medium}>
+              Mobile: {profileData.PhoneNumber}
             </CustomText>
-            <CustomText style={[globalStyles.f12Medium]}>
-              Email: {profileData?.Email ?? "-"}
+            <CustomText style={globalStyles.f12Medium}>
+              Email: {profileData.Email}
             </CustomText>
+
             <View
               style={[
                 globalStyles.flexrow,
@@ -118,9 +118,10 @@ export default function ProfileScreen() {
                 <Image source={locationicon} style={styles.icons} />
               </View>
               <CustomText style={globalStyles.f12Bold}>
-                {profileData?.StateName}, {profileData?.CityName}
+                {profileData.AddressLine1}
               </CustomText>
             </View>
+
             <View
               style={[
                 globalStyles.flexrow,
@@ -132,7 +133,7 @@ export default function ProfileScreen() {
                 <Image source={person} style={styles.icons} />
               </View>
               <CustomText style={globalStyles.f12Bold}>
-                Dealer: {profileData?.DealerName ?? "-"}
+                Dealer: {profileData.DealerName}
               </CustomText>
             </View>
           </View>
@@ -161,7 +162,7 @@ export default function ProfileScreen() {
                 globalStyles.primary,
               ]}
             >
-              {profileData?.ServiceCompleted ?? "0"}
+              {profileData.ServiceCompleted ?? "0"}
             </CustomText>
             <CustomText>Services Completed</CustomText>
           </View>
@@ -174,7 +175,7 @@ export default function ProfileScreen() {
                   globalStyles.primary,
                 ]}
               >
-                {profileData?.Rating ?? "0.0"}
+                {profileData.Rating ?? "0.0"}
               </CustomText>
               <CustomText>Review Ratings</CustomText>
             </TouchableOpacity>
@@ -187,7 +188,7 @@ export default function ProfileScreen() {
                 globalStyles.primary,
               ]}
             >
-              {profileData?.ServedCustomers ?? "0+"}
+              {profileData.ServedCustomers ?? "0+"}
             </CustomText>
             <CustomText>Served Customers</CustomText>
           </View>
@@ -199,7 +200,7 @@ export default function ProfileScreen() {
                 globalStyles.primary,
               ]}
             >
-              {profileData?.KilometersTravelled ?? "0"}
+              {profileData.KilometersTravelled ?? "0"}
             </CustomText>
             <CustomText>Kilometers Traveled</CustomText>
           </View>

@@ -111,7 +111,7 @@ export default function LoginScreen() {
             style={styles.logo}
           />
         </View>
-
+        <CustomText style={globalStyles.fullredLight}>9705577208</CustomText>
         <TextInput
           placeholder="Enter Phone Number"
           placeholderTextColor={color.textWhite}
@@ -122,7 +122,6 @@ export default function LoginScreen() {
           autoCapitalize="none"
           editable={!inputsDisabled}
         />
-
         <TextInput
           placeholder="Enter Password"
           placeholderTextColor={color.textWhite}
