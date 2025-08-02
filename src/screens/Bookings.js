@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -6,63 +6,34 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import globalStyles from "../styles/globalStyles";
-import profilepic from "../../assets/images/person.jpg";
-import CustomText from "../components/CustomText";
-import locationicon from "../../assets/icons/Navigation/LocationsPin.png";
-import dateicon from "../../assets/icons/Navigation/schedule.png";
-import dashboardicon from "../../assets/icons/Navigation/techhom.png";
-import reportsicon from "../../assets/icons/Navigation/reports.png";
-import { color } from "../styles/theme";
+import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
+import {
+  MaterialCommunityIcons,
+  FontAwesome5,
+  Ionicons,
+  Entypo,
+} from "@expo/vector-icons";
 
-const bookingsData = [
-  {
-    id: 1,
-    name: "Jhon Dio",
-    phone: "7780290335",
-    address:
-      "#B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur, Telangana 500081",
-    date: "16/07/2025",
-    time: "06:00 PM",
-    code: "TGE131998",
-    location: "AULTO",
-    distance: "2KM From",
-    service: "Leather Fabric",
-  },
-  {
-    id: 2,
-    name: "Jhon Dio",
-    phone: "7780290335",
-    address:
-      "#B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur, Telangana 500081",
-    date: "16/07/2025",
-    time: "06:00 PM",
-    code: "TGE131998",
-    location: "AULTO",
-    distance: "2KM From",
-    service: "Leather Fabric",
-  },
-  {
-    id: 3,
-    name: "Jhon Dio",
-    phone: "7780290335",
-    address:
-      "#B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur, Telangana 500081",
-    date: "16/07/2025",
-    time: "06:00 PM",
-    code: "TGE131998",
-    location: "AULTO",
-    distance: "2KM From",
-    service: "Leather Fabric",
-  },
-];
+import globalStyles from "../styles/globalStyles";
+import CustomText from "../components/CustomText";
+import { color } from "../styles/theme";
 
 export default function Bookings() {
   const navigation = useNavigation();
+  const [bookings, setBookings] = useState([]);
 
-  const customerInfo = () => {
-    navigation.navigate("customerInfo");
+  useEffect(() => {
+    axios
+      .get(
+        "https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=73"
+      )
+      .then((res) => setBookings(res.data ?? []))
+      .catch((err) => console.error("Fetch error", err));
+  }, []);
+
+  const customerInfo = (booking) => {
+    navigation.navigate("customerInfo", { booking });
   };
 
   return (
@@ -71,11 +42,9 @@ export default function Bookings() {
       contentContainerStyle={{ paddingBottom: 30 }}
     >
       <View style={globalStyles.container}>
-       
-
-        {bookingsData.map((item) => (
+        {bookings.map((item,index) => (
           <View
-            key={item.id}
+            key={index}
             style={[
               globalStyles.bgprimary,
               globalStyles.p4,
@@ -84,23 +53,29 @@ export default function Bookings() {
             ]}
           >
             <View style={globalStyles.flexrow}>
-              <Image source={profilepic} style={styles.avatar} />
+              <Image
+                source={{
+                  uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
+                }}
+                style={styles.avatar}
+              />
 
               <View style={[globalStyles.ml3, { flex: 1 }]}>
                 <CustomText
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
-                  {item.name}
+                  {item.CustFullName}
                 </CustomText>
                 <CustomText
                   style={[globalStyles.f12Regular, globalStyles.textWhite]}
                 >
-                  Mobile: {item.phone}
+                  Mobile: {item.CustPhoneNumber}
                 </CustomText>
                 <CustomText
                   style={[globalStyles.f10Light, globalStyles.neutral100]}
+                  numberOfLines={1}
                 >
-                  {item.address}
+                  {item.FullAddress}
                 </CustomText>
               </View>
             </View>
@@ -123,13 +98,16 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={locationicon} style={styles.icons} />
-                    </View>
+                    <MaterialCommunityIcons
+                      name="map-marker-distance"
+                      size={16}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                      {item.distance}
+                       {item.CustPhoneNumber}
                     </CustomText>
                   </View>
 
@@ -140,13 +118,16 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={locationicon} style={styles.icons} />
-                    </View>
+                    <FontAwesome5
+                      name="car"
+                      size={14}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                      {item.location}
+                      {item.CityID}
                     </CustomText>
                   </View>
 
@@ -157,13 +138,16 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={dashboardicon} style={styles.icons} />
-                    </View>
+                    <Entypo
+                      name="v-card"
+                      size={14}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                      {item.code}
+                      {item.BookingTrackID}
                     </CustomText>
                   </View>
                 </View>
@@ -176,13 +160,16 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={dateicon} style={styles.icons} />
-                    </View>
+                    <MaterialCommunityIcons
+                      name="calendar"
+                      size={16}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                      {item.date}
+                      {item.BookingDate?.slice(0, 10)}
                     </CustomText>
                   </View>
 
@@ -193,13 +180,16 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={locationicon} style={styles.icons} />
-                    </View>
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
                     >
-                      At {item.time}
+                      {item.TimeSlot}
                     </CustomText>
                   </View>
 
@@ -210,13 +200,17 @@ export default function Bookings() {
                       globalStyles.alineItemscenter,
                     ]}
                   >
-                    <View style={styles.iconbg}>
-                      <Image source={reportsicon} style={styles.icons} />
-                    </View>
+                    <Entypo
+                      name="documents"
+                      size={16}
+                      color="#fff"
+                      style={{ marginRight: 4 }}
+                    />
                     <CustomText
                       style={[globalStyles.f10Regular, globalStyles.textWhite]}
+                      numberOfLines={1}
                     >
-                      {item.service}
+                      {item.PackageName}
                     </CustomText>
                   </View>
                 </View>
@@ -232,7 +226,7 @@ export default function Bookings() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={customerInfo}
+                  onPress={() => customerInfo(item)}
                   style={[styles.viewButton, globalStyles.mt3]}
                 >
                   <CustomText
@@ -251,20 +245,6 @@ export default function Bookings() {
 }
 
 const styles = StyleSheet.create({
-  icons: {
-    width: 11,
-    height: 16,
-  },
-  iconbg: {
-    padding: 6,
-    height: 30,
-    width: 30,
-    backgroundColor: color.white,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 5,
-  },
   cancelButton: {
     backgroundColor: color.black,
     paddingVertical: 8,
