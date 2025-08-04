@@ -34,9 +34,7 @@ export default function Dashboard() {
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
   };
-  const RouteMap = () => {
-    navigation.navigate("Routemap");
-  };
+
   const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
@@ -45,7 +43,8 @@ export default function Dashboard() {
         const techId = await AsyncStorage.getItem("technicianId");
         if (techId) {
           const res = await axios.get(
-            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techId}`
+            // `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techId}`
+            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=74`
           );
           setBookings(res.data ?? []);
         } else {
@@ -173,11 +172,6 @@ export default function Dashboard() {
               customerInfo
             </CustomText>
           </TouchableOpacity>
-          <TouchableOpacity onPress={RouteMap}>
-            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
-              RouteMap
-            </CustomText>
-          </TouchableOpacity>
           {bookings.map((item, index) => (
             <View
               key={index}
@@ -189,7 +183,7 @@ export default function Dashboard() {
               ]}
             >
               <View style={[globalStyles.flexrow]}>
-                <Image
+                {/* <Image
                   source={
                     bookings
                       ? {
@@ -198,7 +192,20 @@ export default function Dashboard() {
                       : profilepic
                   }
                   style={styles.avatar}
-                />
+                /> */}
+                {/* <Image
+                  source={
+                    item.ProfileImage
+                      ? {
+                          uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
+                        }
+                      : profilepic
+                  }
+                  style={styles.avatar}
+                  onError={() =>
+                    console.log("Image load failed for:", item.ProfileImage)
+                  }
+                /> */}
 
                 <View style={[globalStyles.ml3, { flex: 1 }]}>
                   <CustomText

@@ -12,15 +12,21 @@ import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import globalStyles from "../styles/globalStyles";
+import CustomText from "./CustomText";
 
 export default function LiveTrackingWithRoute() {
+  const navigation = useNavigation();
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
-
+  const ServiceStart = () => {
+    navigation.navigate("ServiceStart");
+  };
   const destination = {
-    latitude: 17.4435, 
-    longitude: 78.4483, 
+    latitude: 17.4435,
+    longitude: 78.4483,
   };
 
   useEffect(() => {
@@ -169,10 +175,14 @@ export default function LiveTrackingWithRoute() {
       >
         <Ionicons name="locate" size={24} color="#fff" />
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.startButton} onPress={openGoogleMaps}>
-        <Text style={styles.startButtonText}>Start Navigation</Text>
-      </TouchableOpacity>
+      <View style={[styles.startreach]}>
+        <TouchableOpacity style={styles.ReachedButton} onPress={ServiceStart}>
+          <Text style={styles.startButtonText}>Reached</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.startButton} onPress={openGoogleMaps}>
+          <Text style={styles.startButtonText}>Start Navigation</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -210,16 +220,30 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     elevation: 5,
   },
-  startButton: {
+  startreach: {
     position: "absolute",
     bottom: 20,
     left: 20,
     right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  startButton: {
     backgroundColor: "#28a745",
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
     elevation: 5,
+    width: "48%",
+  },
+  ReachedButton: {
+    backgroundColor: "#F8B400",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 5,
+    width: "48%",
   },
   startButtonText: {
     color: "#fff",

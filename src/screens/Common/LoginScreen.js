@@ -16,6 +16,8 @@ import CustomText from "../../components/CustomText";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

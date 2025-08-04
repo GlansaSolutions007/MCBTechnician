@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,17 +15,21 @@ const SLIDER_WIDTH = width * 0.9;
 const BUTTON_WIDTH = 120;
 const BUTTON_HEIGHT = 50;
 
-const SlideButton = () => {
+const SlideButton = ({ onComplete }) => {
   const translateX = useSharedValue(0);
-  const completed = useSharedValue(false); 
+  const completed = useSharedValue(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   const onSlideComplete = () => {
-    Alert.alert('Ride Started', 'You have successfully started the ride.');
+    if (onComplete) {
+      onComplete(); 
+    }
+    setIsVisible(false);
   };
 
   const gestureHandler = useAnimatedGestureHandler({
     onStart: (_, ctx) => {
-      if (completed.value) return; 
+      if (completed.value) return;
       ctx.startX = translateX.value;
     },
     onActive: (event, ctx) => {
@@ -51,8 +55,9 @@ const SlideButton = () => {
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
-    opacity: completed.value ? 0.6 : 1, 
+    opacity: completed.value ? 0.6 : 1,
   }));
+  if (!isVisible) return null;
 
   return (
     <View style={styles.container}>
@@ -75,11 +80,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   slider: {
-  
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 10,
-    width: '100%',
+    width: SLIDER_WIDTH,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -90,7 +94,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
- 
   },
-
 });

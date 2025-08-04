@@ -19,11 +19,11 @@ import { color } from "../styles/theme";
 export default function Bookings() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { bookings } = route.params;
-  const navigatin = useNavigation();
-  const customerInfo = () => {
-    navigatin.navigate("customerInfo",{bookings});
+  const customerInfo = (booking) => {
+    navigation.navigate("customerInfo", { booking });
   };
+  const { bookings } = route.params;
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}

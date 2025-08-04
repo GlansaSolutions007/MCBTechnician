@@ -15,7 +15,6 @@ import ServiceEnd from "../screens/ServiceEnd";
 import CollectPayment from "../screens/CollectPayment";
 import Bookings from "../screens/Bookings";
 import Notifications from "../screens/Notifications";
-import RouteMap from "../components/RouteMap";
 
 const Stack = createNativeStackNavigator();
 
@@ -100,11 +99,7 @@ export default function CustomerStackNavigator() {
         component={Notifications}
         options={{ title: "Notifications" }}
       />
-      <Stack.Screen
-        name="Routemap"
-        component={RouteMap}
-        options={{ title: "RouteMap" }}
-      />
+      
     </Stack.Navigator>
   );
 }
