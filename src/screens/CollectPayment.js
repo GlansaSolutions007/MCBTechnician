@@ -1,12 +1,37 @@
-import React from "react";
-import { Image, ScrollView, TouchableOpacity, View } from "react-native";
-import globalStyles from "../styles/globalStyles";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import CustomText from "../components/CustomText";
-import { Ionicons } from "@expo/vector-icons";
-import QRImage from "../../assets/images/QRImage.png";
+import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
+import QRCode from "react-native-qrcode-svg";
 
 export default function CollectPayment() {
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const amount = 600;
+
+  useEffect(() => {
+    const mockPaymentLink = async () => {
+      try {
+        setLoading(true);
+        await new Promise((resolve) => setTimeout(resolve, 1500)); 
+        setPaymentUrl("https://paytm.me/your-test-link"); 
+      } catch (error) {
+        setErrorMessage("Failed to create payment link.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    mockPaymentLink();
+  }, []);
+
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
       <View style={[globalStyles.container, globalStyles.alineItemscenter]}>
@@ -22,7 +47,7 @@ export default function CollectPayment() {
             globalStyles.black,
           ]}
         >
-          600₹
+          {amount}₹
         </CustomText>
 
         <View
@@ -34,61 +59,16 @@ export default function CollectPayment() {
             globalStyles.mb6,
           ]}
         >
-          <Image
-            source={QRImage}
-            style={{
-              width: 270,
-              height: 270,
-            }}
-            resizeMode="contain"
-          />
+          {loading ? (
+            <ActivityIndicator size="large" color={color.black} />
+          ) : paymentUrl ? (
+            <QRCode value={paymentUrl} size={250} />
+          ) : (
+            <CustomText style={{ color: "red", textAlign: "center" }}>
+              {errorMessage || "Failed to load QR"}
+            </CustomText>
+          )}
         </View>
-
-        <CustomText
-          style={[
-            globalStyles.f16Medium,
-            globalStyles.neutral500,
-            globalStyles.mb2,
-            globalStyles.alineSelfstart,
-          ]}
-        >
-          Payment Method
-        </CustomText>
-
-        <TouchableOpacity
-          style={[
-            globalStyles.flexrow,
-            globalStyles.justifysb,
-            globalStyles.alineItemscenter,
-            globalStyles.p3,
-            globalStyles.w100,
-          ]}
-        >
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            <CustomText style={globalStyles.f16Regular}>Apple Pay</CustomText>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={color.black} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            globalStyles.flexrow,
-            globalStyles.justifysb,
-            globalStyles.alineItemscenter,
-            globalStyles.p3,
-            { width: "100%" },
-          ]}
-        >
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            {/* <Image
-              source={RazorPayLogo}
-              style={{ width: 24, height: 24, marginRight: 10 }}
-              resizeMode="contain"
-            /> */}
-            <CustomText style={globalStyles.f16Regular}>Razor Pay</CustomText>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={color.black} />
-        </TouchableOpacity>
 
         <TouchableOpacity style={[globalStyles.blackButton, globalStyles.w100]}>
           <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>

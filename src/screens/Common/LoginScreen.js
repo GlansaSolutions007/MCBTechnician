@@ -19,7 +19,6 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const { login } = useAuth();
@@ -49,18 +48,26 @@ export default function LoginScreen() {
         }
       );
 
+      console.log("Login response:", response.data);
+
       if (response.data?.success) {
-        const { email, token, technicianid } = response.data;
+        const techID = response.data?.techId;
+        const email = response.data?.email || "";
+        const token = response.data?.token || "";
 
-        login({
-          email,
-          token,
-          technicianid,
-        });
+        if (!techID) {
+          throw new Error("Tech ID not found in response.");
+        }
 
+        await AsyncStorage.setItem("techID", techID.toString());
+        await AsyncStorage.setItem("token", token);
+        await AsyncStorage.setItem("email", email);
+
+        login({ email, token, techID: techID });
+        console.log("iddddddddddddddd:", techID);
         navigation.replace("CustomerTabs", {
           screen: "Profile",
-          params: { technicianid: response.data.technicianid },
+          params: { techID: techID },
         });
       } else {
         throw new Error(response.data?.message || "Login failed.");

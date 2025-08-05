@@ -28,6 +28,9 @@ export default function Dashboard() {
   const customerInfo = () => {
     navigation.navigate("customerInfo");
   };
+  const CollectPayment = () => {
+    navigation.navigate("CollectPayment");
+  };
   const LiveTrackingMap = () => {
     navigation.navigate("LiveTrackingMap");
   };
@@ -40,11 +43,12 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const techId = await AsyncStorage.getItem("technicianId");
-        if (techId) {
+        const techID = await AsyncStorage.getItem("techID");
+
+        console.log("techhhhhh:", techID);
+        if (techID) {
           const res = await axios.get(
-            // `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techId}`
-            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=74`
+            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techID}`
           );
           setBookings(res.data ?? []);
         } else {
@@ -170,6 +174,11 @@ export default function Dashboard() {
           <TouchableOpacity onPress={customerInfo}>
             <CustomText style={[styles.startButton, globalStyles.textWhite]}>
               customerInfo
+            </CustomText>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={CollectPayment}>
+            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
+              CollectPayment
             </CustomText>
           </TouchableOpacity>
           {bookings.map((item, index) => (

@@ -26,7 +26,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchTechnicianDetails = async () => {
       try {
-        const techId = await AsyncStorage.getItem("technicianId");
+        const techId = await AsyncStorage.getItem("techID");
         if (!techId) {
           console.warn("No technicianId found");
           setLoading(false);
@@ -68,6 +68,7 @@ export default function ProfileScreen() {
     return (
       <View style={[globalStyles.container, globalStyles.justifycenter]}>
         <CustomText>No Profile Found</CustomText>
+        <CustomText>{techId}</CustomText>
       </View>
     );
   }
@@ -84,17 +85,18 @@ export default function ProfileScreen() {
               globalStyles.mr4,
             ]}
           >
-          <Image
-  source={
-    profileData?.ProfileImage
-      ? {
-          uri: `https://api.mycarsbuddy.com/${encodeURI(profileData.ProfileImage)}`,
-        }
-      : require("../../../assets/images/persontwo.jpg")
-  }
-  style={styles.avatar}
-/>
-
+            <Image
+              source={
+                profileData?.ProfileImage
+                  ? {
+                      uri: `https://api.mycarsbuddy.com/${encodeURI(
+                        profileData.ProfileImage
+                      )}`,
+                    }
+                  : require("../../../assets/images/persontwo.jpg")
+              }
+              style={styles.avatar}
+            />
           </View>
           <View>
             <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>

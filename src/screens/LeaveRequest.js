@@ -11,15 +11,18 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import person from "../../assets/icons/Navigation/techProfile.png";
 import profilepic from "../../assets/images/persontwo.jpg";
 import locationicon from "../../assets/icons/Navigation/LocationsPin.png";
 import { color } from "../styles/theme";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function LeaveRequest() {
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+  const [leaveReason, setLeaveReason] = useState("");
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -28,6 +31,52 @@ export default function LeaveRequest() {
       d.getMonth() + 1
     ).padStart(2, "0")}/${d.getFullYear()}`;
   };
+
+
+
+const handleSendRequest = async () => {
+  if (!fromDate || !toDate || !leaveReason.trim()) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  try {
+    const techID = await AsyncStorage.getItem("techID");
+
+    if (!techID) {
+      alert("Technician ID not found");
+      return;
+    }
+
+    const payload = {
+      techID: parseInt(techID), // convert from string to number
+      fromDate: new Date(fromDate).toISOString(),
+      toDate: new Date(toDate).toISOString(),
+      leaveReason: leaveReason.trim(),
+      requestedToId: 4, // This is hardcoded; change if needed
+    };
+
+    const response = await axios.post(
+      "https://api.mycarsbuddy.com/api/LeaveRequest",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      alert("Leave request submitted successfully");
+    } else {
+      alert("Failed to send request");
+    }
+  } catch (error) {
+    console.error("Error submitting leave request:", error?.response?.data || error.message);
+    alert("Something went wrong");
+  }
+};
+
 
   return (
     <ScrollView
@@ -110,7 +159,7 @@ export default function LeaveRequest() {
         </View>
       </View>
 
-      <View style={styles.alertBox}>
+      {/* <View style={styles.alertBox}>
         <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
           ❗ You have bookings on the above selected dates.
           {"\n"}Please check with dealer
@@ -126,10 +175,12 @@ export default function LeaveRequest() {
             Cancel Bookings
           </CustomText>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <View style={[globalStyles.w100]}>
-        <CustomText style={[globalStyles.f16Bold,globalStyles.primary, globalStyles.mb2]}>
+        <CustomText
+          style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb2]}
+        >
           Leave reason
         </CustomText>
         <TextInput
@@ -137,84 +188,95 @@ export default function LeaveRequest() {
           multiline
           maxLength={100}
           style={globalStyles.textArea}
+          value={leaveReason}
+          onChangeText={setLeaveReason}
         />
+
         {/* <CustomText style={[globalStyles.f12Regular, globalStyles.alineSelfend]}>
           100 / 100
         </CustomText> */}
       </View>
 
-      <View style={[ globalStyles.mv5]}>
-        <CustomText style={[globalStyles.f16Bold,globalStyles.primary, globalStyles.mb2]}>Requesting to</CustomText>
-      <View style={[globalStyles.flexrow, ]}>
+      <View style={[globalStyles.mv5]}>
+        <CustomText
+          style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb2]}
+        >
+          Requesting to
+        </CustomText>
+        <View style={[globalStyles.flexrow]}>
+          <View
+            style={[
+              globalStyles.alineItemscenter,
+              globalStyles.mb3,
+              globalStyles.mr4,
+            ]}
+          >
+            <Image source={profilepic} style={styles.avatar} />
+          </View>
+          <View>
+            <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+              Bhuvan Raj
+            </CustomText>
+            <CustomText style={[globalStyles.f12Medium]}>
+              Mobile: 9988776655
+            </CustomText>
+            <CustomText style={[globalStyles.f12Medium]}>
+              Email : bhuvan@carbuddy.com
+            </CustomText>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <View style={styles.iconbg}>
+                <Image source={locationicon} style={styles.icons} />
+              </View>
+              <CustomText style={globalStyles.f12Bold}>
+                Telangana, Hyderabad
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt1,
+                globalStyles.alineItemscenter,
+              ]}
+            ></View>
+          </View>
+        </View>
         <View
           style={[
-            globalStyles.alineItemscenter,
-            globalStyles.mb3,
-            globalStyles.mr4,
+            globalStyles.flexrow,
+            globalStyles.justifycenter,
+            globalStyles.justifysb,
           ]}
         >
-          <Image source={profilepic} style={styles.avatar} />
-        </View>
-        <View>
-          <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
-            Bhuvan Raj
-          </CustomText>
-          <CustomText style={[globalStyles.f12Medium]}>
-            Mobile: 9988776655
-          </CustomText>
-          <CustomText style={[globalStyles.f12Medium]}>
-            Email : bhuvan@carbuddy.com
-          </CustomText>
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.mt2,
-              globalStyles.alineItemscenter,
-            ]}
-          >
-            <View style={styles.iconbg}>
-              <Image source={locationicon} style={styles.icons} />
-            </View>
-            <CustomText style={globalStyles.f12Bold}>
-              Telangana, Hyderabad
+          <TouchableOpacity style={styles.btnone} onPress={handleSendRequest}>
+            <CustomText style={styles.cancelButtonText}>
+              Send Request
             </CustomText>
-          </View>
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.mt1,
-              globalStyles.alineItemscenter,
-            ]}
-          >
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.btntwo}>
+            <CustomText style={styles.cancelButtonText}>Cancel</CustomText>
+          </TouchableOpacity>
         </View>
-      </View>
-      <View style={[globalStyles.flexrow, globalStyles.justifycenter, globalStyles.justifysb]}>
-       <TouchableOpacity style={styles.btnone}>
-          <CustomText style={styles.cancelButtonText}>
-            Send Request
-          </CustomText>
-        </TouchableOpacity>
-       <TouchableOpacity style={styles.btntwo}>
-          <CustomText style={styles.cancelButtonText}>
-            Cancel
-          </CustomText>
-        </TouchableOpacity>
-      </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  btnone:{
+  btnone: {
     backgroundColor: color.primary,
     borderRadius: 8,
     paddingVertical: 15,
     alignItems: "center",
     width: "70%",
   },
-  btntwo:{
+  btntwo: {
     backgroundColor: color.black,
     borderRadius: 8,
     paddingVertical: 15,
