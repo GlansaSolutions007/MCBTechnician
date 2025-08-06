@@ -23,6 +23,8 @@ export default function LeaveRequest() {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [leaveReason, setLeaveReason] = useState("");
+  const [errors, setErrors] = useState({});
+  const [subject, setSubject] = useState("");
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -32,51 +34,62 @@ export default function LeaveRequest() {
     ).padStart(2, "0")}/${d.getFullYear()}`;
   };
 
-
-
-const handleSendRequest = async () => {
-  if (!fromDate || !toDate || !leaveReason.trim()) {
-    alert("Please fill all fields");
-    return;
-  }
-
-  try {
-    const techID = await AsyncStorage.getItem("techID");
-
-    if (!techID) {
-      alert("Technician ID not found");
-      return;
+  const handleSendRequest = async () => {
+    let newErrors = {};
+    if (!subject.trim()) newErrors.subject = "Please enter a subject";
+    if (!fromDate) newErrors.fromDate = "Please select from date";
+    if (!toDate) newErrors.toDate = "Please select to date";
+    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+      newErrors.dateRange = "From date cannot be after To date";
     }
+    if (!leaveReason.trim())
+      newErrors.leaveReason = "Please enter leave reason";
+    else if (leaveReason.trim().length < 5)
+      newErrors.leaveReason = "Leave reason must be at least 5 characters";
 
-    const payload = {
-      techID: parseInt(techID), // convert from string to number
-      fromDate: new Date(fromDate).toISOString(),
-      toDate: new Date(toDate).toISOString(),
-      leaveReason: leaveReason.trim(),
-      requestedToId: 4, // This is hardcoded; change if needed
-    };
+    setErrors(newErrors);
 
-    const response = await axios.post(
-      "https://api.mycarsbuddy.com/api/LeaveRequest",
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+
+      if (!techID) {
+        setErrors({ general: "Technician ID not found" });
+        return;
       }
-    );
 
-    if (response.status === 200 || response.status === 201) {
-      alert("Leave request submitted successfully");
-    } else {
-      alert("Failed to send request");
+      const payload = {
+        techID: parseInt(techID),
+        fromDate: new Date(fromDate).toISOString(),
+        toDate: new Date(toDate).toISOString(),
+        leaveReason: leaveReason.trim(),
+        requestedToId: 4,
+      };
+
+      const response = await axios.post(
+        "https://api.mycarsbuddy.com/api/LeaveRequest",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        setFromDate(null);
+        setToDate(null);
+        setLeaveReason("");
+        setErrors({});
+      } else {
+        setErrors({ general: "Failed to send request" });
+      }
+    } catch (error) {
+      console.error("Error:", error?.response?.data || error.message);
+      setErrors({ general: "Something went wrong" });
     }
-  } catch (error) {
-    console.error("Error submitting leave request:", error?.response?.data || error.message);
-    alert("Something went wrong");
-  }
-};
-
+  };
 
   return (
     <ScrollView
@@ -90,6 +103,9 @@ const handleSendRequest = async () => {
           Leave Subject
         </CustomText>
         <TextInput placeholder="Enter here" style={[globalStyles.inputBox]} />
+        {errors.subject && (
+          <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.subject}</CustomText>
+        )}
       </View>
 
       <View
@@ -112,6 +128,9 @@ const handleSendRequest = async () => {
               {fromDate ? formatDate(fromDate) : "DD/MM/YYYY"}
             </CustomText>
           </TouchableOpacity>
+          {errors.fromDate && (
+            <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.fromDate}</CustomText>
+          )}
           {showFromPicker && (
             <DateTimePicker
               value={fromDate || new Date()}
@@ -143,6 +162,9 @@ const handleSendRequest = async () => {
               {toDate ? formatDate(toDate) : "DD/MM/YYYY"}
             </CustomText>
           </TouchableOpacity>
+          {errors.toDate && (
+            <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.toDate}</CustomText>
+          )}
           {showToPicker && (
             <DateTimePicker
               value={toDate || new Date()}
@@ -159,14 +181,14 @@ const handleSendRequest = async () => {
         </View>
       </View>
 
-      {/* <View style={styles.alertBox}>
+      <View style={styles.alertBox}>
         <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
           ❗ You have bookings on the above selected dates.
           {"\n"}Please check with dealer
         </CustomText>
       </View>
 
-      <View style={styles.alertBox}>
+      {/* <View style={styles.alertBox}>
         <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
           ❗ You have bookings on the above selected dates.
         </CustomText>
@@ -191,14 +213,16 @@ const handleSendRequest = async () => {
           value={leaveReason}
           onChangeText={setLeaveReason}
         />
-
+        {errors.leaveReason && (
+          <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.leaveReason}</CustomText>
+        )}
         {/* <CustomText style={[globalStyles.f12Regular, globalStyles.alineSelfend]}>
           100 / 100
         </CustomText> */}
       </View>
 
       <View style={[globalStyles.mv5]}>
-        <CustomText
+        {/* <CustomText
           style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb2]}
         >
           Requesting to
@@ -245,7 +269,8 @@ const handleSendRequest = async () => {
               ]}
             ></View>
           </View>
-        </View>
+        </View> */}
+
         <View
           style={[
             globalStyles.flexrow,
@@ -269,6 +294,7 @@ const handleSendRequest = async () => {
 }
 
 const styles = StyleSheet.create({
+ 
   btnone: {
     backgroundColor: color.primary,
     borderRadius: 8,

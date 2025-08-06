@@ -1,13 +1,13 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
   ScrollView,
   View,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   Linking,
+  Text,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -16,22 +16,150 @@ import profilepic from "../../assets/images/person.jpg";
 import carpic from "../../assets/images/Group 420.png";
 import { color } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
-import SlideButton from "../components/SlideButton ";
+import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import axios from "axios";
 
 export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  console.log("Booking ID:", booking.BookingId);
 
- const LiveTrackingMap = () => {
-  navigation.navigate("LiveTrackingMap", {
-    latitude: booking.latitude,
-    longitude: booking.Longitude,
-    bookingId: booking.BookingId, 
-  });
-};
+  const [location, setLocation] = useState(null);
+  const [routeCoords, setRouteCoords] = useState([]);
+  const mapRef = useRef(null);
+
+  const Reached = async () => {
+    await updateTechnicianTracking("Reached");
+    navigation.navigate("ServiceStart", { booking });
+  };
+
+  const latitude = booking.latitude;
+  const longitude = booking.Longitude;
+  const bookingId = booking.BookingId;
+
+  const destination = {
+    latitude: parseFloat(latitude),
+    longitude: parseFloat(longitude),
+  };
+
+  useEffect(() => {
+    const startTracking = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Denied", "Location access is required.");
+        return;
+      }
+
+      Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 1,
+        },
+        async (loc) => {
+          const coords = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          };
+
+          setLocation(coords);
+
+          if (mapRef.current) {
+            mapRef.current.animateToRegion(coords, 1000);
+          }
+
+          fetchRoute(coords);
+        }
+      );
+    };
+
+    startTracking();
+  }, []);
+
+  const fetchRoute = async (origin) => {
+    try {
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/directions/json`,
+        {
+          params: {
+            origin: `${origin.latitude},${origin.longitude}`,
+            destination: `${destination.latitude},${destination.longitude}`,
+            key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
+          },
+        }
+      );
+
+      const points = response.data.routes[0].overview_polyline.points;
+      const decoded = decodePolyline(points);
+      setRouteCoords(decoded);
+    } catch (error) {
+      console.error("Google Directions API error:", error.message);
+    }
+  };
+
+  const decodePolyline = (t) => {
+    let points = [];
+    let index = 0,
+      len = t.length;
+    let lat = 0,
+      lng = 0;
+
+    while (index < len) {
+      let b,
+        shift = 0,
+        result = 0;
+      do {
+        b = t.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = t.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+      lng += dlng;
+
+      points.push({
+        latitude: lat / 1e5,
+        longitude: lng / 1e5,
+      });
+    }
+    return points;
+  };
+
+  const openGoogleMaps = () => {
+    if (location) {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+      Linking.openURL(url);
+    }
+  };
+
+  const updateTechnicianTracking = async (actionType) => {
+    try {
+      await axios.post(
+        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        {
+          bookingID: bookingId,
+          actionType,
+        }
+      );
+
+      console.log(`${actionType} action sent successfully`);
+    } catch (error) {
+      console.error(`Error sending ${actionType} action:`, error.message);
+      Alert.alert("Error", `Failed to send ${actionType} action.`);
+    }
+  };
 
   return (
     <ScrollView style={[globalStyles.bgcontainer]}>
@@ -251,13 +379,10 @@ export default function CustomerInfo() {
             ]}
           >
             Customer Note
-          
           </CustomText>
-            <CustomText
-              style={[globalStyles.f12Regular, globalStyles.textWhite]}
-            >
-              {booking.Notes}
-            </CustomText>
+          <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite]}>
+            {booking.Notes}
+          </CustomText>
           <View
             style={[
               globalStyles.flexrow,
@@ -308,9 +433,62 @@ export default function CustomerInfo() {
               </TouchableOpacity>
             </View>
 
-            <SafeAreaView style={{ flex: 1 }}>
-              <SlideButton onComplete={LiveTrackingMap} />
-            </SafeAreaView>
+            <View>
+              <View>
+                <TouchableOpacity
+                  style={styles.startride}
+                  onPress={async () => {
+                    await updateTechnicianTracking("StartJourney");
+                    openGoogleMaps();
+                  }}
+                >
+                  <Ionicons
+                    name="rocket"
+                    size={20}
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+
+                  <CustomText style={styles.startButtonText}>
+                    Start Ride
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.startreach]}>
+                <TouchableOpacity
+                  style={styles.ReachedButton}
+                  onPress={Reached}
+                >
+                  <Ionicons
+                    name="flag"
+                    size={20}
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText style={styles.startButtonText}>
+                    Reached
+                  </CustomText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.startButton}
+                  onPress={async () => {
+                    // await updateTechnicianTracking("StartJourney");
+                    openGoogleMaps();
+                  }}
+                >
+                  <Ionicons
+                    name="rocket"
+                    size={20}
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText style={styles.startButtonText}>
+                    Start Ride
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </View>
@@ -411,5 +589,50 @@ const styles = StyleSheet.create({
   },
   width30: {
     width: "30%",
+  },
+  startreach: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+    gap: 10,
+  },
+  ReachedButton: {
+    backgroundColor: "#F8B400",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 5,
+    width: "48%",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  startride: {
+    backgroundColor: "#F8B400",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  startButton: {
+    backgroundColor: color.primary,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 5,
+    width: "48%",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  startButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

@@ -16,18 +16,21 @@ import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import axios from "axios";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
-    const route = useRoute();
-    // const { bookings } = route.params;
+  const route = useRoute();
+  const { booking } = route.params;
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
   const [timerCompleted, setTimerCompleted] = useState(false);
-  const MAX_TIME = 10;
+  // const MAX_TIME = 3600;
+  const MAX_TIME = 5;
+  const bookingId = booking.BookingId;
 
   useEffect(() => {
     let interval = null;
@@ -70,6 +73,23 @@ export default function ServiceStart() {
     setImages(filtered);
   };
 
+  const updateTechnicianTracking = async (actionType) => {
+    try {
+      await axios.post(
+        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        {
+          bookingID: bookingId,
+          actionType,
+        }
+      );
+
+      console.log(`${actionType} action sent successfully`);
+    } catch (error) {
+      console.error(`Error sending ${actionType} action:`, error.message);
+      Alert.alert("Error", `Failed to send ${actionType} action.`);
+    }
+  };
+
   return (
     <ScrollView style={globalStyles.bgcontainer}>
       <View style={globalStyles.container}>
@@ -78,8 +98,8 @@ export default function ServiceStart() {
         <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
           Booking ID:{" "}
           <CustomText style={globalStyles.black}>
-            {/* {bookings.BookingTrackID} */}
-            </CustomText>
+            {booking.BookingTrackID}
+          </CustomText>
         </CustomText>
 
         <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>
@@ -192,19 +212,26 @@ export default function ServiceStart() {
               </CustomText>
               <View style={[globalStyles.mt2, globalStyles.ph4]}>
                 <CustomText style={globalStyles.f18Medium}>
-                  • Leather Fabric Seat Polishing
+                  {booking.PackageNames?.split(", ").map((item, index) => (
+                    <CustomText key={index}>
+                      • {item}
+                      {"\n"}
+                    </CustomText>
+                  ))}
                 </CustomText>
                 <CustomText style={globalStyles.f18Medium}>
-                  • AC Vent Sanitization
-                </CustomText>
-                <CustomText style={globalStyles.f18Medium}>
-                  • Mat Washing & Vacuuming
+                  {booking.IncludeNames?.split(", ").map((item, index) => (
+                    <CustomText key={index}>
+                      • {item}
+                      {"\n"}
+                    </CustomText>
+                  ))}{" "}
                 </CustomText>
               </View>
             </View>
             <TouchableOpacity
-              // onPress={() => setTimerCompleted(true)}
-              onPress={() => {
+              onPress={async () => {
+                await updateTechnicianTracking("ServiceEnded");
                 setTimerCompleted(true);
                 setTimeTaken(elapsedTime);
                 navigation.navigate("ServiceEnd", {
@@ -217,7 +244,7 @@ export default function ServiceStart() {
               <CustomText
                 style={[globalStyles.f12Bold, globalStyles.textWhite]}
               >
-                Completed
+                Next
               </CustomText>
             </TouchableOpacity>
           </View>
@@ -249,7 +276,8 @@ export default function ServiceStart() {
               </View>
               <TouchableOpacity
                 style={styles.pricecard}
-                onPress={() => {
+                onPress={async () => {
+                  await updateTechnicianTracking("ServiceStarted");
                   setTimerStarted(true);
                   setElapsedTime(0);
                   setTimerCompleted(false);

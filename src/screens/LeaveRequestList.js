@@ -102,17 +102,28 @@ export default function LeaveRequestList() {
           </TouchableOpacity>
         </View>
 
-        <CustomText style={[globalStyles.f20Bold, globalStyles.mb3]}>
-          Leave Requests
-        </CustomText>
-
         {loading ? (
           <ActivityIndicator color={color.black} size="large" />
+        ) : leaveData.length === 0 ? (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <CustomText style={globalStyles.neutral500}>
+              No leave requests found
+            </CustomText>
+          </View>
         ) : (
           leaveData.map((item, index) => {
             const statusStyle = getStatusStyle(item.Status);
             return (
               <View key={index} style={styles.card}>
+                <CustomText style={[globalStyles.f20Bold, globalStyles.mb3]}>
+                  Leave Requests
+                </CustomText>
                 <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
                   <View style={globalStyles.flex1}>
                     <CustomText

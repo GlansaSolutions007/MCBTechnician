@@ -9,6 +9,7 @@ export const color = {
   fullred:"#911719",
   fullredLight: "#FF6B6B",
   redverulight: "#FDEAEA",
+  error: "#ff1a1a",
 
   // Backgrounds
   background: "#F3F3F3",

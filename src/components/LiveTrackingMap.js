@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import globalStyles from "../styles/globalStyles";
 import CustomText from "./CustomText";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LiveTrackingWithRoute() {
   const navigation = useNavigation();
@@ -131,11 +132,12 @@ export default function LiveTrackingWithRoute() {
   };
 
   const updateTrackingStatus = async (status) => {
+    const techID = await AsyncStorage.getItem("techID");
     try {
       const payload = {
         BookingID: bookingId,
         Status: status,
-        TechnicianID: 73, // replace with dynamic tech ID if needed
+        TechnicianID: techID,
         Latitude: location?.latitude || 0,
         Longitude: location?.longitude || 0,
       };

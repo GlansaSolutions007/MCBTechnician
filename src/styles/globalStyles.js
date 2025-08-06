@@ -120,6 +120,9 @@ export default StyleSheet.create({
   red: {
     color: color.red,
   },
+  error: {
+    color: color.error,
+  },
 
   fullred: {
     color: color.fullred,
