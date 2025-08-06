@@ -25,10 +25,14 @@ export default function CustomerInfo() {
   const { booking } = route.params;
   console.log("Booking ID:", booking.BookingId);
 
+ const LiveTrackingMap = () => {
+  navigation.navigate("LiveTrackingMap", {
+    latitude: booking.latitude,
+    longitude: booking.Longitude,
+    bookingId: booking.BookingId, 
+  });
+};
 
-  const LiveTrackingMap = () => {
-    navigation.navigate("LiveTrackingMap");
-  };
   return (
     <ScrollView style={[globalStyles.bgcontainer]}>
       <View>
@@ -37,7 +41,9 @@ export default function CustomerInfo() {
 
           <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
             Booking ID:{" "}
-            <CustomText style={globalStyles.black}>TG234518</CustomText>
+            <CustomText style={globalStyles.black}>
+              {booking.BookingTrackID}
+            </CustomText>
           </CustomText>
 
           <View
@@ -178,13 +184,20 @@ export default function CustomerInfo() {
             </CustomText>
             <View style={[globalStyles.mt2, globalStyles.ph4]}>
               <CustomText style={globalStyles.f18Medium}>
-                • Leather Fabric Seat Polishing
+                {booking.PackageNames?.split(", ").map((item, index) => (
+                  <CustomText key={index}>
+                    • {item}
+                    {"\n"}
+                  </CustomText>
+                ))}
               </CustomText>
               <CustomText style={globalStyles.f18Medium}>
-                • AC Vent Sanitization
-              </CustomText>
-              <CustomText style={globalStyles.f18Medium}>
-                • Mat Washing & Vacuuming
+                {booking.IncludeNames?.split(", ").map((item, index) => (
+                  <CustomText key={index}>
+                    • {item}
+                    {"\n"}
+                  </CustomText>
+                ))}{" "}
               </CustomText>
             </View>
           </View>
@@ -237,13 +250,14 @@ export default function CustomerInfo() {
               globalStyles.mt2,
             ]}
           >
-            Customer Note:{" "}
+            Customer Note
+          
+          </CustomText>
             <CustomText
-              style={[globalStyles.f12Medium, globalStyles.textWhite]}
+              style={[globalStyles.f12Regular, globalStyles.textWhite]}
             >
               {booking.Notes}
             </CustomText>
-          </CustomText>
           <View
             style={[
               globalStyles.flexrow,
@@ -254,7 +268,6 @@ export default function CustomerInfo() {
           ></View>
 
           <View style={[globalStyles.mt2]}>
-            {/* Buttons Row */}
             <View
               style={[
                 globalStyles.mt4,
@@ -262,13 +275,13 @@ export default function CustomerInfo() {
                 globalStyles.justifysb,
               ]}
             >
-              <TouchableOpacity style={styles.cancelButton}>
+              {/* <TouchableOpacity style={styles.cancelButton}>
                 <CustomText
                   style={[globalStyles.textWhite, globalStyles.f12Medium]}
                 >
                   Cancel Booking
                 </CustomText>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               <TouchableOpacity
                 style={styles.callButton}
@@ -336,7 +349,7 @@ const styles = StyleSheet.create({
   },
   callButton: {
     backgroundColor: color.primary,
-    width: "46%",
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,

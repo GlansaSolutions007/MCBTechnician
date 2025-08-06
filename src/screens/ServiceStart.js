@@ -15,10 +15,12 @@ import { AnimatedCircularProgress } from "react-native-circular-progress";
 import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
+    const route = useRoute();
+    // const { bookings } = route.params;
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -73,10 +75,11 @@ export default function ServiceStart() {
       <View style={globalStyles.container}>
         <AvailabilityHeader />
 
-        {/* Booking Info */}
         <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
           Booking ID:{" "}
-          <CustomText style={globalStyles.black}>TG234518</CustomText>
+          <CustomText style={globalStyles.black}>
+            {/* {bookings.BookingTrackID} */}
+            </CustomText>
         </CustomText>
 
         <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>

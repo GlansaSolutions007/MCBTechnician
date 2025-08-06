@@ -12,7 +12,7 @@ import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import globalStyles from "../styles/globalStyles";
 import CustomText from "./CustomText";
 
@@ -20,14 +20,21 @@ export default function LiveTrackingWithRoute() {
   const navigation = useNavigation();
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
+  const route = useRoute();
+  const { bookings } = route.params;
   const mapRef = useRef(null);
-  const ServiceStart = () => {
-    navigation.navigate("ServiceStart");
+  const Reached = () => {
+    navigation.navigate("ServiceStart", { bookings });
   };
+  const { latitude, longitude, bookingId } = route.params;
+
+  console.log("Lat:", latitude, "Lng:", longitude, "BookingId:", bookingId);
+
   const destination = {
-    latitude: 17.4435,
-    longitude: 78.4483,
+    latitude: parseFloat(latitude),
+    longitude: parseFloat(longitude),
   };
+  console.log("Destination:", destination);
 
   useEffect(() => {
     const startTracking = async () => {
@@ -123,6 +130,49 @@ export default function LiveTrackingWithRoute() {
     return points;
   };
 
+  const updateTrackingStatus = async (status) => {
+    try {
+      const payload = {
+        BookingID: bookingId,
+        Status: status,
+        TechnicianID: 73, // replace with dynamic tech ID if needed
+        Latitude: location?.latitude || 0,
+        Longitude: location?.longitude || 0,
+      };
+
+      console.log(`Sending Tracking Payload for ${status}:`, payload);
+
+      const response = await axios.post(
+        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 && response.data?.success) {
+        console.log(`${status} status updated successfully`);
+        if (status === "Reached") {
+          navigation.navigate("ServiceStart");
+        }
+      } else {
+        console.warn("Unexpected response:", response);
+        Alert.alert("Error", `Failed to update ${status} status`);
+      }
+    } catch (error) {
+      console.error(
+        `Error updating tracking status (${status}):`,
+        error.message
+      );
+      if (error.response?.data) {
+        console.log("Response error data:", error.response.data);
+      }
+      Alert.alert("Error", `Failed to update ${status} status`);
+    }
+  };
+
   const openGoogleMaps = () => {
     if (location) {
       const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
@@ -176,10 +226,21 @@ export default function LiveTrackingWithRoute() {
         <Ionicons name="locate" size={24} color="#fff" />
       </TouchableOpacity>
       <View style={[styles.startreach]}>
-        <TouchableOpacity style={styles.ReachedButton} onPress={ServiceStart}>
+        <TouchableOpacity
+          style={styles.ReachedButton}
+          // onPress={() => updateTrackingStatus("Reached")}
+          onPress={Reached}
+        >
           <Text style={styles.startButtonText}>Reached</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.startButton} onPress={openGoogleMaps}>
+
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={() => {
+            updateTrackingStatus("StartJourney");
+            openGoogleMaps();
+          }}
+        >
           <Text style={styles.startButtonText}>Start Navigation</Text>
         </TouchableOpacity>
       </View>

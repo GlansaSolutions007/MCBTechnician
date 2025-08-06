@@ -1,27 +1,47 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, View, StyleSheet, TouchableOpacity } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
-
-const bookings = [
-  {
-    id: "TG234518",
-    assignedOn: "29th July 2025",
-    estHrs: "5hrs",
-    category: "Interior Cleaning",
-    package: "Spa Cleaning",
-  },
-  {
-    id: "TG987654",
-    assignedOn: "1st August 2025",
-    estHrs: "3hrs",
-    category: "Exterior Cleaning",
-    package: "Deluxe Wash",
-  },
-];
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function TaskReportsScreen() {
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+  try {
+    const techID = await AsyncStorage.getItem("techID");
+    if (!techID) {
+      console.warn("Technician ID not found in AsyncStorage.");
+      return;
+    }
+
+    const response = await axios.get(
+      `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techID}`
+    );
+
+    const tomorrow = new Date();
+    tomorrow.setHours(0, 0, 0, 0); 
+    tomorrow.setDate(tomorrow.getDate() + 1); 
+
+    const futureBookings = response.data.filter((item) => {
+      const bookingDate = new Date(item.BookingDate);
+      bookingDate.setHours(0, 0, 0, 0); 
+      return bookingDate >= tomorrow;
+    });
+
+    setBookings(futureBookings);
+  } catch (error) {
+    console.error("Failed to fetch bookings:", error);
+  }
+};
+
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -42,7 +62,7 @@ function TaskReportsScreen() {
                 >
                   Booking ID:
                 </CustomText>{" "}
-                {item.id}
+                {item.BookingTrackID}
               </CustomText>
               <Ionicons name="chevron-forward" size={20} color="#000" />
             </View>
@@ -59,7 +79,11 @@ function TaskReportsScreen() {
                 Assigned on:
               </CustomText>
               <CustomText style={globalStyles.f10Regular}>
-                {item.assignedOn}
+                {new Date(item.BookingDate).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
               </CustomText>
             </View>
 
@@ -70,10 +94,10 @@ function TaskReportsScreen() {
                 size={16}
               />
               <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-                Est. Hrs:
+                Time Slot:
               </CustomText>
               <CustomText style={globalStyles.f10Regular}>
-                {item.estHrs}
+                {item.TimeSlot}
               </CustomText>
             </View>
 
@@ -87,7 +111,7 @@ function TaskReportsScreen() {
                 Category:
               </CustomText>
               <CustomText style={globalStyles.f10Regular}>
-                {item.category}
+                {item.CategoryNames}
               </CustomText>
             </View>
 
@@ -101,7 +125,7 @@ function TaskReportsScreen() {
                 Package:
               </CustomText>
               <CustomText style={globalStyles.f10Regular}>
-                {item.package}
+                {item.PackageNames}
               </CustomText>
             </View>
           </TouchableOpacity>

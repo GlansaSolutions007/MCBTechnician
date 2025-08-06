@@ -259,7 +259,9 @@ export default function Dashboard() {
                 <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
                   {item.TimeSlot}
                 </CustomText>
-                <TouchableOpacity onPress={LiveTrackingMap}>
+                <TouchableOpacity 
+                onPress={LiveTrackingMap}
+                >
                   <View
                     style={{
                       backgroundColor: color.black,
@@ -402,7 +404,7 @@ export default function Dashboard() {
             ]}
           >
             <TouchableOpacity
-              onPress={LiveTrackingMap}
+              // onPress={LiveTrackingMap}
               style={styles.startButton}
             >
               <CustomText
@@ -466,7 +468,9 @@ export default function Dashboard() {
               <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
               Leather Fabric Seat Polishing
             </CustomText>
-            <TouchableOpacity onPress={LiveTrackingMap}>
+            <TouchableOpacity 
+            // onPress={LiveTrackingMap}
+            >
               <MiniMapRoute
                 origin={{
                   latitude: 17.4445,
