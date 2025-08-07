@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -14,20 +16,23 @@ import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function LeaveRequestList() {
   const navigation = useNavigation();
   const [leaveData, setLeaveData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     fetchLeaveData();
-  }, []);
+  }, [selectedDate]);
 
   const fetchLeaveData = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
-        const token = await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem("token");
 
       if (!techID) {
         console.warn("No techID found in AsyncStorage");
@@ -37,13 +42,22 @@ export default function LeaveRequestList() {
       const response = await axios.get(
         `https://api.mycarsbuddy.com/api/LeaveRequest/Techid?TechId=${techID}`,
         {
-            headers: {
-              Authorization: `Bearer ${token}`, // <-- Correct header
-            },
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
-      setLeaveData(response.data);
+      const allData = response.data;
+      if (selectedDate) {
+        const filteredData = allData.filter((item) => {
+          const from = moment(item.FromDate).format("YYYY-MM-DD");
+          return from === moment(selectedDate).format("YYYY-MM-DD");
+        });
+        setLeaveData(filteredData);
+      } else {
+        setLeaveData(allData);
+      }
     } catch (error) {
       console.error("Error fetching leave data:", error);
     } finally {
@@ -86,6 +100,15 @@ export default function LeaveRequestList() {
     }
   };
 
+  const handleDateChange = (event, date) => {
+    setShowPicker(false);
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+  const clearFilter = () => {
+    setSelectedDate(null);
+  };
   return (
     <ScrollView style={[globalStyles.bgcontainer]}>
       <View style={[globalStyles.p4]}>
@@ -103,10 +126,27 @@ export default function LeaveRequestList() {
           >
             <CustomText style={styles.addButtonText}>Add Request</CustomText>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setShowPicker(true)}
+          >
             <Ionicons name="calendar-outline" size={24} color={color.white} />
           </TouchableOpacity>
+          {selectedDate && (
+            <TouchableOpacity onPress={clearFilter} style={styles.iconButton}>
+              <Ionicons name="close-circle" size={30} color={color.white} />
+            </TouchableOpacity>
+          )}
         </View>
+
+        {showPicker && (
+          <DateTimePicker
+            value={selectedDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
 
         {loading ? (
           <ActivityIndicator color={color.black} size="large" />
@@ -128,7 +168,7 @@ export default function LeaveRequestList() {
             return (
               <View key={index} style={styles.card}>
                 <CustomText style={[globalStyles.f20Bold, globalStyles.mb3]}>
-                  Leave Requests
+                  {item.LeaveReason}
                 </CustomText>
                 <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
                   <View style={globalStyles.flex1}>
@@ -173,7 +213,6 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: color.primary,
     paddingVertical: 14,
-    width: "70%",
     alignItems: "center",
     paddingHorizontal: 28,
     borderRadius: 14,
@@ -184,7 +223,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   iconButton: {
-    width: "25%",
     alignItems: "center",
     backgroundColor: color.black,
     padding: 10,

@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Image,
+  Modal,
+  Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomText from "../components/CustomText";
@@ -16,6 +17,7 @@ import locationicon from "../../assets/icons/Navigation/LocationsPin.png";
 import { color } from "../styles/theme";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function LeaveRequest() {
   const [fromDate, setFromDate] = useState(null);
@@ -25,6 +27,8 @@ export default function LeaveRequest() {
   const [leaveReason, setLeaveReason] = useState("");
   const [errors, setErrors] = useState({});
   const [subject, setSubject] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -34,14 +38,27 @@ export default function LeaveRequest() {
     ).padStart(2, "0")}/${d.getFullYear()}`;
   };
 
+  const showErrorModal = (message) => {
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
   const handleSendRequest = async () => {
     let newErrors = {};
     if (!subject.trim()) newErrors.subject = "Please enter a subject";
     if (!fromDate) newErrors.fromDate = "Please select from date";
     if (!toDate) newErrors.toDate = "Please select to date";
-    if (fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
-      newErrors.dateRange = "From date cannot be after To date";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (fromDate && fromDate <= today) {
+      newErrors.fromDate = "From date must be a future date";
     }
+
+    if (fromDate && toDate && toDate < fromDate) {
+      newErrors.toDate = "To date cannot be before From date";
+    }
+
     if (!leaveReason.trim())
       newErrors.leaveReason = "Please enter leave reason";
     else if (leaveReason.trim().length < 5)
@@ -55,7 +72,7 @@ export default function LeaveRequest() {
       const techID = await AsyncStorage.getItem("techID");
 
       if (!techID) {
-        setErrors({ general: "Technician ID not found" });
+        showErrorModal("Technician ID not found");
         return;
       }
 
@@ -68,7 +85,7 @@ export default function LeaveRequest() {
       };
 
       const response = await axios.post(
-        "https://api.mycarsbuddy.com/api/LeaveRequest",
+        `${API_BASE_URL}LeaveRequest`,
         payload,
         {
           headers: {
@@ -82,12 +99,13 @@ export default function LeaveRequest() {
         setToDate(null);
         setLeaveReason("");
         setErrors({});
+        showErrorModal("Leave request sent successfully!");
       } else {
-        setErrors({ general: "Failed to send request" });
+        showErrorModal("Failed to send request");
       }
     } catch (error) {
       console.error("Error:", error?.response?.data || error.message);
-      setErrors({ general: "Something went wrong" });
+      showErrorModal("Something went wrong");
     }
   };
 
@@ -102,9 +120,22 @@ export default function LeaveRequest() {
         >
           Leave Subject
         </CustomText>
-        <TextInput placeholder="Enter here" style={[globalStyles.inputBox]} />
+        <TextInput
+          placeholder="Enter here"
+          style={[globalStyles.inputBox]}
+          value={subject}
+          onChangeText={setSubject}
+        />
         {errors.subject && (
-          <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.subject}</CustomText>
+          <CustomText
+            style={[
+              globalStyles.f10Light,
+              globalStyles.error,
+              globalStyles.ml2,
+            ]}
+          >
+            {errors.subject}
+          </CustomText>
         )}
       </View>
 
@@ -128,8 +159,17 @@ export default function LeaveRequest() {
               {fromDate ? formatDate(fromDate) : "DD/MM/YYYY"}
             </CustomText>
           </TouchableOpacity>
+
           {errors.fromDate && (
-            <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.fromDate}</CustomText>
+            <CustomText
+              style={[
+                globalStyles.f10Light,
+                globalStyles.error,
+                globalStyles.ml2,
+              ]}
+            >
+              {errors.fromDate}
+            </CustomText>
           )}
           {showFromPicker && (
             <DateTimePicker
@@ -139,7 +179,27 @@ export default function LeaveRequest() {
               onChange={(event, selectedDate) => {
                 setShowFromPicker(false);
                 if (selectedDate) {
-                  setFromDate(selectedDate);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const picked = new Date(selectedDate);
+                  picked.setHours(0, 0, 0, 0);
+
+                  if (picked <= today) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      fromDate: "From date must be a future date",
+                    }));
+                    return;
+                  } else {
+                    setErrors((prev) => ({ ...prev, fromDate: null }));
+                  }
+
+                  setFromDate(picked);
+
+                  // Clear toDate if it's before new fromDate
+                  if (toDate && picked > toDate) {
+                    setToDate(null);
+                  }
                 }
               }}
             />
@@ -163,7 +223,15 @@ export default function LeaveRequest() {
             </CustomText>
           </TouchableOpacity>
           {errors.toDate && (
-            <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.toDate}</CustomText>
+            <CustomText
+              style={[
+                globalStyles.f10Light,
+                globalStyles.error,
+                globalStyles.ml2,
+              ]}
+            >
+              {errors.toDate}
+            </CustomText>
           )}
           {showToPicker && (
             <DateTimePicker
@@ -173,7 +241,20 @@ export default function LeaveRequest() {
               onChange={(event, selectedDate) => {
                 setShowToPicker(false);
                 if (selectedDate) {
-                  setToDate(selectedDate);
+                  const picked = new Date(selectedDate);
+                  picked.setHours(0, 0, 0, 0);
+
+                  if (fromDate && picked < fromDate) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      toDate: "To date cannot be before From date",
+                    }));
+                    return;
+                  } else {
+                    setErrors((prev) => ({ ...prev, toDate: null }));
+                  }
+
+                  setToDate(picked);
                 }
               }}
             />
@@ -214,7 +295,15 @@ export default function LeaveRequest() {
           onChangeText={setLeaveReason}
         />
         {errors.leaveReason && (
-          <CustomText style={[globalStyles.f10Light,globalStyles.error,globalStyles.ml2]}>{errors.leaveReason}</CustomText>
+          <CustomText
+            style={[
+              globalStyles.f10Light,
+              globalStyles.error,
+              globalStyles.ml2,
+            ]}
+          >
+            {errors.leaveReason}
+          </CustomText>
         )}
         {/* <CustomText style={[globalStyles.f12Regular, globalStyles.alineSelfend]}>
           100 / 100
@@ -289,12 +378,64 @@ export default function LeaveRequest() {
           </TouchableOpacity>
         </View>
       </View>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackground}
+          onPress={() => setModalVisible(false)}
+        >
+          <Pressable
+            style={styles.modalContainer}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <CustomText style={globalStyles.f14Bold}>{modalMessage}</CustomText>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifycenter,
+                globalStyles.mt4,
+              ]}
+            >
+              <TouchableOpacity
+                style={[styles.button, styles.logoutButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <CustomText style={{ color: "white" }}>OK</CustomText>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
- 
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 24,
+    borderRadius: 12,
+    width: "80%",
+  },
+  button: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  logoutButton: {
+    backgroundColor: color.primary,
+  },
   btnone: {
     backgroundColor: color.primary,
     borderRadius: 8,
