@@ -6,11 +6,11 @@ import CustomHeader from "../components/CustomHeader";
 import { color } from "../styles/theme";
 import dashboard from '../../assets/icons/Navigation/techhom.png'
 import TaskReportsicon from '../../assets/icons/Navigation/reports.png'
-import SchedulesTrackicon from '../../assets/icons/Navigation/schedule.png'
+// import SchedulesTrackicon from '../../assets/icons/Navigation/schedule.png'
 // import servicelocationsicon from '../../assets/icons/Navigation/LocationsPin.png'
 import Profile from '../../assets/icons/Navigation/techProfile.png'
 import Dashboard from "../screens/Dashboard";
-import SchedulesTrack from "../screens/SchedulesTrack";
+// import SchedulesTrack from "../screens/SchedulesTrack";
 import TaskReportsScreen from "../screens/TaskReportsScreen";
 // import Servicelocations from "../screens/Servicelocations";
 const Tab = createBottomTabNavigator();
@@ -73,9 +73,9 @@ export default function CustomerTabNavigator({ navigation }) {
     case "Task & Reports":
       iconSource = TaskReportsicon;
       break;
-    case "Schedules Track":
-      iconSource = SchedulesTrackicon;
-      break;
+    // case "Schedules Track":
+    //   iconSource = SchedulesTrackicon;
+    //   break;
     // case "service locations":
     //   iconSource = servicelocationsicon;
     //   break;
@@ -103,7 +103,7 @@ export default function CustomerTabNavigator({ navigation }) {
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
       <Tab.Screen name="Task & Reports"component={TaskReportsScreen} />
-      <Tab.Screen name="Schedules Track" component={SchedulesTrack} />
+      {/* <Tab.Screen name="Schedules Track" component={SchedulesTrack} /> */}
       {/* <Tab.Screen name="service locations" component={Servicelocations} /> */}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

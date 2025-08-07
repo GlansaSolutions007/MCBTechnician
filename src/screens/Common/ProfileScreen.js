@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from "react-native";
 import CustomText from "../../components/CustomText";
 import globalStyles from "../../styles/globalStyles";
@@ -17,16 +19,27 @@ import { useNavigation } from "@react-navigation/native";
 import AvailabilityHeader from "../../components/AvailabilityHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-
+import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "@env";
 export default function ProfileScreen() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
-
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { logout } = useAuth();
+  const confirmLogout = () => {
+    setShowLogoutModal(true);
+  };
+  const handleLogout = () => {
+    setShowLogoutModal(false);
+    logout(); // real logout
+  };
   useEffect(() => {
     const fetchTechnicianDetails = async () => {
       try {
         const techId = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
+
         if (!techId) {
           console.warn("No technicianId found");
           setLoading(false);
@@ -34,7 +47,12 @@ export default function ProfileScreen() {
         }
 
         const res = await axios.get(
-          `https://api.mycarsbuddy.com/api/TechniciansDetails/technicianid?technicianid=${techId}`
+          `${API_BASE_URL}TechniciansDetails/technicianid?technicianid=${techId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         setProfileData(res.data.data?.[0] ?? null);
       } catch (err) {
@@ -226,19 +244,100 @@ export default function ProfileScreen() {
                   globalStyles.mv3,
                 ]}
               >
-                <CustomText>{item.label}</CustomText>
+                <CustomText style={[globalStyles.f12Bold]}>
+                  {item.label}
+                </CustomText>
                 <Ionicons name="chevron-forward" size={16} color="#333" />
               </TouchableOpacity>
-              {idx < 5 && <View style={styles.divider} />}
+              {idx < 6 && <View style={styles.divider} />}
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          onPress={confirmLogout}
+          style={[
+            globalStyles.flexrow,
+            globalStyles.justifysb,
+            globalStyles.mt3,
+          ]}
+        >
+          <CustomText style={[globalStyles.f12Bold, globalStyles.error]}>
+            Log Out
+          </CustomText>
+          <Ionicons name="chevron-forward" size={16} color={color.error} />
+        </TouchableOpacity>
       </View>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showLogoutModal}
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackground}
+          onPress={() => setShowLogoutModal(false)}
+        >
+          <Pressable
+            style={styles.modalContainer}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <CustomText style={globalStyles.f14Bold}>
+              Are you sure you want to log out?
+            </CustomText>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.mt4,
+              ]}
+            >
+              <Pressable
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <CustomText>No</CustomText>
+              </Pressable>
+              <Pressable
+                style={[styles.button, styles.logoutButton]}
+                onPress={handleLogout}
+              >
+                <CustomText style={{ color: "white" }}>Yes</CustomText>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    padding: 24,
+    borderRadius: 12,
+    width: "80%",
+    alignItems: "center",
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  cancelButton: {
+    backgroundColor: "#f0f0f0",
+    marginRight: 10,
+  },
+  logoutButton: {
+    backgroundColor: color.error,
+  },
+
   divider: {
     height: 1,
     backgroundColor: color.neutral[100],

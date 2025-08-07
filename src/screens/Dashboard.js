@@ -21,6 +21,7 @@ import reports from "../../assets/icons/Navigation/reports.png";
 import MiniMapRoute from "../components/MiniMapRoute";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
@@ -44,13 +45,19 @@ export default function Dashboard() {
     const fetchBookings = async () => {
       try {
         const techID = await AsyncStorage.getItem("techID");
-
-        console.log("techhhhhh:", techID);
+        console.log(API_BASE_URL, "URLLLLL");
+        const token = await AsyncStorage.getItem("token");
+        console.log("techhhhh:", techID);
         if (techID) {
           const res = await axios.get(
-            `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techID}`
+            `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
-          setBookings(res.data ?? []);
+          setBookings(Array.isArray(res.data) ? res.data : []);
         } else {
           console.warn("No technicianId found");
         }
@@ -168,19 +175,6 @@ export default function Dashboard() {
           </View>
         </View>
         <View style={[globalStyles.mt3]}>
-          <CustomText style={[globalStyles.f14Bold]}>
-            Next Active Service
-          </CustomText>
-          <TouchableOpacity onPress={customerInfo}>
-            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
-              customerInfo
-            </CustomText>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={CollectPayment}>
-            <CustomText style={[styles.startButton, globalStyles.textWhite]}>
-              CollectPayment
-            </CustomText>
-          </TouchableOpacity>
           {bookings.map((item, index) => (
             <View
               key={index}
@@ -259,9 +253,7 @@ export default function Dashboard() {
                 <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
                   {item.TimeSlot}
                 </CustomText>
-                <TouchableOpacity 
-                onPress={LiveTrackingMap}
-                >
+                <TouchableOpacity onPress={LiveTrackingMap}>
                   <View
                     style={{
                       backgroundColor: color.black,
@@ -468,7 +460,7 @@ export default function Dashboard() {
               <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
               Leather Fabric Seat Polishing
             </CustomText>
-            <TouchableOpacity 
+            <TouchableOpacity
             // onPress={LiveTrackingMap}
             >
               <MiniMapRoute

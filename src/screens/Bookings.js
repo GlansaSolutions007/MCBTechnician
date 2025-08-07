@@ -15,6 +15,7 @@ import {
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
+import {API_BASE_URL} from "@env";
 
 export default function Bookings() {
   const navigation = useNavigation();
@@ -27,212 +28,244 @@ export default function Bookings() {
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
-      contentContainerStyle={{ paddingBottom: 30 }}
+      contentContainerStyle={
+        bookings.length === 0 ? styles.noDataContainer : { paddingBottom: 30 }
+      }
     >
       <View style={globalStyles.container}>
-        {bookings.map((item, index) => (
-          <View
-            key={index}
-            style={[
-              globalStyles.bgprimary,
-              globalStyles.p4,
-              globalStyles.mt5,
-              globalStyles.card,
-            ]}
-          >
-            <View style={globalStyles.flexrow}>
-              <Image
-                source={{
-                  uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
-                }}
-                style={styles.avatar}
-              />
-
-              <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  {item.CustFullName}
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                >
-                  Mobile: {item.CustPhoneNumber}
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.neutral100]}
-                  numberOfLines={1}
-                >
-                  {item.FullAddress}
-                </CustomText>
-              </View>
-            </View>
-
-            <View style={globalStyles.divider} />
-
+        {bookings.length === 0 ? (
+          <CustomText style={globalStyles.neutral500}>
+            No bookings assigned
+          </CustomText>
+        ) : (
+          bookings.map((item, index) => (
             <View
+              key={index}
               style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.alineItemscenter,
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.mt5,
+                globalStyles.card,
               ]}
             >
-              <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-                <View style={globalStyles.mr3}>
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="map-marker-distance"
-                      size={16}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                    >
-                      {item.CustPhoneNumber}
-                    </CustomText>
-                  </View>
+              <View style={globalStyles.flexrow}>
+                <Image
+                  source={{
+                    uri: `${API_BASE_URL}${item.ProfileImage}`,
+                  }}
+                  style={styles.avatar}
+                />
 
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
+                <View style={[globalStyles.ml3, { flex: 1 }]}>
+                  <CustomText
+                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
                   >
-                    <FontAwesome5
-                      name="car"
-                      size={14}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                    >
-                      {item.CityID}
-                    </CustomText>
-                  </View>
-
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
+                    {item.CustomerName}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
                   >
-                    <Entypo
-                      name="v-card"
-                      size={14}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                    >
-                      {item.BookingTrackID}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View>
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
+                    Mobile: {item.PhoneNumber}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f10Light, globalStyles.neutral100]}
+                    numberOfLines={1}
                   >
-                    <MaterialCommunityIcons
-                      name="calendar"
-                      size={16}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                    >
-                      {item.BookingDate?.slice(0, 10)}
-                    </CustomText>
-                  </View>
-
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
-                  >
-                    <Ionicons
-                      name="time-outline"
-                      size={16}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                    >
-                      {item.TimeSlot}
-                    </CustomText>
-                  </View>
-
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.mt2,
-                      globalStyles.alineItemscenter,
-                    ]}
-                  >
-                    <Entypo
-                      name="documents"
-                      size={16}
-                      color="#fff"
-                      style={{ marginRight: 4 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.textWhite]}
-                      numberOfLines={1}
-                    >
-                      {item.PackageName}
-                    </CustomText>
-                  </View>
+                    {item.StateName}
+                    
+                  </CustomText>
                 </View>
               </View>
 
-              <View style={globalStyles.alineSelfend}>
-                <TouchableOpacity style={styles.cancelButton}>
-                  <CustomText
-                    style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                  >
-                    Cancel
-                  </CustomText>
-                </TouchableOpacity>
+              <View style={globalStyles.divider} />
 
-                <TouchableOpacity
-                  onPress={() => customerInfo(item)}
-                  style={[styles.viewButton, globalStyles.mt3]}
-                >
-                  <CustomText
-                    style={[globalStyles.f12Bold, globalStyles.primary]}
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
+                  <View style={globalStyles.mr3}>
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="map-marker-distance"
+                        size={16}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        {item.PhoneNumber}
+                      </CustomText>
+                    </View>
+
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <FontAwesome5
+                        name="car"
+                        size={14}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        {item.VehicleNumber}
+                      </CustomText>
+                    </View>
+
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <Entypo
+                        name="v-card"
+                        size={14}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        {item.BookingTrackID}
+                      </CustomText>
+                    </View>
+                  </View>
+
+                  <View>
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="calendar"
+                        size={16}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        {item.BookingDate?.slice(0, 10)}
+                      </CustomText>
+                    </View>
+
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        {item.TimeSlot}
+                      </CustomText>
+                    </View>
+
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.mt2,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <Entypo
+                        name="documents"
+                        size={16}
+                        color="#fff"
+                        style={{ marginRight: 4 }}
+                      />
+                      <CustomText
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.textWhite,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.PackageName}
+                      </CustomText>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={globalStyles.alineSelfend}>
+                  <TouchableOpacity style={styles.cancelButton}>
+                    <CustomText
+                      style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                    >
+                      Cancel
+                    </CustomText>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => customerInfo(item)}
+                    style={[styles.viewButton, globalStyles.mt3]}
                   >
-                    View
-                  </CustomText>
-                </TouchableOpacity>
+                    <CustomText
+                      style={[globalStyles.f12Bold, globalStyles.primary]}
+                    >
+                      View
+                    </CustomText>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  noDataContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   cancelButton: {
     backgroundColor: color.black,
     paddingVertical: 8,

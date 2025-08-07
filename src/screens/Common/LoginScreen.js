@@ -116,11 +116,10 @@ export default function LoginScreen() {
       <View>
         <View>
           <Image
-            source={require("../../../assets/Logo/my car buddy-02 yellow-01.png")}
+            source={require("../../../assets/Logo/mycarbuddy.png")}
             style={styles.logo}
           />
         </View>
-        <CustomText style={globalStyles.fullredLight}>9705577208</CustomText>
         <TextInput
           placeholder="Enter Phone Number"
           placeholderTextColor={color.textWhite}
@@ -166,11 +165,11 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   logo: {
-    width: 200,
-    height: 100,
+    width: 350,
+    height: 250,
     resizeMode: "contain",
     alignSelf: "center",
-    marginBottom: 100,
+    marginBottom: 50,
   },
 
   skipButton: {

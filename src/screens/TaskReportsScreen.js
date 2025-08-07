@@ -5,6 +5,7 @@ import globalStyles from "../styles/globalStyles";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 function TaskReportsScreen() {
   const [bookings, setBookings] = useState([]);
@@ -14,122 +15,138 @@ function TaskReportsScreen() {
   }, []);
 
   const fetchBookings = async () => {
-  try {
-    const techID = await AsyncStorage.getItem("techID");
-    if (!techID) {
-      console.warn("Technician ID not found in AsyncStorage.");
-      return;
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+
+      if (!techID) {
+        console.warn("Technician ID not found in AsyncStorage.");
+        return;
+      }
+
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const tomorrow = new Date();
+      tomorrow.setHours(0, 0, 0, 0);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const futureBookings = response.data.filter((item) => {
+        const bookingDate = new Date(item.BookingDate);
+        bookingDate.setHours(0, 0, 0, 0);
+        return bookingDate >= tomorrow;
+      });
+
+      setBookings(futureBookings);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
     }
-
-    const response = await axios.get(
-      `https://api.mycarsbuddy.com/api/Bookings/GetAssignedBookings?Id=${techID}`
-    );
-
-    const tomorrow = new Date();
-    tomorrow.setHours(0, 0, 0, 0); 
-    tomorrow.setDate(tomorrow.getDate() + 1); 
-
-    const futureBookings = response.data.filter((item) => {
-      const bookingDate = new Date(item.BookingDate);
-      bookingDate.setHours(0, 0, 0, 0); 
-      return bookingDate >= tomorrow;
-    });
-
-    setBookings(futureBookings);
-  } catch (error) {
-    console.error("Failed to fetch bookings:", error);
-  }
-};
-
+  };
 
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
-      style={[globalStyles.bgcontainer]}
-      contentContainerStyle={{ paddingBottom: 30 }}
+      style={[globalStyles.bgcontainer, { flex: 1 }]}
+      contentContainerStyle={{ flexGrow: 1 }}
     >
-      <View style={globalStyles.container}>
-        {bookings.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}
-            activeOpacity={0.8}
+      <View style={[globalStyles.container, { flex: 1 }]}>
+        {bookings.length === 0 ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
-            <View style={styles.header}>
-              <CustomText style={globalStyles.f16Bold}>
-                <CustomText
-                  style={[globalStyles.primary, globalStyles.f16Bold]}
-                >
-                  Booking ID:
-                </CustomText>{" "}
-                {item.BookingTrackID}
-              </CustomText>
-              <Ionicons name="chevron-forward" size={20} color="#000" />
-            </View>
+            <CustomText style={globalStyles.neutral500}>
+              No bookings assigned
+            </CustomText>
+          </View>
+        ) : (
+          bookings.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}
+              activeOpacity={0.8}
+            >
+              <View style={styles.header}>
+                <CustomText style={globalStyles.f16Bold}>
+                  <CustomText
+                    style={[globalStyles.primary, globalStyles.f16Bold]}
+                  >
+                    Booking ID:
+                  </CustomText>{" "}
+                  {item.BookingTrackID}
+                </CustomText>
+                <Ionicons name="chevron-forward" size={20} color="#000" />
+              </View>
 
-            <View style={globalStyles.divider} />
+              <View style={globalStyles.divider} />
 
-            <View style={styles.infoRow}>
-              <FontAwesome5
-                style={[styles.icon, globalStyles.black]}
-                name="calendar-alt"
-                size={16}
-              />
-              <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-                Assigned on:
-              </CustomText>
-              <CustomText style={globalStyles.f10Regular}>
-                {new Date(item.BookingDate).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </CustomText>
-            </View>
+              <View style={styles.infoRow}>
+                <FontAwesome5
+                  style={[styles.icon, globalStyles.black]}
+                  name="calendar-alt"
+                  size={16}
+                />
+                <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
+                  Assigned on:
+                </CustomText>
+                <CustomText style={globalStyles.f10Regular}>
+                  {new Date(item.BookingDate).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </CustomText>
+              </View>
 
-            <View style={styles.infoRow}>
-              <FontAwesome5
-                style={[styles.icon, globalStyles.black]}
-                name="clock"
-                size={16}
-              />
-              <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-                Time Slot:
-              </CustomText>
-              <CustomText style={globalStyles.f10Regular}>
-                {item.TimeSlot}
-              </CustomText>
-            </View>
+              <View style={styles.infoRow}>
+                <FontAwesome5
+                  style={[styles.icon, globalStyles.black]}
+                  name="clock"
+                  size={16}
+                />
+                <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
+                  Time Slot:
+                </CustomText>
+                <CustomText style={globalStyles.f10Regular}>
+                  {item.TimeSlot}
+                </CustomText>
+              </View>
 
-            <View style={styles.infoRow}>
-              <FontAwesome5
-                style={[styles.icon, globalStyles.black]}
-                name="th-list"
-                size={16}
-              />
-              <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-                Category:
-              </CustomText>
-              <CustomText style={globalStyles.f10Regular}>
-                {item.CategoryNames}
-              </CustomText>
-            </View>
+              <View style={styles.infoRow}>
+                <FontAwesome5
+                  style={[styles.icon, globalStyles.black]}
+                  name="th-list"
+                  size={16}
+                />
+                <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
+                  Category:
+                </CustomText>
+                <CustomText style={globalStyles.f10Regular}>
+                  {item.CategoryNames}
+                </CustomText>
+              </View>
 
-            <View style={styles.infoRow}>
-              <FontAwesome5
-                style={[styles.icon, globalStyles.black]}
-                name="spa"
-                size={16}
-              />
-              <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-                Package:
-              </CustomText>
-              <CustomText style={globalStyles.f10Regular}>
-                {item.PackageNames}
-              </CustomText>
-            </View>
-          </TouchableOpacity>
-        ))}
+              <View style={styles.infoRow}>
+                <FontAwesome5
+                  style={[styles.icon, globalStyles.black]}
+                  name="spa"
+                  size={16}
+                />
+                <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
+                  Package:
+                </CustomText>
+                <CustomText style={globalStyles.f10Regular}>
+                  {item.PackageNames}
+                </CustomText>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
     </ScrollView>
   );

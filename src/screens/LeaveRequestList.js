@@ -27,6 +27,7 @@ export default function LeaveRequestList() {
   const fetchLeaveData = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
 
       if (!techID) {
         console.warn("No techID found in AsyncStorage");
@@ -34,7 +35,12 @@ export default function LeaveRequestList() {
       }
 
       const response = await axios.get(
-        `https://api.mycarsbuddy.com/api/LeaveRequest/Techid?TechId=${techID}`
+        `https://api.mycarsbuddy.com/api/LeaveRequest/Techid?TechId=${techID}`,
+        {
+            headers: {
+              Authorization: `Bearer ${token}`, // <-- Correct header
+            },
+          }
       );
 
       setLeaveData(response.data);
