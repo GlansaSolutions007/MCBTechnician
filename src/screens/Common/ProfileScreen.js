@@ -21,11 +21,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+
 export default function ProfileScreen() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
   const { logout } = useAuth();
   const confirmLogout = () => {
     setShowLogoutModal(true);
@@ -34,6 +38,69 @@ export default function ProfileScreen() {
     setShowLogoutModal(false);
     logout(); // real logout
   };
+
+const [uploading, setUploading] = useState(false);
+
+const pickImage = async () => {
+  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permissionResult.granted) {
+    alert("Permission to access camera roll is required!");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [4, 3],
+    quality: 0.7,
+  });
+
+  if (!result.cancelled) {
+    const uri = result.assets[0].uri;
+    setUploading(true);
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const techId = await AsyncStorage.getItem("techID");
+
+      const formData = new FormData();
+      formData.append("file", {
+        uri,
+        name: "profile.jpg",
+        type: "image/jpeg",
+      });
+
+      formData.append("technicianId", techId);
+
+      const response = await axios.post(
+        `${API_BASE_URL}TechniciansDetails/UploadImage`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setProfileData((prev) => ({
+          ...prev,
+          ProfileImage: response.data.filename,
+        }));
+      } else {
+        alert("Upload failed");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Error uploading image");
+    } finally {
+      setUploading(false);
+    }
+  }
+};
+
+
   useEffect(() => {
     const fetchTechnicianDetails = async () => {
       try {
@@ -103,18 +170,39 @@ export default function ProfileScreen() {
               globalStyles.mr4,
             ]}
           >
-            <Image
+            {/* <Image
               source={
                 profileData?.ProfileImage
                   ? {
-                      uri: `https://api.mycarsbuddy.com/${encodeURI(
+                      uri: `https://api.mycarsbuddy.com/Images/${encodeURI(
                         profileData.ProfileImage
                       )}`,
                     }
                   : require("../../../assets/images/persontwo.jpg")
               }
               style={styles.avatar}
-            />
+            /> */}
+            <TouchableOpacity onPress={pickImage} style={{ position: "relative" }}>
+  <Image
+    source={
+      profileData?.ProfileImage
+        ? {
+            uri: `https://api.mycarsbuddy.com/Images/${encodeURI(
+              profileData.ProfileImage
+            )}`,
+          }
+        : require("../../../assets/images/persontwo.jpg")
+    }
+    style={styles.avatar}
+  />
+  {uploading && (
+    <View style={styles.loadingOverlay}>
+      <ActivityIndicator size="small" color="#fff" />
+    </View>
+  )}
+</TouchableOpacity>
+
+            
           </View>
           <View>
             <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
@@ -312,6 +400,15 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+
+  loadingOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: "rgba(0,0,0,0.5)",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: 8,
+},
+
   modalBackground: {
     flex: 1,
     justifyContent: "center",

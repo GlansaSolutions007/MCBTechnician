@@ -6,6 +6,7 @@ import { decode } from "@mapbox/polyline";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { color } from "../styles/theme";
 
 const MiniMapRoute = ({ origin, destination, bookingId }) => {
   const [routeCoords, setRouteCoords] = useState([]);
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   button: {
-    backgroundColor: "#007BFF",
+    backgroundColor: color.primary,
     padding: 10,
     borderRadius: 6,
     flexDirection: "row",
