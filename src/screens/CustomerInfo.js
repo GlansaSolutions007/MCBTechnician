@@ -19,16 +19,37 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
+import { API_BASE_URL } from "@env";
+import { API_BASE_URL_IMAGE } from "@env";
 
 export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
+  const [showSecondButtons, setShowSecondButtons] = useState(false);
+  const [totalDuration, setTotalDuration] = useState(0);
+  
+useEffect(() => {
+  if (Array.isArray(booking) && booking.length > 0) {
+    const sum = booking.reduce((total, b) => {
+      const pkgSum = (b.Packages || []).reduce((pkgTotal, pkg) => {
+        return pkgTotal + Number(pkg.EstimatedDurationMinutes || 0);
+      }, 0);
+      return total + pkgSum;
+    }, 0);
 
+    setTotalDuration(sum);
+  }
+}, [booking]);
+
+  const handleStartRide = async () => {
+    await updateTechnicianTracking("StartJourney");
+    openGoogleMaps();
+    setShowSecondButtons(true);
+  };
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
     navigation.navigate("ServiceStart", { booking });
@@ -147,7 +168,7 @@ export default function CustomerInfo() {
   const updateTechnicianTracking = async (actionType) => {
     try {
       await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
           bookingID: bookingId,
           actionType,
@@ -183,10 +204,15 @@ export default function CustomerInfo() {
             ]}
           >
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              <Image source={profilepic} style={globalStyles.avatarside} />
+              <Image
+                source={{
+                  uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}`,
+                }}
+                style={globalStyles.avatarside}
+              />
               <View style={[globalStyles.ml50, globalStyles.flex1]}>
                 <CustomText style={[globalStyles.f20Bold, globalStyles.black]}>
-                  {booking.CustFullName}
+                  {booking.CustomerName}
                 </CustomText>
                 <CustomText
                   style={[
@@ -195,7 +221,7 @@ export default function CustomerInfo() {
                     globalStyles.mb2,
                   ]}
                 >
-                  Mobile: {booking.CustPhoneNumber}
+                  Mobile: {booking.PhoneNumber}
                 </CustomText>
                 <CustomText
                   style={[
@@ -204,6 +230,7 @@ export default function CustomerInfo() {
                     globalStyles.primary,
                   ]}
                 >
+                  dfds
                   {booking.FullAddress}
                 </CustomText>
               </View>
@@ -306,28 +333,89 @@ export default function CustomerInfo() {
             </View>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt5]} />
+          {/* <View>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+              Service Details
+            </CustomText>
+            {booking.Packages.map((pkg) => (
+              <View>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {pkg.PackageName}
+                </CustomText>
+
+                {pkg.Category?.map((sub) => (
+                  <View style={[globalStyles.mt2, globalStyles.ph4]}>
+                    <CustomText>{sub.CategoryName}</CustomText>
+
+                    {pkg.Category?.SubCategories?.map((sub) => (
+                      <View style={[globalStyles.mt2, globalStyles.ph4]}>
+                        <CustomText
+                          style={globalStyles.f12Medium}
+                          key={sub.SubCategoryID}
+                        >
+                          {sub.SubCategoryName}
+                        </CustomText>
+                        <CustomText style={globalStyles.f18Medium}></CustomText>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View> */}
           <View>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
               Service Details
             </CustomText>
-            <View style={[globalStyles.mt2, globalStyles.ph4]}>
-              <CustomText style={globalStyles.f18Medium}>
-                {booking.PackageNames?.split(", ").map((item, index) => (
-                  <CustomText key={index}>
-                    • {item}
-                    {"\n"}
+
+            {booking.Packages.map((pkg) => (
+              <View key={pkg.PackageID} style={[globalStyles.mt2]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {pkg.PackageName}
+                </CustomText>
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <CustomText style={[globalStyles.f12Medium]}>
+                    Estimated Time:
                   </CustomText>
-                ))}
-              </CustomText>
-              <CustomText style={globalStyles.f18Medium}>
-                {booking.IncludeNames?.split(", ").map((item, index) => (
-                  <CustomText key={index}>
-                    • {item}
-                    {"\n"}
+                  <CustomText
+                    style={[globalStyles.f12Bold, globalStyles.black]}
+                  >
+                    {pkg.EstimatedDurationMinutes}
+                    
                   </CustomText>
-                ))}{" "}
-              </CustomText>
-            </View>
+                </View>
+
+                {pkg.Category && (
+                  <View style={[globalStyles.mt1, globalStyles.ph4]}>
+                    <CustomText style={globalStyles.f16Medium}>
+                      {pkg.Category.CategoryName}
+                    </CustomText>
+
+                    {pkg.Category.SubCategories?.map((sub) => (
+                      <View
+                        key={sub.SubCategoryID}
+                        style={[globalStyles.mt2, globalStyles.ph4]}
+                      >
+                        <CustomText style={globalStyles.f12Medium}>
+                          {sub.SubCategoryName}
+                        </CustomText>
+
+                        {sub.Includes?.map((inc) => (
+                          <CustomText
+                            key={inc.IncludeID}
+                            style={globalStyles.f10Regular}
+                          >
+                            {inc.IncludeName}
+                          </CustomText>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
 
           <View
@@ -346,11 +434,16 @@ export default function CustomerInfo() {
               >
                 Estimated Time
               </CustomText>
-              <CustomText
-                style={[globalStyles.f32Bold, globalStyles.textWhite]}
-              >
-                {booking.EstimatedDurationMinutes}
-              </CustomText>
+              {booking.Packages.map((pkg) => (
+                <View key={pkg.PackageID}>
+                  <CustomText
+                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                  >
+                    {/* {pkg.EstimatedDurationMinutes} */}
+                    {totalDuration} mins
+                  </CustomText>
+                </View>
+              ))}
             </View>
             <View style={styles.pricecard}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
@@ -411,7 +504,7 @@ export default function CustomerInfo() {
               <TouchableOpacity
                 style={styles.callButton}
                 onPress={() => {
-                  const phoneNumber = booking.CustPhoneNumber;
+                  const phoneNumber = booking.PhoneNumber;
                   if (phoneNumber) {
                     Linking.openURL(`tel:${phoneNumber}`);
                   } else {
@@ -433,7 +526,7 @@ export default function CustomerInfo() {
               </TouchableOpacity>
             </View>
 
-            <View>
+            {/* <View>
               <View>
                 <TouchableOpacity
                   style={styles.startride}
@@ -488,6 +581,58 @@ export default function CustomerInfo() {
                   </CustomText>
                 </TouchableOpacity>
               </View>
+            </View> */}
+            <View>
+              {!showSecondButtons ? (
+                <TouchableOpacity
+                  style={styles.startride}
+                  onPress={handleStartRide}
+                >
+                  <Ionicons
+                    name="rocket"
+                    size={20}
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText style={styles.startButtonText}>
+                    Start Ride
+                  </CustomText>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.startreach}>
+                  <TouchableOpacity
+                    style={styles.ReachedButton}
+                    onPress={Reached}
+                  >
+                    <Ionicons
+                      name="flag"
+                      size={20}
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
+                    <CustomText style={styles.startButtonText}>
+                      Reached
+                    </CustomText>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.startButton}
+                    onPress={() => {
+                      openGoogleMaps();
+                    }}
+                  >
+                    <Ionicons
+                      name="rocket"
+                      size={20}
+                      color="white"
+                      style={{ marginRight: 8 }}
+                    />
+                    <CustomText style={styles.startButtonText}>
+                      Start Ride
+                    </CustomText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </View>

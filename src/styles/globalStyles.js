@@ -88,7 +88,6 @@ export default StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     justifyContent: "center",
-    marginBottom: 8,
   },
   bgcontainer: {
     backgroundColor: "#ededed",

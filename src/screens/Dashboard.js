@@ -22,6 +22,7 @@ import MiniMapRoute from "../components/MiniMapRoute";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
+import { API_BASE_URL_IMAGE } from "@env";
 
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
@@ -68,6 +69,66 @@ export default function Dashboard() {
 
     fetchBookings();
   }, []);
+  const [techID, setTechID] = useState(null);
+  const [count, setCount] = useState(0);
+  const [assignedTasks, setAssignedTasks] = useState([]);
+
+  useEffect(() => {
+    const loadTechID = async () => {
+      const id = await AsyncStorage.getItem("techID");
+      setTechID(Number(id));
+    };
+    loadTechID();
+  }, []);
+
+  useEffect(() => {
+    if (techID && bookings?.length) {
+      const taskCount =
+        bookings.reduce((total, booking) => {
+          const pkgCount =
+            booking.Packages?.reduce((pkgTotal, pkg) => {
+              const matchCount =
+                pkg.Category?.SubCategories?.filter((sub) => sub.id === techID)
+                  .length || 0;
+              return pkgTotal + matchCount;
+            }, 0) || 0;
+          return total + pkgCount;
+        }, 0) || 0;
+
+      const tasks =
+        bookings.flatMap(
+          (booking) =>
+            booking.Packages?.flatMap(
+              (pkg) =>
+                pkg.Category?.SubCategories?.filter(
+                  (sub) => sub.id === techID
+                ) || []
+            ) || []
+        ) || [];
+
+      setCount(taskCount);
+      setAssignedTasks(tasks);
+    }
+  }, [techID, bookings]);
+  // const count =
+  //   bookings.reduce((total, booking) => {
+  //     const pkgCount =
+  //       booking.Packages?.reduce((pkgTotal, pkg) => {
+  //         const matchCount =
+  //           pkg.Category?.SubCategories?.filter((sub) => sub.id === techID)
+  //             .length || 0;
+  //         return pkgTotal + matchCount;
+  //       }, 0) || 0;
+  //     return total + pkgCount;
+  //   }, 0) || 0;
+
+  // const assignedTasks = bookings.flatMap(
+  //   (booking) =>
+  //     booking.Packages?.flatMap(
+  //       (pkg) =>
+  //         pkg.Category?.SubCategories?.filter((sub) => sub.id === techID) || []
+  //     ) || []
+  // );
 
   return (
     <ScrollView
@@ -166,113 +227,20 @@ export default function Dashboard() {
                 source={reports}
                 style={{ width: 20, height: 28, tintColor: "#fff" }}
               />
-              <CustomText
+              {/* <CustomText
                 style={[globalStyles.f40Bold, globalStyles.textWhite]}
               >
-                08
-              </CustomText>
+                {assignedTasks}
+              </CustomText> */}
+              <View>
+                <CustomText
+                  style={[globalStyles.f10Bold, globalStyles.textWhite]}
+                >
+                  {assignedTasks}
+                </CustomText>
+              </View>
             </View>
           </View>
-        </View>
-        <View style={[globalStyles.mt3]}>
-          {bookings.map((item, index) => (
-            <View
-              key={index}
-              style={[
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.card,
-                globalStyles.mt2,
-              ]}
-            >
-              <View style={[globalStyles.flexrow]}>
-                {/* <Image
-                  source={
-                    bookings
-                      ? {
-                          uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
-                        }
-                      : profilepic
-                  }
-                  style={styles.avatar}
-                /> */}
-                {/* <Image
-                  source={
-                    item.ProfileImage
-                      ? {
-                          uri: `https://api.mycarsbuddy.com/${item.ProfileImage}`,
-                        }
-                      : profilepic
-                  }
-                  style={styles.avatar}
-                  onError={() =>
-                    console.log("Image load failed for:", item.ProfileImage)
-                  }
-                /> */}
-
-                <View style={[globalStyles.ml3, { flex: 1 }]}>
-                  <CustomText
-                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                  >
-                    {item.CustFullName}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                  >
-                    Mobile: {item.CustPhoneNumber}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f10Light, globalStyles.neutral100]}
-                  >
-                    {item.FullAddress}
-                  </CustomText>
-                </View>
-              </View>
-
-              <View style={globalStyles.divider} />
-
-              <CustomText
-                style={[
-                  globalStyles.f12Medium,
-                  globalStyles.textWhite,
-                  globalStyles.alineSelfcenter,
-                  globalStyles.mb4,
-                ]}
-              >
-                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-                Leather Fabric Seat Polishing
-              </CustomText>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
-                  globalStyles.alineItemscenter,
-                  styles.card,
-                ]}
-              >
-                <CustomText style={[globalStyles.f28Bold, globalStyles.black]}>
-                  {item.TimeSlot}
-                </CustomText>
-                <TouchableOpacity onPress={LiveTrackingMap}>
-                  <View
-                    style={{
-                      backgroundColor: color.black,
-                      borderRadius: 50,
-                      padding: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name="navigate-outline"
-                      size={24}
-                      color={color.white}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
         </View>
 
         <Pressable
@@ -304,7 +272,7 @@ export default function Dashboard() {
                   globalStyles.alineSelfend,
                 ]}
               >
-                04
+                {count}
               </CustomText>
             </View>
           </View>
@@ -338,143 +306,168 @@ export default function Dashboard() {
               yet....
             </CustomText>
           </View>
-
-          {/* carddddd11111111111 */}
-          <View
-            style={[
-              globalStyles.bgprimary,
-              globalStyles.p4,
-              globalStyles.card,
-              globalStyles.mt5,
-            ]}
-          >
-            <View style={[globalStyles.flexrow]}>
-              <Image source={profilepic} style={styles.avatar} />
-
-              <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  Jhon Dio
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                >
-                  Mobile: 7780290335
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.neutral100]}
-                >
-                  #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
-                  Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </CustomText>
-              </View>
-            </View>
-
-            <View style={globalStyles.divider} />
-
-            <CustomText
+          {bookings.map((item, index) => (
+            <View
               style={[
-                globalStyles.f12Medium,
-                globalStyles.textWhite,
-                globalStyles.alineSelfcenter,
-                globalStyles.mb35,
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.mt5,
+                globalStyles.card,
               ]}
             >
-              <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-              Leather Fabric Seat Polishing
-            </CustomText>
-          </View>
+              <View style={[globalStyles.flexrow]}>
+                <Image
+                  source={
+                    item.ProfileImage
+                      ? {
+                          uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                        }
+                      : profilepic
+                  }
+                  style={styles.avatar}
+                  onError={() =>
+                    console.log("Image load failed for:", item.ProfileImage)
+                  }
+                />
 
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.justifysb,
-              globalStyles.ph4,
-              globalStyles.mt4,
-              styles.service,
-            ]}
-          >
-            <TouchableOpacity
-              // onPress={LiveTrackingMap}
-              style={styles.startButton}
-            >
-              <CustomText
-                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                <View style={[globalStyles.ml3, { flex: 1 }]}>
+                  <CustomText
+                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                  >
+                    {item.CustomerName}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                  >
+                    Mobile: {item.PhoneNumber}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f10Light, globalStyles.neutral100]}
+                  >
+                    {item.FullAddress}
+                  </CustomText>
+                </View>
+              </View>
+
+              <View style={globalStyles.divider} />
+              {/* <CustomText
+                style={[
+                  globalStyles.f12Medium,
+                  globalStyles.textWhite,
+                  globalStyles.alineSelfcenter,
+                  globalStyles.mb1,
+                ]}
               >
-                Start The Service
-              </CustomText>
-            </TouchableOpacity>
+                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
+                Leather Fabric Seat Polishing
+              </CustomText> */}
+              <TouchableOpacity
+              // onPress={LiveTrackingMap}
+              >
+                <MiniMapRoute
+                  origin={{
+                    latitude: 17.4445,
+                    longitude: 78.3772,
+                  }}
+                  destination={{
+                    latitude: 17.36191607830754,
+                    longitude: 78.47466965365447,
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
 
-            {/* <TouchableOpacity activeOpacity={0.9} style={styles.denyButton}> */}
-            <Pressable
-              android_ripple={{ color: "#5f5f5fff" }}
-              style={({ pressed }) => [
-                styles.denyButton,
-                Platform.OS === "ios" && pressed && { backgroundColor: "#000" },
+        <View style={[globalStyles.mt3]}>
+          {bookings.map((item, index) => (
+            <View
+              key={index}
+              style={[
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.card,
+                globalStyles.mt2,
               ]}
             >
-              <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                Deny service
-              </CustomText>
-            </Pressable>
-          </View>
+              <View style={[globalStyles.flexrow]}>
+                <Image
+                  source={
+                    item.ProfileImage
+                      ? {
+                          uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                        }
+                      : profilepic
+                  }
+                  style={styles.avatar}
+                  onError={() =>
+                    console.log("Image load failed for:", item.ProfileImage)
+                  }
+                />
 
-          {/* carddddd2222222222222 */}
+                <View style={[globalStyles.ml3, { flex: 1 }]}>
+                  <CustomText
+                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                  >
+                    {item.CustomerName}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                  >
+                    Mobile: {item.PhoneNumber}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f10Light, globalStyles.neutral100]}
+                  >
+                    {item.FullAddress}
+                  </CustomText>
+                </View>
+              </View>
 
-          <View
-            style={[globalStyles.bgprimary, globalStyles.p4, globalStyles.card]}
-          >
-            <View style={[globalStyles.flexrow]}>
-              <Image source={profilepic} style={styles.avatar} />
+              <View style={globalStyles.divider} />
 
-              <View style={[globalStyles.ml3, { flex: 1 }]}>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  Jhon Dio
+              {/* <CustomText
+                style={[
+                  globalStyles.f12Medium,
+                  globalStyles.textWhite,
+                  globalStyles.alineSelfcenter,
+                  globalStyles.mb4,
+                ]}
+              >
+                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
+                Leather Fabric Seat Polishing
+              </CustomText> */}
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.alineItemscenter,
+                  styles.card,
+                ]}
+              >
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {item.TimeSlot}
                 </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                >
-                  Mobile: 7780290335
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.neutral100]}
-                >
-                  #B1 Spaces & More Business Park #M3 Dr.No.#1-89/A/8, C/2,
-                  Vittal Rao Nagar Rd, Madhapur, Telangana 500081
-                </CustomText>
+                <TouchableOpacity onPress={LiveTrackingMap}>
+                  <View
+                    style={{
+                      backgroundColor: color.black,
+                      borderRadius: 50,
+                      padding: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name="navigate-outline"
+                      size={24}
+                      color={color.white}
+                    />
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <View style={globalStyles.divider} />
-            <CustomText
-              style={[
-                globalStyles.f12Medium,
-                globalStyles.textWhite,
-                globalStyles.alineSelfcenter,
-                globalStyles.mb1,
-              ]}
-            >
-              <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-              Leather Fabric Seat Polishing
-            </CustomText>
-            <TouchableOpacity
-            // onPress={LiveTrackingMap}
-            >
-              <MiniMapRoute
-                origin={{
-                  latitude: 17.4445,
-                  longitude: 78.3772,
-                }}
-                destination={{
-                  latitude: 17.36191607830754,
-                  longitude: 78.47466965365447,
-                }}
-              />
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
       </View>
     </ScrollView>
