@@ -41,7 +41,40 @@ export default function Dashboard() {
   };
 
   const [bookings, setBookings] = useState([]);
+  const [bookingCounts, setBookingCounts] = useState({
+    TodayAssignedBookingsCount: 0,
+    ScheduledBookingsCount: 0,
+    TodayCustomerCount: 0,
+    CompletedBookingsCount: 0,
+  });
 
+  useEffect(() => {
+    const fetchBookingCounts = async () => {
+      try {
+        const techID = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
+
+        if (techID) {
+          const res = await axios.get(
+            `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            setBookingCounts(res.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching booking counts:", err);
+      }
+    };
+
+    fetchBookingCounts();
+  }, []);
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -175,7 +208,7 @@ export default function Dashboard() {
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  02
+                  {bookingCounts.ScheduledBookingsCount}
                 </CustomText>
               </View>
             </View>
@@ -234,9 +267,9 @@ export default function Dashboard() {
               </CustomText> */}
               <View>
                 <CustomText
-                  style={[globalStyles.f10Bold, globalStyles.textWhite]}
+                  style={[globalStyles.f40Bold, globalStyles.textWhite]}
                 >
-                  {assignedTasks}
+                  {bookingCounts.TodayAssignedBookingsCount}
                 </CustomText>
               </View>
             </View>
@@ -272,7 +305,7 @@ export default function Dashboard() {
                   globalStyles.alineSelfend,
                 ]}
               >
-                {count}
+                {bookingCounts.TodayAssignedBookingsCount}
               </CustomText>
             </View>
           </View>
@@ -280,106 +313,115 @@ export default function Dashboard() {
           <View style={globalStyles.divider} />
 
           <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-            <IconLabel icon="time-outline" label="8 hrs" />
-            <IconLabel icon="people-outline" label="2 customers" />
-            <IconLabel icon="checkmark-circle-outline" label="2 Active" />
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <IconLabel icon="time-outline" />
+              <CustomText style={globalStyles.f12Bold}>
+                {bookingCounts.TodayCustomerCount} hrs
+              </CustomText>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <IconLabel icon="people-outline" />
+              <CustomText style={globalStyles.f12Bold}>
+                {bookingCounts.TodayCustomerCount} customers
+              </CustomText>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <IconLabel icon="checkmark-circle-outline" />
+              <CustomText style={globalStyles.f12Bold}>
+                {bookingCounts.CompletedBookingsCount} Active
+              </CustomText>
+            </View>
           </View>
         </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
+          <CustomText style={[globalStyles.f14Bold,]}>
             Next Active Service
           </CustomText>
 
-          <CustomText
-            style={[globalStyles.f28Regular, globalStyles.neutral300]}
-          >
-            There are no{" "}
-          </CustomText>
-          <View style={[globalStyles.flexrow]}>
-            <CustomText style={[globalStyles.primary, globalStyles.f28Bold]}>
-              active services{" "}
-            </CustomText>
-            <CustomText
-              style={[globalStyles.f28Regular, , globalStyles.neutral300]}
-            >
-              yet....
-            </CustomText>
-          </View>
-          {bookings.map((item, index) => (
-            <View
-              style={[
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.mt5,
-                globalStyles.card,
-              ]}
-            >
+          {bookings.length === 0 ? (
+            <>
+              <CustomText
+                style={[globalStyles.f28Regular, globalStyles.neutral300]}
+              >
+                There are no{" "}
+              </CustomText>
               <View style={[globalStyles.flexrow]}>
-                <Image
-                  source={
-                    item.ProfileImage
-                      ? {
-                          uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                        }
-                      : profilepic
-                  }
-                  style={styles.avatar}
-                  onError={() =>
-                    console.log("Image load failed for:", item.ProfileImage)
-                  }
-                />
-
-                <View style={[globalStyles.ml3, { flex: 1 }]}>
-                  <CustomText
-                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                  >
-                    {item.CustomerName}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                  >
-                    Mobile: {item.PhoneNumber}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f10Light, globalStyles.neutral100]}
-                  >
-                    {item.FullAddress}
-                  </CustomText>
-                </View>
+                <CustomText
+                  style={[globalStyles.primary, globalStyles.f28Bold]}
+                >
+                  active services{" "}
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f28Regular, globalStyles.neutral300]}
+                >
+                  yet....
+                </CustomText>
               </View>
-
-              <View style={globalStyles.divider} />
-              {/* <CustomText
+            </>
+          ) : (
+            bookings.map((item, index) => (
+              <View
+                key={index}
                 style={[
-                  globalStyles.f12Medium,
-                  globalStyles.textWhite,
-                  globalStyles.alineSelfcenter,
-                  globalStyles.mb1,
+                  globalStyles.bgprimary,
+                  globalStyles.p4,
+                  globalStyles.mt5,
+                  globalStyles.card,
                 ]}
               >
-                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-                Leather Fabric Seat Polishing
-              </CustomText> */}
-              <TouchableOpacity
-              // onPress={LiveTrackingMap}
-              >
-                <MiniMapRoute
-                  origin={{
-                    latitude: 17.4445,
-                    longitude: 78.3772,
-                  }}
-                  destination={{
-                    latitude: 17.36191607830754,
-                    longitude: 78.47466965365447,
-                  }}
-                />
-              </TouchableOpacity>
-            </View>
-          ))}
+                <View style={[globalStyles.flexrow]}>
+                  <Image
+                    source={
+                      item.ProfileImage
+                        ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                        : profilepic
+                    }
+                    style={styles.avatar}
+                    onError={() =>
+                      console.log("Image load failed for:", item.ProfileImage)
+                    }
+                  />
+
+                  <View style={[globalStyles.ml3, { flex: 1 }]}>
+                    <CustomText
+                      style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                    >
+                      {item.CustomerName}
+                    </CustomText>
+                    <CustomText
+                      style={[globalStyles.f12Regular, globalStyles.textWhite]}
+                    >
+                      Mobile: {item.PhoneNumber}
+                    </CustomText>
+                    <CustomText
+                      style={[globalStyles.f10Light, globalStyles.neutral100]}
+                    >
+                      {item.FullAddress}
+                    </CustomText>
+                  </View>
+                </View>
+
+                <View style={globalStyles.divider} />
+
+                <View>
+                  <MiniMapRoute
+                    origin={{
+                      latitude: 17.4445,
+                      longitude: 78.3772,
+                    }}
+                    destination={{
+                      latitude: 17.36191607830754,
+                      longitude: 78.47466965365447,
+                    }}
+                  />
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
-        <View style={[globalStyles.mt3]}>
+        {/* <View style={[globalStyles.mt3]}>
           {bookings.map((item, index) => (
             <View
               key={index}
@@ -425,18 +467,6 @@ export default function Dashboard() {
               </View>
 
               <View style={globalStyles.divider} />
-
-              {/* <CustomText
-                style={[
-                  globalStyles.f12Medium,
-                  globalStyles.textWhite,
-                  globalStyles.alineSelfcenter,
-                  globalStyles.mb4,
-                ]}
-              >
-                <CustomText style={globalStyles.f14Bold}>Service:</CustomText>{" "}
-                Leather Fabric Seat Polishing
-              </CustomText> */}
               <View
                 style={[
                   globalStyles.flexrow,
@@ -468,7 +498,7 @@ export default function Dashboard() {
               </View>
             </View>
           ))}
-        </View>
+        </View> */}
       </View>
     </ScrollView>
   );

@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, Alert, Linking, Image, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Linking,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import axios from "axios";
 import { decode } from "@mapbox/polyline";
@@ -11,6 +18,7 @@ import { color } from "../styles/theme";
 const MiniMapRoute = ({ origin, destination, bookingId }) => {
   const [routeCoords, setRouteCoords] = useState([]);
   const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -56,7 +64,8 @@ const MiniMapRoute = ({ origin, destination, bookingId }) => {
         },
         {
           headers: {
-            Authorization: "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjU5NTg4YmFhNjU0NDQ1NDE4M2M3ZDllYzhjODNjYWU2IiwiaCI6Im11cm11cjY0In0=",
+            Authorization:
+              "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjU5NTg4YmFhNjU0NDQ1NDE4M2M3ZDllYzhjODNjYWU2IiwiaCI6Im11cm11cjY0In0=",
             "Content-Type": "application/json",
           },
         }
@@ -69,6 +78,7 @@ const MiniMapRoute = ({ origin, destination, bookingId }) => {
       }));
 
       setRouteCoords(coords);
+      setLoading(false); // Map is ready to display
 
       setTimeout(() => {
         if (mapRef.current && coords.length > 0) {
@@ -80,38 +90,7 @@ const MiniMapRoute = ({ origin, destination, bookingId }) => {
       }, 300);
     } catch (error) {
       console.error("Error fetching mini route:", error);
-    }
-  };
-
-  const updateTrackingStatus = async (status) => {
-    const techID = await AsyncStorage.getItem("techID");
-    try {
-      const payload = {
-        BookingID: bookingId,
-        Status: status,
-        TechnicianID: techID,
-        Latitude: location?.latitude || 0,
-        Longitude: location?.longitude || 0,
-      };
-
-      const response = await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 && response.data?.success) {
-        console.log(`${status} status updated successfully`);
-      } else {
-        Alert.alert("Error", `Failed to update ${status} status`);
-      }
-    } catch (error) {
-      console.error(`Error updating tracking status (${status}):`, error.message);
-      Alert.alert("Error", `Failed to update ${status} status`);
+      setLoading(false);
     }
   };
 
@@ -124,30 +103,38 @@ const MiniMapRoute = ({ origin, destination, bookingId }) => {
 
   return (
     <View style={styles.mapContainer}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        pitchEnabled={false}
-        rotateEnabled={false}
-      >
-        {location && <Marker coordinate={location} />}
-        <Marker coordinate={destination} />
-        {routeCoords.length > 0 && (
-          <Polyline coordinates={routeCoords} strokeWidth={3} strokeColor="blue" />
-        )}
-      </MapView>
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={color.primary} />
+        </View>
+      ) : (
+        <>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            {location && <Marker coordinate={location} />}
+            <Marker coordinate={destination} />
+            {routeCoords.length > 0 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeWidth={3}
+                strokeColor="blue"
+              />
+            )}
+          </MapView>
 
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.button} onPress={() => updateTrackingStatus("StartJourney")}>
-          <Text style={styles.buttonText}>Start Journey</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={openGoogleMaps}>
-          <Ionicons name="navigate" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Navigate</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.controls}>
+            <TouchableOpacity style={styles.button} onPress={openGoogleMaps}>
+              <Ionicons name="navigate" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </View>
   );
 };
@@ -163,24 +150,26 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  loader: {
+    flex: 1,
+    height: 200,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+  },
   controls: {
     position: "absolute",
-    bottom: 10,
-    left: 10,
-    right: 10,
+    top: 5,
+    right: 5,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
   },
   button: {
     backgroundColor: color.primary,
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 50,
     flexDirection: "row",
     alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    marginLeft: 6,
   },
 });
 
