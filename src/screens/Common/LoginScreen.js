@@ -101,7 +101,7 @@ export default function LoginScreen() {
 
   return (
     <View style={[globalStyles.bgprimary, globalStyles.container]}>
-      {!keyboardVisible && (
+      {/* {!keyboardVisible && (
         <TouchableOpacity
           style={styles.skipButton}
           onPress={() => navigation.replace("CustomerTabs")}
@@ -111,7 +111,7 @@ export default function LoginScreen() {
             <AntDesign name="doubleright" size={16} color="white" />
           </View>
         </TouchableOpacity>
-      )}
+      )} */}
       <View />
       <View>
         <View>

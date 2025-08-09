@@ -289,6 +289,9 @@ useEffect(() => {
                   </CustomText>
                   <View style={styles.carimage}>
                     <Image source={carpic} />
+                    {/* <Image    source={{
+                    uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}`,
+                  }} /> */}
                   </View>
                 </View>
               </View>
