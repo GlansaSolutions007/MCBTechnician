@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   ActivityIndicator,
   StyleSheet,
   Text,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import MapView, {
   Marker,
@@ -15,9 +16,11 @@ import MapView, {
 import * as Location from "expo-location";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
+import { color } from "../styles/theme";
 
-function decodePolyline(encoded) {
-  let points = [];
+
+const decodePolyline = (encoded) => {
+  const points = [];
   let index = 0,
     lat = 0,
     lng = 0;
@@ -31,7 +34,7 @@ function decodePolyline(encoded) {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    const dlat = result & 1 ? ~(result >> 1) : result >> 1;
     lat += dlat;
 
     shift = 0;
@@ -41,13 +44,13 @@ function decodePolyline(encoded) {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    const dlng = result & 1 ? ~(result >> 1) : result >> 1;
     lng += dlng;
 
     points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
   }
   return points;
-}
+};
 
 export default function MiniMapRoute({ route }) {
   const customerLat = route?.params?.customerLat ?? null;
@@ -63,16 +66,21 @@ export default function MiniMapRoute({ route }) {
   useEffect(() => {
     (async () => {
       try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
+        const { status } =
+          await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          console.warn("Location permission denied");
-          setLoading(false);
+          Alert.alert(
+            "Permission Denied",
+            "Location access is required to show your route."
+          );
           return;
         }
-        let location = await Location.getCurrentPositionAsync({});
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
         setCurrentLocation(location.coords);
       } catch (err) {
-        console.error("Error getting location:", err);
+        console.error("Location error:", err);
       } finally {
         setLoading(false);
       }
@@ -81,17 +89,11 @@ export default function MiniMapRoute({ route }) {
 
   useEffect(() => {
     if (currentLocation && customerLat && customerLng) {
-      fetchRoute(
-        {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-        },
-        { latitude: customerLat, longitude: customerLng }
-      );
+      fetchRoute(currentLocation, { latitude: customerLat, longitude: customerLng });
     }
   }, [currentLocation, customerLat, customerLng]);
 
-  const fetchRoute = async (origin, destination) => {
+  const fetchRoute = useCallback(async (origin, destination) => {
     try {
       const { data } = await axios.get(
         "https://maps.googleapis.com/maps/api/directions/json",
@@ -111,6 +113,7 @@ export default function MiniMapRoute({ route }) {
 
       const points = data.routes[0]?.overview_polyline?.points;
       const legs = data.routes[0]?.legs[0];
+
       if (legs) {
         setDistance(legs.distance.text);
         setDuration(legs.duration.text);
@@ -119,17 +122,15 @@ export default function MiniMapRoute({ route }) {
       if (points) {
         const decoded = decodePolyline(points);
         setRouteCoords(decoded);
-        if (mapRef.current) {
-          mapRef.current.fitToCoordinates(decoded, {
-            edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-            animated: true,
-          });
-        }
+        mapRef.current?.fitToCoordinates(decoded, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
       }
     } catch (err) {
-      console.error("Error fetching route:", err.message);
+      console.error("Route fetch error:", err.message);
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -142,7 +143,7 @@ export default function MiniMapRoute({ route }) {
   if (!currentLocation) {
     return (
       <View style={styles.center}>
-        <Text>No location available. Please enable GPS.</Text>
+        <Text>No location available. Enable GPS to continue.</Text>
       </View>
     );
   }
@@ -167,7 +168,7 @@ export default function MiniMapRoute({ route }) {
           </Callout>
         </Marker>
 
-        {customerLat && customerLng && (
+        {customerLat && customerLng ? (
           <Marker
             coordinate={{ latitude: customerLat, longitude: customerLng }}
             pinColor="red"
@@ -176,18 +177,17 @@ export default function MiniMapRoute({ route }) {
               <Text>Customer</Text>
             </Callout>
           </Marker>
-        )}
+        ) : null}
 
         {routeCoords.length > 0 && (
           <Polyline
             coordinates={routeCoords}
             strokeWidth={4}
-            strokeColor="#007BFF"
+            strokeColor={color.primary}
           />
         )}
       </MapView>
 
-      {/* Overlay UI */}
       <View style={styles.overlay}>
         <View style={styles.infoWrapper}>
           <View style={styles.infoBox}>
@@ -199,7 +199,7 @@ export default function MiniMapRoute({ route }) {
             <Text style={styles.infoValue}>{duration ?? "--"}</Text>
           </View>
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.locateButton}
           onPress={() => {
             mapRef.current?.animateToRegion({
@@ -211,7 +211,7 @@ export default function MiniMapRoute({ route }) {
           }}
         >
           <Ionicons name="navigate" size={20} color="#1FA4A2" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     height: 200,
-    backgroundColor: "#1FA4A2", // teal background
+    backgroundColor: "#1FA4A2",
     elevation: 4,
     margin: 10,
   },
@@ -247,12 +247,10 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: "#fff",
   },
   infoValue: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#B6F2EC", // light greenish
   },
   locateButton: {
     backgroundColor: "#fff",

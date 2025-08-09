@@ -30,7 +30,7 @@ export default function ServiceStart() {
   const [timerCompleted, setTimerCompleted] = useState(false);
   // const MAX_TIME = 3600;
   const MAX_TIME = 5;
-  const bookingId = booking.BookingId;
+  const bookingId = booking.BookingID;
 
   useEffect(() => {
     let interval = null;
@@ -79,9 +79,10 @@ export default function ServiceStart() {
         "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
         {
           bookingID: bookingId,
-          actionType,
+          actionType: actionType,
         }
       );
+      console.log("=================",bookingId)
 
       console.log(`${actionType} action sent successfully`);
     } catch (error) {

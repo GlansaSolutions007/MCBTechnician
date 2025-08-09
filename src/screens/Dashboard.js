@@ -39,6 +39,14 @@ export default function Dashboard() {
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
   };
+  // console.log(
+  //   "Fetching booking counts from:",
+  //   `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`
+  // );
+  // console.log(
+  //   "Fetching assigned bookings from:",
+  //   `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`
+  // );
 
   const [bookings, setBookings] = useState([]);
   const [bookingCounts, setBookingCounts] = useState({
@@ -55,17 +63,22 @@ export default function Dashboard() {
         const token = await AsyncStorage.getItem("token");
 
         if (techID) {
-          const res = await axios.get(
-            `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          try {
+            const res = await axios.get(
+              `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
 
-          if (Array.isArray(res.data) && res.data.length > 0) {
-            setBookingCounts(res.data[0]);
+            // Use res here:
+            if (Array.isArray(res.data) && res.data.length > 0) {
+              setBookingCounts(res.data[0]);
+            }
+          } catch (error) {
+            console.error("No bookings found for this technician");
           }
         }
       } catch (err) {
@@ -75,13 +88,12 @@ export default function Dashboard() {
 
     fetchBookingCounts();
   }, []);
+
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         const techID = await AsyncStorage.getItem("techID");
-        console.log(API_BASE_URL, "URLLLLL");
         const token = await AsyncStorage.getItem("token");
-        console.log("techhhhh:", techID);
         if (techID) {
           const res = await axios.get(
             `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
@@ -205,6 +217,7 @@ export default function Dashboard() {
                   source={schedule}
                   style={{ width: 20, height: 20, tintColor: "#fff" }}
                 />
+
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
@@ -335,7 +348,7 @@ export default function Dashboard() {
         </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <CustomText style={[globalStyles.f14Bold,]}>
+          <CustomText style={[globalStyles.f14Bold]}>
             Next Active Service
           </CustomText>
 
@@ -371,7 +384,7 @@ export default function Dashboard() {
                 ]}
               >
                 <View style={[globalStyles.flexrow]}>
-                  <Image
+                  {/* <Image
                     source={
                       item.ProfileImage
                         ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
@@ -381,6 +394,12 @@ export default function Dashboard() {
                     onError={() =>
                       console.log("Image load failed for:", item.ProfileImage)
                     }
+                  /> */}
+                  <Image
+                    source={{
+                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
+                    }}
+                    style={styles.avatar}
                   />
 
                   <View style={[globalStyles.ml3, { flex: 1 }]}>
@@ -433,7 +452,7 @@ export default function Dashboard() {
               ]}
             >
               <View style={[globalStyles.flexrow]}>
-                <Image
+                {/* <Image
                   source={
                     item.ProfileImage
                       ? {
@@ -445,7 +464,13 @@ export default function Dashboard() {
                   onError={() =>
                     console.log("Image load failed for:", item.ProfileImage)
                   }
-                />
+                /> */}
+                 <Image
+                    source={{
+                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
+                    }}
+                    style={styles.avatar}
+                  />
 
                 <View style={[globalStyles.ml3, { flex: 1 }]}>
                   <CustomText
@@ -478,7 +503,9 @@ export default function Dashboard() {
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                   {item.TimeSlot}
                 </CustomText>
-                <TouchableOpacity onPress={LiveTrackingMap}>
+                <TouchableOpacity
+                // onPress={LiveTrackingMap}
+                >
                   <View
                     style={{
                       backgroundColor: color.black,

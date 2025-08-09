@@ -16,6 +16,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to track your current position on the map."
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
       }
     },
     "android": {
@@ -28,7 +31,12 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

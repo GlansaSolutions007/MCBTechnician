@@ -51,7 +51,7 @@ export default function Bookings() {
               <View style={globalStyles.flexrow}>
                 <Image
                   source={{
-                    uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                    uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
                   }}
                   style={styles.avatar}
                 />
@@ -69,7 +69,7 @@ export default function Bookings() {
                   </CustomText>
                   <CustomText
                     style={[globalStyles.f10Light, globalStyles.neutral100]}
-                    numberOfLines={1}
+                    numberOfLines={3}
                   >
                     {item.FullAddress}
                   </CustomText>
@@ -222,7 +222,7 @@ export default function Bookings() {
                           globalStyles.f10Regular,
                           globalStyles.textWhite,
                         ]}
-                        numberOfLines={1}
+                        numberOfLines={3}
                       >
                         {item.PackageName}
                       </CustomText>

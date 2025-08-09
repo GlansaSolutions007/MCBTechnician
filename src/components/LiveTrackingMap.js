@@ -132,25 +132,33 @@ export default function LiveTrackingWithRoute() {
   };
 
   const updateTrackingStatus = async (status) => {
-    const techID = await AsyncStorage.getItem("techID");
     try {
+      const techID = await AsyncStorage.getItem("techID");
+      if (!techID) {
+        Alert.alert("Error", "Technician ID not found.");
+        return;
+      }
+
+      if (!location) {
+        Alert.alert("Error", "Current location not available yet.");
+        return;
+      }
+
       const payload = {
         BookingID: bookingId,
         Status: status,
         TechnicianID: techID,
-        Latitude: location?.latitude || 0,
-        Longitude: location?.longitude || 0,
+        Latitude: location.latitude,
+        Longitude: location.longitude,
       };
 
-      console.log(`Sending Tracking Payload for ${status}:`, payload);
+      console.log("Sending Tracking Payload:", payload);
 
       const response = await axios.post(
         "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
         payload,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
@@ -170,8 +178,13 @@ export default function LiveTrackingWithRoute() {
       );
       if (error.response?.data) {
         console.log("Response error data:", error.response.data);
+        Alert.alert(
+          "Error",
+          error.response.data.message || `Failed to update ${status} status`
+        );
+      } else {
+        Alert.alert("Error", `Failed to update ${status} status`);
       }
-      Alert.alert("Error", `Failed to update ${status} status`);
     }
   };
 

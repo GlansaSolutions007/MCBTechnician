@@ -13,9 +13,9 @@ import buddy from "../../assets/images/buddy.png";
 import { Ionicons } from "@expo/vector-icons";
 
 const initialServices = [
-  { id: 1, label: "Leather Fabric Seat Polishing", completed: false },
-  { id: 2, label: "AC Vent Sanitization", completed: false },
-  { id: 3, label: "Mat Washing & Vacuuming", completed: false },
+  { id: 1, label: "Leather Fabric Seat Polishing", completed: true  },
+  { id: 2, label: "AC Vent Sanitization", completed: true  },
+  { id: 3, label: "Mat Washing & Vacuuming", completed: true  },
 ];
 
 const formatReadableTime = (seconds) => {

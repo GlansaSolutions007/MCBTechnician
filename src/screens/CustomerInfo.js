@@ -31,34 +31,33 @@ export default function CustomerInfo() {
   const mapRef = useRef(null);
   const [showSecondButtons, setShowSecondButtons] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
-  
-useEffect(() => {
-  if (Array.isArray(booking) && booking.length > 0) {
-    const sum = booking.reduce((total, b) => {
-      const pkgSum = (b.Packages || []).reduce((pkgTotal, pkg) => {
-        return pkgTotal + Number(pkg.EstimatedDurationMinutes || 0);
+
+  useEffect(() => {
+    if (Array.isArray(booking) && booking.length > 0) {
+      const sum = booking.reduce((total, b) => {
+        const pkgSum = (b.Packages || []).reduce((pkgTotal, pkg) => {
+          return pkgTotal + Number(pkg.EstimatedDurationMinutes || 0);
+        }, 0);
+        return total + pkgSum;
       }, 0);
-      return total + pkgSum;
-    }, 0);
 
-    setTotalDuration(sum);
-  }
-}, [booking]);
+      setTotalDuration(sum);
+    }
+  }, [booking]);
 
-  const handleStartRide = async () => {
-    await updateTechnicianTracking("StartJourney");
-    openGoogleMaps();
-    setShowSecondButtons(true);
-  };
-  const Reached = async () => {
-    await updateTechnicianTracking("Reached");
-    navigation.navigate("ServiceStart", { booking });
-  };
+  // const handleStartRide = async () => {
+  //   await updateTechnicianTracking("StartJourney");
+  //   openGoogleMaps();
+  //   setShowSecondButtons(true);
+  // };
+  // const Reached = async () => {
+  //   await updateTechnicianTracking("Reached");
+  //   navigation.navigate("ServiceStart", { booking });
+  // };
 
   const latitude = booking.latitude;
   const longitude = booking.Longitude;
-  const bookingId = booking.BookingId;
-
+  const bookingId = booking.BookingID;
   const destination = {
     latitude: parseFloat(latitude),
     longitude: parseFloat(longitude),
@@ -167,19 +166,31 @@ useEffect(() => {
 
   const updateTechnicianTracking = async (actionType) => {
     try {
+      const payload = {
+        bookingID: Number(bookingId),
+        actionType,
+      };
+      console.log("Sending payload:", payload);
       await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: bookingId,
-          actionType,
-        }
+        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        payload
       );
-
       console.log(`${actionType} action sent successfully`);
     } catch (error) {
       console.error(`Error sending ${actionType} action:`, error.message);
       Alert.alert("Error", `Failed to send ${actionType} action.`);
     }
+  };
+
+  const handleStartRide = async () => {
+    openGoogleMaps();
+    await updateTechnicianTracking("StartJourney");
+    setShowSecondButtons(true);
+  };
+
+  const Reached = async () => {
+    await updateTechnicianTracking("Reached");
+    navigation.navigate("ServiceStart", { booking: booking });
   };
 
   return (
@@ -206,7 +217,7 @@ useEffect(() => {
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <Image
                 source={{
-                  uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}`,
+                  uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
                 }}
                 style={globalStyles.avatarside}
               />
@@ -215,17 +226,13 @@ useEffect(() => {
                   {booking.CustomerName}
                 </CustomText>
                 <CustomText
-                  style={[
-                    globalStyles.f12Bold,
-                    globalStyles.primary,
-                    globalStyles.mb2,
-                  ]}
+                  style={[globalStyles.f12Bold, globalStyles.primary]}
                 >
                   Mobile: {booking.PhoneNumber}
                 </CustomText>
                 <CustomText
                   style={[
-                    globalStyles.f12Regular,
+                    globalStyles.f10Regular,
                     globalStyles.neutral500,
                     globalStyles.primary,
                   ]}
@@ -289,6 +296,12 @@ useEffect(() => {
                   </CustomText>
                   <View style={styles.carimage}>
                     <Image source={carpic} />
+                    {/* <Image
+                source={{
+                  uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
+                }}
+                style={globalStyles.avatarside}
+              /> */}
                     {/* <Image    source={{
                     uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}`,
                   }} /> */}
@@ -386,7 +399,6 @@ useEffect(() => {
                     style={[globalStyles.f12Bold, globalStyles.black]}
                   >
                     {pkg.EstimatedDurationMinutes}
-                    
                   </CustomText>
                 </View>
 

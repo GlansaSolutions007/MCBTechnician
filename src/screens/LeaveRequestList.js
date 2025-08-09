@@ -167,14 +167,14 @@ export default function LeaveRequestList() {
             const statusStyle = getStatusStyle(item.Status);
             return (
               <View key={index} style={styles.card}>
-                <CustomText style={[globalStyles.f20Bold, globalStyles.mb3]}>
+                <CustomText style={[globalStyles.f14Bold, globalStyles.mb3]}>
                   {item.LeaveReason}
                 </CustomText>
                 <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
                   <View style={globalStyles.flex1}>
                     <CustomText
                       style={[
-                        globalStyles.f16Bold,
+                        globalStyles.f12Bold,
                         styles.subjectText,
                         globalStyles.mb1,
                       ]}
