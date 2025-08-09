@@ -1,176 +1,268 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
-  StyleSheet,
-  Alert,
-  Linking,
   ActivityIndicator,
+  StyleSheet,
+  Text,
   TouchableOpacity,
 } from "react-native";
-import MapView, { Polyline, Marker } from "react-native-maps";
-import axios from "axios";
-import { decode } from "@mapbox/polyline";
+import MapView, {
+  Marker,
+  Polyline,
+  Callout,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { color } from "../styles/theme";
 
-const MiniMapRoute = ({ origin, destination, bookingId }) => {
-  const [routeCoords, setRouteCoords] = useState([]);
-  const [location, setLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b,
+      shift = 0,
+      result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+  return points;
+}
+
+export default function MiniMapRoute({ route }) {
+  const customerLat = route?.params?.customerLat ?? null;
+  const customerLng = route?.params?.customerLng ?? null;
+
   const mapRef = useRef(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [routeCoords, setRouteCoords] = useState([]);
+  const [distance, setDistance] = useState(null);
+  const [duration, setDuration] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const startTracking = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location access is required.");
-        return;
-      }
-
-      Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 1,
-        },
-        async (loc) => {
-          const coords = {
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          };
-
-          setLocation(coords);
-          fetchRoute(coords);
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.warn("Location permission denied");
+          setLoading(false);
+          return;
         }
-      );
-    };
-
-    startTracking();
+        let location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation(location.coords);
+      } catch (err) {
+        console.error("Error getting location:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const fetchRoute = async (originCoords) => {
-    try {
-      const res = await axios.post(
-        "https://api.openrouteservice.org/v2/directions/driving-car",
+  useEffect(() => {
+    if (currentLocation && customerLat && customerLng) {
+      fetchRoute(
         {
-          coordinates: [
-            [originCoords.longitude, originCoords.latitude],
-            [destination.longitude, destination.latitude],
-          ],
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
         },
+        { latitude: customerLat, longitude: customerLng }
+      );
+    }
+  }, [currentLocation, customerLat, customerLng]);
+
+  const fetchRoute = async (origin, destination) => {
+    try {
+      const { data } = await axios.get(
+        "https://maps.googleapis.com/maps/api/directions/json",
         {
-          headers: {
-            Authorization:
-              "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjU5NTg4YmFhNjU0NDQ1NDE4M2M3ZDllYzhjODNjYWU2IiwiaCI6Im11cm11cjY0In0=",
-            "Content-Type": "application/json",
+          params: {
+            origin: `${origin.latitude},${origin.longitude}`,
+            destination: `${destination.latitude},${destination.longitude}`,
+            key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
           },
         }
       );
 
-      const geometry = res.data.routes[0].geometry;
-      const coords = decode(geometry).map(([lat, lng]) => ({
-        latitude: lat,
-        longitude: lng,
-      }));
+      if (data.status !== "OK") {
+        console.error("Directions API error:", data);
+        return;
+      }
 
-      setRouteCoords(coords);
-      setLoading(false); // Map is ready to display
+      const points = data.routes[0]?.overview_polyline?.points;
+      const legs = data.routes[0]?.legs[0];
+      if (legs) {
+        setDistance(legs.distance.text);
+        setDuration(legs.duration.text);
+      }
 
-      setTimeout(() => {
-        if (mapRef.current && coords.length > 0) {
-          mapRef.current.fitToCoordinates(coords, {
-            edgePadding: { top: 40, bottom: 40, left: 40, right: 40 },
-            animated: false,
+      if (points) {
+        const decoded = decodePolyline(points);
+        setRouteCoords(decoded);
+        if (mapRef.current) {
+          mapRef.current.fitToCoordinates(decoded, {
+            edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+            animated: true,
           });
         }
-      }, 300);
-    } catch (error) {
-      console.error("Error fetching mini route:", error);
-      setLoading(false);
+      }
+    } catch (err) {
+      console.error("Error fetching route:", err.message);
     }
   };
 
-  const openGoogleMaps = () => {
-    if (location) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
-      Linking.openURL(url);
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007BFF" />
+      </View>
+    );
+  }
+
+  if (!currentLocation) {
+    return (
+      <View style={styles.center}>
+        <Text>No location available. Please enable GPS.</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.mapContainer}>
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={color.primary} />
-        </View>
-      ) : (
-        <>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            pitchEnabled={false}
-            rotateEnabled={false}
-          >
-            {location && <Marker coordinate={location} />}
-            <Marker coordinate={destination} />
-            {routeCoords.length > 0 && (
-              <Polyline
-                coordinates={routeCoords}
-                strokeWidth={3}
-                strokeColor="blue"
-              />
-            )}
-          </MapView>
+    <View style={styles.cardContainer}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={{
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+        showsUserLocation
+      >
+        <Marker coordinate={currentLocation} pinColor="blue">
+          <Callout>
+            <Text>You</Text>
+          </Callout>
+        </Marker>
 
-          <View style={styles.controls}>
-            <TouchableOpacity style={styles.button} onPress={openGoogleMaps}>
-              <Ionicons name="navigate" size={20} color="#fff" />
-            </TouchableOpacity>
+        {customerLat && customerLng && (
+          <Marker
+            coordinate={{ latitude: customerLat, longitude: customerLng }}
+            pinColor="red"
+          >
+            <Callout>
+              <Text>Customer</Text>
+            </Callout>
+          </Marker>
+        )}
+
+        {routeCoords.length > 0 && (
+          <Polyline
+            coordinates={routeCoords}
+            strokeWidth={4}
+            strokeColor="#007BFF"
+          />
+        )}
+      </MapView>
+
+      {/* Overlay UI */}
+      <View style={styles.overlay}>
+        <View style={styles.infoWrapper}>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoLabel}>Distance</Text>
+            <Text style={styles.infoValue}>{distance ?? "--"}</Text>
           </View>
-        </>
-      )}
+          <View style={styles.infoBox}>
+            <Text style={styles.infoLabel}>Time</Text>
+            <Text style={styles.infoValue}>{duration ?? "--"}</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.locateButton}
+          onPress={() => {
+            mapRef.current?.animateToRegion({
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            });
+          }}
+        >
+          <Ionicons name="navigate" size={20} color="#1FA4A2" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  mapContainer: {
-    height: 200,
-    borderRadius: 12,
+  cardContainer: {
+    borderRadius: 20,
     overflow: "hidden",
-    marginTop: 12,
+    height: 200,
+    backgroundColor: "#1FA4A2", // teal background
+    elevation: 4,
+    margin: 10,
   },
   map: {
-    width: "100%",
-    height: "100%",
-  },
-  loader: {
     flex: 1,
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
-  controls: {
+  overlay: {
     position: "absolute",
-    top: 5,
-    right: 5,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  button: {
-    backgroundColor: color.primary,
-    padding: 10,
-    borderRadius: 50,
+    top: 10,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  infoWrapper: {
+    flexDirection: "row",
+  },
+  infoBox: {
+    marginRight: 20,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#fff",
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#B6F2EC", // light greenish
+  },
+  locateButton: {
+    backgroundColor: "#fff",
+    padding: 8,
+    borderRadius: 50,
+    elevation: 3,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
-
-export default MiniMapRoute;

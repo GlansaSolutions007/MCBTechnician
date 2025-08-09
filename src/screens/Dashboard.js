@@ -421,7 +421,7 @@ export default function Dashboard() {
           )}
         </View>
 
-        {/* <View style={[globalStyles.mt3]}>
+        <View style={[globalStyles.mt3]}>
           {bookings.map((item, index) => (
             <View
               key={index}
@@ -498,7 +498,7 @@ export default function Dashboard() {
               </View>
             </View>
           ))}
-        </View> */}
+        </View>
       </View>
     </ScrollView>
   );
