@@ -68,6 +68,14 @@ export default function ServiceStart() {
     }
   };
 
+  // const next = () => {
+  //   navigation.navigate("ServiceEnd", {
+  //     estimatedTime: MAX_TIME,
+  //     actualTime: elapsedTime,
+  //     booking: booking,
+  //   });
+  // };
+
   const removeImage = (index) => {
     const filtered = images.filter((_, i) => i !== index);
     setImages(filtered);
@@ -82,7 +90,7 @@ export default function ServiceStart() {
           actionType: actionType,
         }
       );
-      console.log("=================",bookingId)
+      console.log("=================", bookingId);
 
       console.log(`${actionType} action sent successfully`);
     } catch (error) {
@@ -231,14 +239,19 @@ export default function ServiceStart() {
               </View>
             </View>
             <TouchableOpacity
-              onPress={async () => {
-                await updateTechnicianTracking("ServiceEnded");
-                setTimerCompleted(true);
-                setTimeTaken(elapsedTime);
+              // onPress={() => {
+              //   next;
+              //   setTimerCompleted(true);
+              //   setTimeTaken(elapsedTime);
+              // }}
+              onPress={() => {
                 navigation.navigate("ServiceEnd", {
                   estimatedTime: MAX_TIME,
                   actualTime: elapsedTime,
+                  booking: booking,
                 });
+                setTimerCompleted(true);
+                setTimeTaken(elapsedTime);
               }}
               style={globalStyles.blackButton}
             >
