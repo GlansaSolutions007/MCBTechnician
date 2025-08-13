@@ -1,5 +1,6 @@
 import {
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -24,22 +25,28 @@ export default function Bookings() {
   const customerInfo = (booking) => {
     navigation.navigate("customerInfo", { booking });
   };
+const today = new Date().toISOString().slice(0, 10);
 
+  const todaysBookings = bookings.filter(
+    (item) => item.BookingDate?.slice(0, 10) === today
+  );
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={
-        bookings.length === 0 ? styles.noDataContainer : { paddingBottom: 30 }
+        todaysBookings.length === 0 ? styles.noDataContainer : { paddingBottom: 30 }
       }
     >
       <View style={globalStyles.container}>
-        {bookings.length === 0 ? (
+        {todaysBookings.length === 0 ? (
           <CustomText style={globalStyles.neutral500}>
             No bookings assigned
           </CustomText>
         ) : (
-          bookings.map((item, index) => (
-            <View
+          todaysBookings.map((item, index) => (
+            <Pressable
+              // <View
+              onPress={() => customerInfo(item)}
               key={index}
               style={[
                 globalStyles.bgprimary,
@@ -229,29 +236,9 @@ export default function Bookings() {
                     </View>
                   </View>
                 </View>
-
-                <View style={globalStyles.alineSelfend}>
-                  <TouchableOpacity style={styles.cancelButton}>
-                    <CustomText
-                      style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                    >
-                      Cancel
-                    </CustomText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => customerInfo(item)}
-                    style={[styles.viewButton, globalStyles.mt3]}
-                  >
-                    <CustomText
-                      style={[globalStyles.f12Bold, globalStyles.primary]}
-                    >
-                      View
-                    </CustomText>
-                  </TouchableOpacity>
-                </View>
               </View>
-            </View>
+              {/* </View> */}
+            </Pressable>
           ))
         )}
       </View>

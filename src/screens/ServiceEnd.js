@@ -391,7 +391,7 @@ export default function ServiceEnd() {
         <TouchableOpacity
           // onPress={CollectPayment}
           onPress={async () => {
-            await updateTechnicianTracking("ServiceEnded");
+            await updateTechnicianTracking("Completed");
             navigation.navigate("CollectPayment");
           }}
           style={globalStyles.blackButton}

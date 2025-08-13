@@ -27,26 +27,11 @@ import { API_BASE_URL_IMAGE } from "@env";
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
-  const customerInfo = () => {
-    navigation.navigate("customerInfo");
-  };
-  const CollectPayment = () => {
-    navigation.navigate("CollectPayment");
-  };
-  const LiveTrackingMap = () => {
-    navigation.navigate("LiveTrackingMap");
-  };
+ 
+  
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
   };
-  // console.log(
-  //   "Fetching booking counts from:",
-  //   `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`
-  // );
-  // console.log(
-  //   "Fetching assigned bookings from:",
-  //   `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`
-  // );
 
   const [bookings, setBookings] = useState([]);
   const [bookingCounts, setBookingCounts] = useState({
@@ -55,7 +40,10 @@ export default function Dashboard() {
     TodayCustomerCount: 0,
     CompletedBookingsCount: 0,
   });
-
+ const ServiceStart = async (item) => {
+   navigation.navigate("ServiceStart", {  booking: item });
+   console.log("000000000000000000000000",item)
+  };
   useEffect(() => {
     const fetchBookingCounts = async () => {
       try {
@@ -349,52 +337,21 @@ export default function Dashboard() {
 
         <View style={[globalStyles.mt4]}>
           <CustomText style={[globalStyles.f14Bold]}>
-            Next Active Service
+            Active Service
           </CustomText>
 
-          {bookings.length === 0 ? (
-            <>
-              <CustomText
-                style={[globalStyles.f28Regular, globalStyles.neutral300]}
-              >
-                There are no{" "}
-              </CustomText>
-              <View style={[globalStyles.flexrow]}>
-                <CustomText
-                  style={[globalStyles.primary, globalStyles.f28Bold]}
-                >
-                  active services{" "}
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f28Regular, globalStyles.neutral300]}
-                >
-                  yet....
-                </CustomText>
-              </View>
-            </>
-          ) : (
-            bookings.map((item, index) => (
+          <View style={[globalStyles.mt3]}>
+            {bookings.filter(item => item.BookingStatus === "ServiceStarted").map((item, index) => (
               <View
                 key={index}
                 style={[
                   globalStyles.bgprimary,
                   globalStyles.p4,
-                  globalStyles.mt5,
                   globalStyles.card,
+                  globalStyles.mt2,
                 ]}
               >
                 <View style={[globalStyles.flexrow]}>
-                  {/* <Image
-                    source={
-                      item.ProfileImage
-                        ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                        : profilepic
-                    }
-                    style={styles.avatar}
-                    onError={() =>
-                      console.log("Image load failed for:", item.ProfileImage)
-                    }
-                  /> */}
                   <Image
                     source={{
                       uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
@@ -422,109 +379,44 @@ export default function Dashboard() {
                 </View>
 
                 <View style={globalStyles.divider} />
-
-                <View>
-                  <MiniMapRoute
-                    origin={{
-                      latitude: 17.4445,
-                      longitude: 78.3772,
-                    }}
-                    destination={{
-                      latitude: 17.36191607830754,
-                      longitude: 78.47466965365447,
-                    }}
-                  />
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={[globalStyles.mt3]}>
-          {bookings.map((item, index) => (
-            <View
-              key={index}
-              style={[
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.card,
-                globalStyles.mt2,
-              ]}
-            >
-              <View style={[globalStyles.flexrow]}>
-                {/* <Image
-                  source={
-                    item.ProfileImage
-                      ? {
-                          uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                        }
-                      : profilepic
-                  }
-                  style={styles.avatar}
-                  onError={() =>
-                    console.log("Image load failed for:", item.ProfileImage)
-                  }
-                /> */}
-                 <Image
-                    source={{
-                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                    }}
-                    style={styles.avatar}
-                  />
-
-                <View style={[globalStyles.ml3, { flex: 1 }]}>
-                  <CustomText
-                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                  >
-                    {item.CustomerName}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                  >
-                    Mobile: {item.PhoneNumber}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f10Light, globalStyles.neutral100]}
-                  >
-                    {item.FullAddress}
-                  </CustomText>
-                </View>
-              </View>
-
-              <View style={globalStyles.divider} />
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
-                  globalStyles.alineItemscenter,
-                  styles.card,
-                ]}
-              >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {item.TimeSlot}
-                </CustomText>
-                <TouchableOpacity
-                // onPress={LiveTrackingMap}
+                <View
+                  style={[
+                    globalStyles.flexrow,
+                    globalStyles.justifysb,
+                    globalStyles.alineItemscenter,
+                    styles.card,
+                  ]}
                 >
-                  <View
-                    style={{
-                      backgroundColor: color.black,
-                      borderRadius: 50,
-                      padding: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                  <CustomText
+                    style={[globalStyles.f16Bold, globalStyles.black]}
                   >
-                    <Ionicons
-                      name="navigate-outline"
-                      size={24}
-                      color={color.white}
-                    />
-                  </View>
-                </TouchableOpacity>
+                    {item.TimeSlot}
+                  </CustomText>
+                  <TouchableOpacity
+                  // onPress={ServiceStart,item}
+                  onPress={() => ServiceStart(item)}
+
+                  >
+                    <View
+                      style={{
+                        backgroundColor: color.black,
+                        borderRadius: 50,
+                        padding: 8,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons
+                        name="navigate-outline"
+                        size={24}
+                        color={color.white}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       </View>
     </ScrollView>

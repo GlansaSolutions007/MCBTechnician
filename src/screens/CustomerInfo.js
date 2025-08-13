@@ -181,23 +181,22 @@ export default function CustomerInfo() {
   //   }
   // };
   const openGoogleMaps = async () => {
-  if (location && destination) {
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+    if (location && destination) {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
 
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert("Error", "Google Maps not available on this device");
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert("Error", "Google Maps not available on this device");
+        }
+      } catch (error) {
+        console.error("Error opening Google Maps:", error);
+        Alert.alert("Error", "Failed to open Google Maps");
       }
-    } catch (error) {
-      console.error("Error opening Google Maps:", error);
-      Alert.alert("Error", "Failed to open Google Maps");
     }
-  }
-};
-
+  };
 
   const updateTechnicianTracking = async (actionType) => {
     try {
@@ -222,25 +221,16 @@ export default function CustomerInfo() {
   //   await updateTechnicianTracking("StartJourney");
   //   setShowSecondButtons(true);
   // };
-const handleStartRide = async () => {
-  // 1. Update status first
-  await updateTechnicianTracking("StartJourney");
-
-  // 2. Save the flag so button hides
-  try {
-    await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
-  } catch (error) {
-    console.error("Error saving start ride flag", error);
-  }
-
-  // 3. Open Google Maps
-  await openGoogleMaps();
-
-  // 4. Show the second set of buttons
-  setShowSecondButtons(true);
-};
-
-
+  const handleStartRide = async () => {
+    await updateTechnicianTracking("StartJourney");
+    try {
+      await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
+    } catch (error) {
+      console.error("Error saving start ride flag", error);
+    }
+    await openGoogleMaps();
+    setShowSecondButtons(true);
+  };
 
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
@@ -506,15 +496,15 @@ const handleStartRide = async () => {
               >
                 Total Estimated Time
               </CustomText>
-                <View >
-                  <CustomText
-                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                  >
-                    {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
-                      booking.TotalEstimatedDurationMinutes % 60
-                    }m`}
-                  </CustomText>
-                </View>
+              <View>
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
+                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                    booking.TotalEstimatedDurationMinutes % 60
+                  }m`}
+                </CustomText>
+              </View>
             </View>
             <View style={styles.pricecard}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
@@ -597,62 +587,6 @@ const handleStartRide = async () => {
               </TouchableOpacity>
             </View>
 
-            {/* <View>
-              <View>
-                <TouchableOpacity
-                  style={styles.startride}
-                  onPress={async () => {
-                    await updateTechnicianTracking("StartJourney");
-                    openGoogleMaps();
-                  }}
-                >
-                  <Ionicons
-                    name="rocket"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-
-                  <CustomText style={styles.startButtonText}>
-                    Start Ride
-                  </CustomText>
-                </TouchableOpacity>
-              </View>
-              <View style={[styles.startreach]}>
-                <TouchableOpacity
-                  style={styles.ReachedButton}
-                  onPress={Reached}
-                >
-                  <Ionicons
-                    name="flag"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText style={styles.startButtonText}>
-                    Reached
-                  </CustomText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.startButton}
-                  onPress={async () => {
-                    // await updateTechnicianTracking("StartJourney");
-                    openGoogleMaps();
-                  }}
-                >
-                  <Ionicons
-                    name="rocket"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText style={styles.startButtonText}>
-                    Start Ride
-                  </CustomText>
-                </TouchableOpacity>
-              </View>
-            </View> */}
             <View>
               {!showSecondButtons ? (
                 <TouchableOpacity
@@ -671,37 +605,39 @@ const handleStartRide = async () => {
                 </TouchableOpacity>
               ) : (
                 <View style={styles.startreach}>
-                  <TouchableOpacity
-                    style={styles.ReachedButton}
-                    onPress={Reached}
-                  >
-                    <Ionicons
-                      name="flag"
-                      size={20}
-                      color="white"
-                      style={{ marginRight: 8 }}
-                    />
-                    <CustomText style={styles.startButtonText}>
-                      Reached
-                    </CustomText>
-                  </TouchableOpacity>
+                  {booking.BookingStatus !== "Completed" && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.ReachedButton}
+                        onPress={Reached}
+                      >
+                        <Ionicons
+                          name="flag"
+                          size={20}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText style={styles.startButtonText}>
+                          Reached
+                        </CustomText>
+                      </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.startButton}
-                    onPress={() => {
-                      openGoogleMaps();
-                    }}
-                  >
-                    <Ionicons
-                      name="rocket"
-                      size={20}
-                      color="white"
-                      style={{ marginRight: 8 }}
-                    />
-                    <CustomText style={styles.startButtonText}>
-                      Start Ride
-                    </CustomText>
-                  </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={openGoogleMaps}
+                      >
+                        <Ionicons
+                          name="rocket"
+                          size={20}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText style={styles.startButtonText}>
+                          Start Ride
+                        </CustomText>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               )}
             </View>
