@@ -31,6 +31,13 @@ export default function ServiceStart() {
   const [timerCompleted, setTimerCompleted] = useState(false);
   const [MAX_TIME, setMaxTime] = useState(0);
   const bookingId = booking.BookingID;
+
+  const calculateElapsedFromAPI = (serviceStartedAt) => {
+  const start = new Date(serviceStartedAt); // API UTC time
+  const now = new Date();
+  return Math.floor((now - start) / 1000); // seconds difference
+};
+
   useEffect(() => {
     let interval = null;
 
@@ -61,44 +68,55 @@ export default function ServiceStart() {
 
   useEffect(() => {
     const loadTimerState = async () => {
-      try {
-        const storedState = await AsyncStorage.getItem("serviceTimerState");
-        if (storedState) {
-          const {
-            timerStarted,
-            elapsedTime,
-            maxTime,
-            timerCompleted,
-            bookingId: storedBookingId,
-          } = JSON.parse(storedState);
+  try {
+    const storedState = await AsyncStorage.getItem(`timerState_${booking.BookingID}`);
 
-          // Make sure it's for the same booking
-          if (storedBookingId === bookingId) {
-            setTimerStarted(timerStarted);
-            setElapsedTime(elapsedTime);
-            setMaxTime(maxTime);
-            setTimerCompleted(timerCompleted);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load timer state:", error);
-      }
-    };
+    if (storedState) {
+      const parsedState = JSON.parse(storedState);
+      setElapsedTime(parsedState.elapsedTime);
+      setMaxTime(parsedState.maxTime);
+      setTimerStarted(parsedState.timerStarted);
+      setTimerCompleted(parsedState.timerCompleted);
+    } 
+    // ⬇ Fallback: No saved state, but API says service already started
+    else if (booking.ServiceStartedAt) {
+      const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+      setElapsedTime(elapsedFromAPI);
+      setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
+      setTimerStarted(true); // show that the timer is running
+    }
+  } catch (error) {
+    console.error("Failed to load timer state", error);
+  }
+};
+
+    // const loadTimerState = async () => {
+    //   try {
+    //     const storedState = await AsyncStorage.getItem("serviceTimerState");
+    //     if (storedState) {
+    //       const {
+    //         timerStarted,
+    //         elapsedTime,
+    //         maxTime,
+    //         timerCompleted,
+    //         bookingId: storedBookingId,
+    //       } = JSON.parse(storedState);
+
+    //       // Make sure it's for the same booking
+    //       if (storedBookingId === bookingId) {
+    //         setTimerStarted(timerStarted);
+    //         setElapsedTime(elapsedTime);
+    //         setMaxTime(maxTime);
+    //         setTimerCompleted(timerCompleted);
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error("Failed to load timer state:", error);
+    //   }
+    // };
 
     loadTimerState();
   }, [bookingId]);
-
-  // useEffect(() => {
-  //   let interval = null;
-
-  //   if (timerStarted && !timerCompleted) {
-  //     interval = setInterval(() => {
-  //       setElapsedTime((prev) => prev + 1);
-  //     }, 1000);
-  //   }
-
-  //   return () => clearInterval(interval);
-  // }, [timerStarted, timerCompleted]);
 
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600)
@@ -354,11 +372,6 @@ export default function ServiceStart() {
               </View>
             </View>
             <TouchableOpacity
-              // onPress={() => {
-              //   next;
-              //   setTimerCompleted(true);
-              //   setTimeTaken(elapsedTime);
-              // }}
               onPress={async () => {
                 navigation.navigate("ServiceEnd", {
                   estimatedTime: MAX_TIME,
@@ -406,48 +419,46 @@ export default function ServiceStart() {
                   }m`}
                 </CustomText>
               </View>
-              {/* <TouchableOpacity
-                style={styles.pricecard}
-                onPress={async () => {
-                  await updateTechnicianTracking("ServiceStarted");
-                  setTimerStarted(true);
-                  setElapsedTime(0);
-                  setTimerCompleted(false);
-                }}
-              >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  Lets Start
-                </CustomText>
-              </TouchableOpacity> */}
+            
               <TouchableOpacity
                 style={styles.pricecard}
-                onPress={async () => {
-                  await updateTechnicianTracking("ServiceStarted");
-
-                  const totalSeconds =
-                    booking.TotalEstimatedDurationMinutes * 60;
-                  setMaxTime(totalSeconds);
-                  setTimerStarted(true);
-                  setElapsedTime(0);
-                  setTimerCompleted(false);
-
-                  // Hide the button permanently for this booking
-                  await AsyncStorage.setItem(
-                    `serviceStarted_${booking.BookingID}`,
-                    "true"
-                  );
-                }}
-
                 // onPress={async () => {
                 //   await updateTechnicianTracking("ServiceStarted");
+
                 //   const totalSeconds =
                 //     booking.TotalEstimatedDurationMinutes * 60;
                 //   setMaxTime(totalSeconds);
-
                 //   setTimerStarted(true);
                 //   setElapsedTime(0);
                 //   setTimerCompleted(false);
+
+                //   await AsyncStorage.setItem(
+                //     `serviceStarted_${booking.BookingID}`,
+                //     "true"
+                //   );
                 // }}
+                onPress={async () => {
+  await updateTechnicianTracking("ServiceStarted");
+
+  const totalSeconds = booking.TotalEstimatedDurationMinutes * 60;
+  setMaxTime(totalSeconds);
+
+  // Calculate elapsed time from API time if it exists
+  const elapsedFromAPI = booking.ServiceStartedAt
+    ? calculateElapsedFromAPI(booking.ServiceStartedAt)
+    : 0;
+
+  setElapsedTime(elapsedFromAPI);
+  setTimerStarted(true);
+  setTimerCompleted(false);
+
+  await AsyncStorage.setItem(
+    `serviceStarted_${booking.BookingID}`,
+    "true"
+  );
+}}
+
+
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                   Lets Start
