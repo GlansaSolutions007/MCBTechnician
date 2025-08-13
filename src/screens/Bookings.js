@@ -25,7 +25,7 @@ export default function Bookings() {
   const customerInfo = (booking) => {
     navigation.navigate("customerInfo", { booking });
   };
-const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
 
   const todaysBookings = bookings.filter(
     (item) => item.BookingDate?.slice(0, 10) === today
@@ -34,7 +34,9 @@ const today = new Date().toISOString().slice(0, 10);
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={
-        todaysBookings.length === 0 ? styles.noDataContainer : { paddingBottom: 30 }
+        todaysBookings.length === 0
+          ? styles.noDataContainer
+          : { paddingBottom: 30 }
       }
     >
       <View style={globalStyles.container}>
@@ -45,11 +47,12 @@ const today = new Date().toISOString().slice(0, 10);
         ) : (
           todaysBookings.map((item, index) => (
             <Pressable
-              // <View
               onPress={() => customerInfo(item)}
               key={index}
               style={[
-                globalStyles.bgprimary,
+                item.BookingStatus == "Completed"
+                  ? { backgroundColor: "#969696" }
+                  : globalStyles.bgprimary,
                 globalStyles.p4,
                 globalStyles.mt5,
                 globalStyles.card,
