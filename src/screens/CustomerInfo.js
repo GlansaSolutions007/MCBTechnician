@@ -21,6 +21,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CustomerInfo() {
   const navigation = useNavigation();
@@ -31,6 +32,22 @@ export default function CustomerInfo() {
   const mapRef = useRef(null);
   const [showSecondButtons, setShowSecondButtons] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
+
+  useEffect(() => {
+    const checkIfStarted = async () => {
+      try {
+        const flag = await AsyncStorage.getItem(
+          `startRide_done_${booking.BookingID}`
+        );
+        if (flag === "true") {
+          setShowSecondButtons(true);
+        }
+      } catch (error) {
+        console.error("Error reading start ride flag", error);
+      }
+    };
+    checkIfStarted();
+  }, [booking.BookingID]);
 
   useEffect(() => {
     if (Array.isArray(booking) && booking.length > 0) {
@@ -157,12 +174,30 @@ export default function CustomerInfo() {
     return points;
   };
 
-  const openGoogleMaps = () => {
-    if (location) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
-      Linking.openURL(url);
+  // const openGoogleMaps = () => {
+  //   if (location) {
+  //     const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+  //     Linking.openURL(url);
+  //   }
+  // };
+  const openGoogleMaps = async () => {
+  if (location && destination) {
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Google Maps not available on this device");
+      }
+    } catch (error) {
+      console.error("Error opening Google Maps:", error);
+      Alert.alert("Error", "Failed to open Google Maps");
     }
-  };
+  }
+};
+
 
   const updateTechnicianTracking = async (actionType) => {
     try {
@@ -182,11 +217,30 @@ export default function CustomerInfo() {
     }
   };
 
-  const handleStartRide = async () => {
-    openGoogleMaps();
-    await updateTechnicianTracking("StartJourney");
-    setShowSecondButtons(true);
-  };
+  // const handleStartRide = async () => {
+  //   openGoogleMaps();
+  //   await updateTechnicianTracking("StartJourney");
+  //   setShowSecondButtons(true);
+  // };
+const handleStartRide = async () => {
+  // 1. Update status first
+  await updateTechnicianTracking("StartJourney");
+
+  // 2. Save the flag so button hides
+  try {
+    await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
+  } catch (error) {
+    console.error("Error saving start ride flag", error);
+  }
+
+  // 3. Open Google Maps
+  await openGoogleMaps();
+
+  // 4. Show the second set of buttons
+  setShowSecondButtons(true);
+};
+
+
 
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
@@ -398,7 +452,10 @@ export default function CustomerInfo() {
                   <CustomText
                     style={[globalStyles.f12Bold, globalStyles.black]}
                   >
-                    {pkg.EstimatedDurationMinutes}
+                    {/* {pkg.EstimatedDurationMinutes} */}{" "}
+                    {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}:${
+                      pkg.EstimatedDurationMinutes % 60
+                    }m`}
                   </CustomText>
                 </View>
 
@@ -447,18 +504,17 @@ export default function CustomerInfo() {
               <CustomText
                 style={[globalStyles.f12Medium, globalStyles.textWhite]}
               >
-                Estimated Time
+                Total Estimated Time
               </CustomText>
-              {booking.Packages.map((pkg) => (
-                <View key={pkg.PackageID}>
+                <View >
                   <CustomText
                     style={[globalStyles.f24Bold, globalStyles.textWhite]}
                   >
-                    {/* {pkg.EstimatedDurationMinutes} */}
-                    {totalDuration} mins
+                    {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                      booking.TotalEstimatedDurationMinutes % 60
+                    }m`}
                   </CustomText>
                 </View>
-              ))}
             </View>
             <View style={styles.pricecard}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>

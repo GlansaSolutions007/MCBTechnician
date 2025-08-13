@@ -17,6 +17,7 @@ import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
@@ -28,21 +29,76 @@ export default function ServiceStart() {
   const [timeTaken, setTimeTaken] = useState(0);
   const [timerStarted, setTimerStarted] = useState(false);
   const [timerCompleted, setTimerCompleted] = useState(false);
-  // const MAX_TIME = 3600;
-  const MAX_TIME = 5;
+  const [MAX_TIME, setMaxTime] = useState(0);
   const bookingId = booking.BookingID;
-
   useEffect(() => {
     let interval = null;
 
     if (timerStarted && !timerCompleted) {
       interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
+        setElapsedTime((prev) => {
+          const updatedTime = prev + 1;
+
+          // Save updated state in AsyncStorage
+          AsyncStorage.setItem(
+            "serviceTimerState",
+            JSON.stringify({
+              timerStarted: true,
+              elapsedTime: updatedTime,
+              maxTime: MAX_TIME,
+              timerCompleted: false,
+              bookingId,
+            })
+          );
+
+          return updatedTime;
+        });
       }, 1000);
     }
 
     return () => clearInterval(interval);
-  }, [timerStarted, timerCompleted]);
+  }, [timerStarted, timerCompleted, MAX_TIME]);
+
+  useEffect(() => {
+    const loadTimerState = async () => {
+      try {
+        const storedState = await AsyncStorage.getItem("serviceTimerState");
+        if (storedState) {
+          const {
+            timerStarted,
+            elapsedTime,
+            maxTime,
+            timerCompleted,
+            bookingId: storedBookingId,
+          } = JSON.parse(storedState);
+
+          // Make sure it's for the same booking
+          if (storedBookingId === bookingId) {
+            setTimerStarted(timerStarted);
+            setElapsedTime(elapsedTime);
+            setMaxTime(maxTime);
+            setTimerCompleted(timerCompleted);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load timer state:", error);
+      }
+    };
+
+    loadTimerState();
+  }, [bookingId]);
+
+  // useEffect(() => {
+  //   let interval = null;
+
+  //   if (timerStarted && !timerCompleted) {
+  //     interval = setInterval(() => {
+  //       setElapsedTime((prev) => prev + 1);
+  //     }, 1000);
+  //   }
+
+  //   return () => clearInterval(interval);
+  // }, [timerStarted, timerCompleted]);
 
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600)
@@ -176,18 +232,58 @@ export default function ServiceStart() {
 
         {timerStarted && (
           <View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.mt4,
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.borderRadiuslarge,
+              ]}
+            >
+              <View
+                style={[
+                  globalStyles.alineSelfcenter,
+                  globalStyles.flexrow,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
+                  Estimated Time:
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                >
+                  {" "}
+                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                    booking.TotalEstimatedDurationMinutes % 60
+                  }m`}
+                </CustomText>
+              </View>
+            </View>
+
             <View style={{ alignItems: "center", marginTop: 30 }}>
               <AnimatedCircularProgress
                 size={240}
-                width={5}
+                width={10}
                 fill={Math.min((elapsedTime / MAX_TIME) * 100, 100)}
                 tintColor={elapsedTime > MAX_TIME ? "red" : color.primary}
-                backgroundColor="#eaeaea"
+                backgroundColor={color.neutral[200]}
                 rotation={0}
                 lineCap="round"
               >
                 {() => (
                   <>
+                    <CustomText
+                      style={[globalStyles.f12Medium, { color: color.black }]}
+                    >
+                      {`${Math.floor(
+                        booking.TotalEstimatedDurationMinutes / 60
+                      )}:${booking.TotalEstimatedDurationMinutes % 60}m`}
+                    </CustomText>
                     <CustomText
                       style={[globalStyles.f12Medium, { color: color.black }]}
                     >
@@ -203,15 +299,34 @@ export default function ServiceStart() {
               </AnimatedCircularProgress>
 
               {timerCompleted && (
-                <CustomText
-                  style={[
-                    globalStyles.mt4,
-                    globalStyles.f16Bold,
-                    { color: "green" },
-                  ]}
-                >
-                  Total Time Taken: {formatTime(elapsedTime)}
-                </CustomText>
+                <>
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.w100,
+                      globalStyles.justifysb,
+                      globalStyles.mt4,
+                      globalStyles.mb2,
+                      globalStyles.bgprimary,
+                      globalStyles.p4,
+                      globalStyles.borderRadiuslarge,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        globalStyles.alineSelfcenter,
+                        globalStyles.flexrow,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                      >
+                        Total Time Taken: {formatTime(elapsedTime)}
+                      </CustomText>
+                    </View>
+                  </View>
+                </>
               )}
             </View>
 
@@ -244,7 +359,7 @@ export default function ServiceStart() {
               //   setTimerCompleted(true);
               //   setTimeTaken(elapsedTime);
               // }}
-              onPress={() => {
+              onPress={async () => {
                 navigation.navigate("ServiceEnd", {
                   estimatedTime: MAX_TIME,
                   actualTime: elapsedTime,
@@ -252,6 +367,7 @@ export default function ServiceStart() {
                 });
                 setTimerCompleted(true);
                 setTimeTaken(elapsedTime);
+                await AsyncStorage.removeItem("serviceTimerState");
               }}
               style={globalStyles.blackButton}
             >
@@ -285,10 +401,12 @@ export default function ServiceStart() {
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  1 hr 30 min
+                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                    booking.TotalEstimatedDurationMinutes % 60
+                  }m`}
                 </CustomText>
               </View>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.pricecard}
                 onPress={async () => {
                   await updateTechnicianTracking("ServiceStarted");
@@ -296,6 +414,40 @@ export default function ServiceStart() {
                   setElapsedTime(0);
                   setTimerCompleted(false);
                 }}
+              >
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  Lets Start
+                </CustomText>
+              </TouchableOpacity> */}
+              <TouchableOpacity
+                style={styles.pricecard}
+                onPress={async () => {
+                  await updateTechnicianTracking("ServiceStarted");
+
+                  const totalSeconds =
+                    booking.TotalEstimatedDurationMinutes * 60;
+                  setMaxTime(totalSeconds);
+                  setTimerStarted(true);
+                  setElapsedTime(0);
+                  setTimerCompleted(false);
+
+                  // Hide the button permanently for this booking
+                  await AsyncStorage.setItem(
+                    `serviceStarted_${booking.BookingID}`,
+                    "true"
+                  );
+                }}
+
+                // onPress={async () => {
+                //   await updateTechnicianTracking("ServiceStarted");
+                //   const totalSeconds =
+                //     booking.TotalEstimatedDurationMinutes * 60;
+                //   setMaxTime(totalSeconds);
+
+                //   setTimerStarted(true);
+                //   setElapsedTime(0);
+                //   setTimerCompleted(false);
+                // }}
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                   Lets Start
