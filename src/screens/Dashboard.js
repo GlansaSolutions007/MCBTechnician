@@ -22,12 +22,12 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
-
+import { RefreshControl } from "react-native";
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
   const [totalAmount, setTotalAmount] = useState(0);
-
+ const [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     const fetchTotalAmount = async () => {
       try {
@@ -191,10 +191,79 @@ export default function Dashboard() {
   //     ) || []
   // );
 
+
+ const fetchTotalAmount = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+      if (!techID) return;
+
+      const res = await axios.get(
+        `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setTotalAmount(res.data[0].TotalAmountCollected || 0);
+      }
+    } catch (err) {
+      console.error("Error fetching total amount:", err);
+    }
+  };
+
+  // Fetch booking counts
+  const fetchBookingCounts = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+
+      if (techID) {
+        const res = await axios.get(
+          `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setBookingCounts(res.data[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching booking counts:", err);
+    }
+  };
+
+  // Fetch today's bookings
+  const fetchBookings = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+      if (techID) {
+        const res = await axios.get(
+          `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setBookings(Array.isArray(res.data) ? res.data : []);
+      }
+    } catch (err) {
+      console.error("Fetch error", err);
+    }
+  };
+
+ const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchTotalAmount(), fetchBookingCounts(), fetchBookings()]);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    onRefresh(); 
+  }, []);
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       <View style={[globalStyles.container]}>
         <AvailabilityHeader />
