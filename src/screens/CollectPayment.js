@@ -9,8 +9,14 @@ import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import QRCode from "react-native-qrcode-svg";
+import Dashboard from "./Dashboard";
+import { useNavigation } from "@react-navigation/native";
 
 export default function CollectPayment() {
+    const navigation = useNavigation();
+   const Dashboard = () => {
+      navigation.navigate("Dashboard");
+    };
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -70,7 +76,7 @@ export default function CollectPayment() {
           )}
         </View>
 
-        <TouchableOpacity style={[globalStyles.blackButton, globalStyles.w100]}>
+        <TouchableOpacity onPress={Dashboard} style={[globalStyles.blackButton, globalStyles.w100]}>
           <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
             Collect Cash
           </CustomText>

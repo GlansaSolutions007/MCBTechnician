@@ -73,6 +73,11 @@ export default StyleSheet.create({
     backgroundColor: color.neutral[200],
     marginVertical: 10,
   },
+  dividerWhite: {
+    height: 1.5,
+    backgroundColor: color.white,
+    marginVertical: 10,
+  },
 
   //  divider: {
   //     height: 1,

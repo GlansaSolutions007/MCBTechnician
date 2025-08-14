@@ -408,7 +408,7 @@ export default function ServiceStart() {
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}h ${
                     booking.TotalEstimatedDurationMinutes % 60
                   }m`}
                 </CustomText>

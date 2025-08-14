@@ -27,9 +27,7 @@ export default function Bookings() {
   };
   const today = new Date().toISOString().slice(0, 10);
 
-  const todaysBookings = bookings.filter(
-    (item) => item.BookingDate?.slice(0, 10) === today
-  );
+  const todaysBookings = bookings;
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}

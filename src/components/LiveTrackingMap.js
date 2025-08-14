@@ -243,7 +243,6 @@ export default function LiveTrackingWithRoute() {
       <View style={[styles.startreach]}>
         <TouchableOpacity
           style={styles.ReachedButton}
-          // onPress={() => updateTrackingStatus("Reached")}
           onPress={Reached}
         >
           <Text style={styles.startButtonText}>Reached</Text>

@@ -18,7 +18,6 @@ import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
 import { useNavigation } from "@react-navigation/native";
 import schedule from "../../assets/icons/Navigation/schedule.png";
 import reports from "../../assets/icons/Navigation/reports.png";
-import MiniMapRoute from "../components/MiniMapRoute";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
@@ -27,8 +26,36 @@ import { API_BASE_URL_IMAGE } from "@env";
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
- 
-  
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  useEffect(() => {
+    const fetchTotalAmount = async () => {
+      try {
+        const techID = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
+        if (!techID) return;
+
+        const res = await axios.get(
+          `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setTotalAmount(res.data[0].TotalAmountCollected || 0);
+
+        }
+      } catch (err) {
+        console.error("Error fetching total amount:", err);
+      }
+    };
+
+    fetchTotalAmount();
+  }, []);
+
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
   };
@@ -40,9 +67,9 @@ export default function Dashboard() {
     TodayCustomerCount: 0,
     CompletedBookingsCount: 0,
   });
- const ServiceStart = async (item) => {
-   navigation.navigate("ServiceStart", {  booking: item });
-   console.log("000000000000000000000000",item)
+  const ServiceStart = async (item) => {
+    navigation.navigate("ServiceStart", { booking: item });
+    console.log("000000000000000000000000", item);
   };
   useEffect(() => {
     const fetchBookingCounts = async () => {
@@ -54,14 +81,13 @@ export default function Dashboard() {
           try {
             const res = await axios.get(
               `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+              `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
               }
             );
-
-            // Use res here:
             if (Array.isArray(res.data) && res.data.length > 0) {
               setBookingCounts(res.data[0]);
             }
@@ -84,7 +110,8 @@ export default function Dashboard() {
         const token = await AsyncStorage.getItem("token");
         if (techID) {
           const res = await axios.get(
-            `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
+            `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
+
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -102,6 +129,7 @@ export default function Dashboard() {
 
     fetchBookings();
   }, []);
+
   const [techID, setTechID] = useState(null);
   const [count, setCount] = useState(0);
   const [assignedTasks, setAssignedTasks] = useState([]);
@@ -222,17 +250,14 @@ export default function Dashboard() {
                 globalStyles.alineItemscenter,
                 globalStyles.justifysb,
                 globalStyles.ph4,
-                globalStyles.pv2,
+                globalStyles.pv3,
               ]}
             >
-              <Image
-                source={schedule}
-                style={{ width: 20, height: 20, tintColor: "#fff" }}
-              />
+            
               <CustomText
-                style={[globalStyles.f32Bold, globalStyles.textWhite]}
+                style={[globalStyles.f24Bold, globalStyles.textWhite]}
               >
-                2k
+                ₹ {totalAmount.toFixed(2)}
               </CustomText>
             </View>
           </View>
@@ -336,86 +361,88 @@ export default function Dashboard() {
         </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <CustomText style={[globalStyles.f14Bold]}>
-            Active Service
-          </CustomText>
+          <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
 
           <View style={[globalStyles.mt3]}>
-            {bookings.filter(item => item.BookingStatus === "ServiceStarted").map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.card,
-                  globalStyles.mt2,
-                ]}
-              >
-                <View style={[globalStyles.flexrow]}>
-                  <Image
-                    source={{
-                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                    }}
-                    style={styles.avatar}
-                  />
-
-                  <View style={[globalStyles.ml3, { flex: 1 }]}>
-                    <CustomText
-                      style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                    >
-                      {item.CustomerName}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                    >
-                      Mobile: {item.PhoneNumber}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f10Light, globalStyles.neutral100]}
-                    >
-                      {item.FullAddress}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View style={globalStyles.divider} />
+            {bookings
+              .filter((item) => item.BookingStatus === "ServiceStarted")
+              .map((item, index) => (
                 <View
+                  key={index}
                   style={[
-                    globalStyles.flexrow,
-                    globalStyles.justifysb,
-                    globalStyles.alineItemscenter,
-                    styles.card,
+                    globalStyles.bgprimary,
+                    globalStyles.p4,
+                    globalStyles.card,
+                    globalStyles.mt2,
                   ]}
                 >
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.black]}
-                  >
-                    {item.TimeSlot}
-                  </CustomText>
-                  <TouchableOpacity
-                  // onPress={ServiceStart,item}
-                  onPress={() => ServiceStart(item)}
-
-                  >
-                    <View
-                      style={{
-                        backgroundColor: color.black,
-                        borderRadius: 50,
-                        padding: 8,
-                        alignItems: "center",
-                        justifyContent: "center",
+                  <View style={[globalStyles.flexrow]}>
+                    <Image
+                      source={{
+                        uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
                       }}
-                    >
-                      <Ionicons
-                        name="navigate-outline"
-                        size={24}
-                        color={color.white}
-                      />
+                      style={styles.avatar}
+                    />
+
+                    <View style={[globalStyles.ml3, { flex: 1 }]}>
+                      <CustomText
+                        style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                      >
+                        {item.CustomerName}
+                      </CustomText>
+                      <CustomText
+                        style={[
+                          globalStyles.f12Regular,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        Mobile: {item.PhoneNumber}
+                      </CustomText>
+                      <CustomText
+                        style={[globalStyles.f10Light, globalStyles.neutral100]}
+                      >
+                        {item.FullAddress}
+                      </CustomText>
                     </View>
-                  </TouchableOpacity>
+                  </View>
+
+                  <View style={globalStyles.divider} />
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.justifysb,
+                      globalStyles.alineItemscenter,
+                      styles.card,
+                    ]}
+                  >
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.black]}
+                    >
+                      {item.TimeSlot}
+                    </CustomText>
+                    <TouchableOpacity
+                      // onPress={ServiceStart,item}
+                      onPress={() => ServiceStart(item)}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: color.black,
+                          borderRadius: 50,
+                          padding: 8,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons
+                          name="navigate-outline"
+                          size={24}
+                          color={color.white}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
           </View>
         </View>
       </View>

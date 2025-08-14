@@ -30,18 +30,14 @@ export default function CustomerInfo() {
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
-  const [showSecondButtons, setShowSecondButtons] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
-
+ 
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
         const flag = await AsyncStorage.getItem(
           `startRide_done_${booking.BookingID}`
         );
-        if (flag === "true") {
-          setShowSecondButtons(true);
-        }
       } catch (error) {
         console.error("Error reading start ride flag", error);
       }
@@ -173,13 +169,6 @@ export default function CustomerInfo() {
     }
     return points;
   };
-
-  // const openGoogleMaps = () => {
-  //   if (location) {
-  //     const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
-  //     Linking.openURL(url);
-  //   }
-  // };
   const openGoogleMaps = async () => {
     if (location && destination) {
       const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
@@ -216,11 +205,6 @@ export default function CustomerInfo() {
     }
   };
 
-  // const handleStartRide = async () => {
-  //   openGoogleMaps();
-  //   await updateTechnicianTracking("StartJourney");
-  //   setShowSecondButtons(true);
-  // };
   const handleStartRide = async () => {
     await updateTechnicianTracking("StartJourney");
     try {
@@ -229,7 +213,6 @@ export default function CustomerInfo() {
       console.error("Error saving start ride flag", error);
     }
     await openGoogleMaps();
-    setShowSecondButtons(true);
   };
 
   const Reached = async () => {
@@ -340,15 +323,6 @@ export default function CustomerInfo() {
                   </CustomText>
                   <View style={styles.carimage}>
                     <Image source={carpic} />
-                    {/* <Image
-                source={{
-                  uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
-                }}
-                style={globalStyles.avatarside}
-              /> */}
-                    {/* <Image    source={{
-                    uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}`,
-                  }} /> */}
                   </View>
                 </View>
               </View>
@@ -597,9 +571,9 @@ export default function CustomerInfo() {
                 <CustomText
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
-                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
-                    booking.TotalEstimatedDurationMinutes % 60
-                  }m`}
+                  {`${Math.floor(
+                    booking.TotalEstimatedDurationMinutes / 60
+                  )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
                 </CustomText>
               </View>
             </View>
@@ -685,7 +659,8 @@ export default function CustomerInfo() {
             </View>
 
             <View>
-              {!showSecondButtons ? (
+              {/* starttttttttt */}
+              {booking.BookingStatus === "Confirmed" && (
                 <TouchableOpacity
                   style={styles.startride}
                   onPress={handleStartRide}
@@ -700,7 +675,8 @@ export default function CustomerInfo() {
                     Start Ride
                   </CustomText>
                 </TouchableOpacity>
-              ) : (
+              )}
+              {booking.BookingStatus === "ServiceStarted" && (
                 <View style={styles.startreach}>
                   {booking.BookingStatus !== "Completed" && (
                     <>
@@ -737,6 +713,8 @@ export default function CustomerInfo() {
                   )}
                 </View>
               )}
+
+              {/* endddddddddd */}
             </View>
           </View>
         </View>
