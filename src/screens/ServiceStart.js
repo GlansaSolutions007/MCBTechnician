@@ -242,6 +242,147 @@ export default function ServiceStart() {
           </View>
         )}
 
+        {!timerStarted && booking.ServiceStartedAt === null && (
+          <View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifysb,
+                globalStyles.mt4,
+                globalStyles.bgprimary,
+                globalStyles.p4,
+                globalStyles.borderRadiuslarge,
+              ]}
+            >
+              <View style={globalStyles.alineSelfcenter}>
+                <CustomText
+                  style={[globalStyles.f12Medium, globalStyles.textWhite]}
+                >
+                  Estimated Time
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f32Bold, globalStyles.textWhite]}
+                >
+                  {`${Math.floor(
+                    booking.TotalEstimatedDurationMinutes / 60
+                  )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
+                </CustomText>
+              </View>
+
+              <TouchableOpacity
+                style={styles.pricecard}
+                onPress={async () => {
+                  await updateTechnicianTracking("ServiceStarted");
+
+                  const totalSeconds =
+                    booking.TotalEstimatedDurationMinutes * 60;
+                  setMaxTime(totalSeconds);
+
+                  const elapsedFromAPI = booking.ServiceStartedAt
+                    ? calculateElapsedFromAPI(booking.ServiceStartedAt)
+                    : 0;
+
+                  setElapsedTime(elapsedFromAPI);
+                  setTimerStarted(true);
+                  setTimerCompleted(false);
+
+                  await AsyncStorage.setItem(
+                    `serviceStarted_${booking.BookingID}`,
+                    "true"
+                  );
+                }}
+              >
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  Lets Start
+                </CustomText>
+              </TouchableOpacity>
+            </View>
+            <CustomText
+              style={[
+                globalStyles.f28Medium,
+                globalStyles.neutral500,
+                globalStyles.mt2,
+              ]}
+            >
+              Hey{" "}
+              <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
+                Buddy
+              </CustomText>
+            </CustomText>
+            <CustomText
+              style={[
+                globalStyles.f12Regular,
+                globalStyles.neutral500,
+                globalStyles.mt2,
+              ]}
+            >
+              If the estimation time exceeded. Please feel free to mention the
+              reason
+            </CustomText>
+
+            <TextInput
+              style={[globalStyles.textArea, globalStyles.mt3]}
+              placeholder="eg. Sick leave..., Going to village"
+              value={reason}
+              onChangeText={setReason}
+              maxLength={100}
+              multiline
+            />
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.justifycenter,
+                globalStyles.mt4,
+              ]}
+            >
+              <TouchableOpacity
+                style={[
+                  globalStyles.flex1,
+                  {
+                    backgroundColor: color.fullredLight,
+                    padding: 16,
+                    borderRadius: 10,
+                    marginRight: 8,
+                  },
+                ]}
+              >
+                <CustomText
+                  style={[
+                    globalStyles.textWhite,
+                    globalStyles.textac,
+                    globalStyles.flexrow,
+                    globalStyles.justifycenter,
+                    globalStyles.alineItemscenter,
+                  ]}
+                >
+                  Cancel service
+                </CustomText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  globalStyles.flex1,
+                  {
+                    backgroundColor: "#000",
+                    padding: 16,
+                    borderRadius: 10,
+                    marginLeft: 8,
+                  },
+                ]}
+              >
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <Image source={helpcall} />
+                  <CustomText style={globalStyles.textWhite}>
+                    Call help line
+                  </CustomText>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {timerStarted && (
           <View>
             <View
@@ -444,24 +585,6 @@ export default function ServiceStart() {
                   )}
                 </View>
               ))}
-              {/* <View style={[globalStyles.mt2, globalStyles.ph4]}>
-                <CustomText style={globalStyles.f18Medium}>
-                  {booking.PackageNames?.split(", ").map((item, index) => (
-                    <CustomText key={index}>
-                      • {item}
-                      {"\n"}
-                    </CustomText>
-                  ))}
-                </CustomText>
-                <CustomText style={globalStyles.f18Medium}>
-                  {booking.IncludeNames?.split(", ").map((item, index) => (
-                    <CustomText key={index}>
-                      • {item}
-                      {"\n"}
-                    </CustomText>
-                  ))}{" "}
-                </CustomText>
-              </View> */}
             </View>
             <TouchableOpacity
               onPress={async () => {
@@ -482,163 +605,6 @@ export default function ServiceStart() {
                 Next
               </CustomText>
             </TouchableOpacity>
-          </View>
-        )}
-
-        {!timerStarted && (
-          <View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.mt4,
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.borderRadiuslarge,
-              ]}
-            >
-              <View style={globalStyles.alineSelfcenter}>
-                <CustomText
-                  style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                >
-                  Estimated Time
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f32Bold, globalStyles.textWhite]}
-                >
-                  {`${Math.floor(
-                    booking.TotalEstimatedDurationMinutes / 60
-                  )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
-                </CustomText>
-              </View>
-
-              <TouchableOpacity
-                style={styles.pricecard}
-                // onPress={async () => {
-                //   await updateTechnicianTracking("ServiceStarted");
-
-                //   const totalSeconds =
-                //     booking.TotalEstimatedDurationMinutes * 60;
-                //   setMaxTime(totalSeconds);
-                //   setTimerStarted(true);
-                //   setElapsedTime(0);
-                //   setTimerCompleted(false);
-
-                //   await AsyncStorage.setItem(
-                //     `serviceStarted_${booking.BookingID}`,
-                //     "true"
-                //   );
-                // }}
-                onPress={async () => {
-                  await updateTechnicianTracking("ServiceStarted");
-
-                  const totalSeconds =
-                    booking.TotalEstimatedDurationMinutes * 60;
-                  setMaxTime(totalSeconds);
-
-                  // Calculate elapsed time from API time if it exists
-                  const elapsedFromAPI = booking.ServiceStartedAt
-                    ? calculateElapsedFromAPI(booking.ServiceStartedAt)
-                    : 0;
-
-                  setElapsedTime(elapsedFromAPI);
-                  setTimerStarted(true);
-                  setTimerCompleted(false);
-
-                  await AsyncStorage.setItem(
-                    `serviceStarted_${booking.BookingID}`,
-                    "true"
-                  );
-                }}
-              >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  Lets Start
-                </CustomText>
-              </TouchableOpacity>
-            </View>
-            <CustomText
-              style={[
-                globalStyles.f28Medium,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              Hey{" "}
-              <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
-                Buddy
-              </CustomText>
-            </CustomText>
-            <CustomText
-              style={[
-                globalStyles.f12Regular,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              If the estimation time exceeded. Please feel free to mention the
-              reason
-            </CustomText>
-
-            <TextInput
-              style={[globalStyles.textArea, globalStyles.mt3]}
-              placeholder="eg. Sick leave..., Going to village"
-              value={reason}
-              onChangeText={setReason}
-              maxLength={100}
-              multiline
-            />
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifycenter,
-                globalStyles.mt4,
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  {
-                    backgroundColor: color.fullredLight,
-                    padding: 16,
-                    borderRadius: 10,
-                    marginRight: 8,
-                  },
-                ]}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.textWhite,
-                    globalStyles.textac,
-                    globalStyles.flexrow,
-                    globalStyles.justifycenter,
-                    globalStyles.alineItemscenter,
-                  ]}
-                >
-                  Cancel service
-                </CustomText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  {
-                    backgroundColor: "#000",
-                    padding: 16,
-                    borderRadius: 10,
-                    marginLeft: 8,
-                  },
-                ]}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Image source={helpcall} />
-                  <CustomText style={globalStyles.textWhite}>
-                    Call help line
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            </View>
           </View>
         )}
       </View>

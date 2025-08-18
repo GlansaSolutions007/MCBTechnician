@@ -720,41 +720,41 @@ export default function CustomerInfo() {
 
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
-                <View style={styles.startreach}>
-                  {/* {booking.BookingStatus !== "Completed" && ( */}
-                    <>
-                      <TouchableOpacity
-                        style={styles.ReachedButton}
-                        onPress={Reached}
-                      >
-                        <Ionicons
-                          name="flag"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText style={styles.startButtonText}>
-                          Reached
-                        </CustomText>
-                      </TouchableOpacity>
+              <View style={styles.startreach}>
+                {booking.BookingStatus !== "Completed" && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.ReachedButton}
+                      onPress={Reached}
+                    >
+                      <Ionicons
+                        name="flag"
+                        size={20}
+                        color="white"
+                        style={{ marginRight: 8 }}
+                      />
+                      <CustomText style={styles.startButtonText}>
+                        Reached
+                      </CustomText>
+                    </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.startButton}
-                       onPress={handleStartRide}
-                      >
-                        <Ionicons
-                          name="rocket"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText style={styles.startButtonText}>
-                          Start Ride
-                        </CustomText>
-                      </TouchableOpacity>
-                    </>
-                   {/* )} */}
-                </View>
+                    <TouchableOpacity
+                      style={styles.startButton}
+                      onPress={handleStartRide}
+                    >
+                      <Ionicons
+                        name="rocket"
+                        size={20}
+                        color="white"
+                        style={{ marginRight: 8 }}
+                      />
+                      <CustomText style={styles.startButtonText}>
+                        Start Ride
+                      </CustomText>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
               {/* )} */}
 
               {/* {booking.BookingStatus === "ServiceStarted" && (

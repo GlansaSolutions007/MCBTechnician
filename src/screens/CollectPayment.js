@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 export default function CollectPayment() {
     const navigation = useNavigation();
    const Dashboard = () => {
-      navigation.navigate("Dashboard");
+      navigation.navigate("CustomerTabNavigator", { screen: "Dashboard" });
     };
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [loading, setLoading] = useState(true);
