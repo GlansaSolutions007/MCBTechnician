@@ -33,11 +33,11 @@ export default function CustomHeader() {
           <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
             Hello User
           </CustomText>
-          <Pressable>
+          {/* <Pressable>
             <CustomText style={[globalStyles.f10Regular, globalStyles.mt1]}>
               Hyderabad, Telangana <Ionicons name="chevron-down" size={14} />
             </CustomText>
-          </Pressable>
+          </Pressable> */}
         </View>
 
         <Pressable onPress={Notifications}>

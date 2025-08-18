@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
-import AvailabilityHeader from "../components/AvailabilityHeader";
+// import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -170,7 +170,7 @@ export default function ServiceStart() {
   return (
     <ScrollView style={globalStyles.bgcontainer}>
       <View style={globalStyles.container}>
-        <AvailabilityHeader />
+        {/* <AvailabilityHeader /> */}
 
         <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
           Booking ID:{" "}

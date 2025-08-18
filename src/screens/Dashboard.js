@@ -13,7 +13,7 @@ import { color } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
 import profilepic from "../../assets/images/person.jpg";
 import CustomText from "../components/CustomText";
-import AvailabilityHeader from "../components/AvailabilityHeader";
+// import AvailabilityHeader from "../components/AvailabilityHeader";
 import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
 import { useNavigation } from "@react-navigation/native";
 import schedule from "../../assets/icons/Navigation/schedule.png";
@@ -277,7 +277,7 @@ export default function Dashboard() {
 
     const interval = setInterval(() => {
       refreshData();
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -291,7 +291,7 @@ export default function Dashboard() {
       }
     >
       <View style={[globalStyles.container]}>
-        <AvailabilityHeader />
+        {/* <AvailabilityHeader /> */}
         <View
           style={[
             globalStyles.flexrow,
@@ -460,7 +460,7 @@ export default function Dashboard() {
 
           <View style={[globalStyles.mt3]}>
             {bookings
-              .filter((item) => item.BookingStatus === "ServiceStarted")
+              .filter((item) => item.BookingStatus === "ServiceStarted"|| item.BookingStatus == "StartJourney"|| item.BookingStatus == "Reached")
               .map((item, index) => (
                 <View
                   key={index}

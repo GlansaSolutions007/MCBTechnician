@@ -3,8 +3,8 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -16,22 +16,44 @@ import {
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
-import { API_BASE_URL_IMAGE } from "@env";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
+import { useState } from "react";
+import axios from "axios";
 
 export default function Bookings() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { bookings } = route.params;
+  const { bookings, techId } = route.params;
+  const [todaysBookings, setTodaysBookings] = useState(bookings);
+  const [refreshing, setRefreshing] = useState(false);
+
   const customerInfo = (booking) => {
     navigation.navigate("customerInfo", { booking });
   };
-  const today = new Date().toISOString().slice(0, 10);
 
-  const todaysBookings = bookings;
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`
+      );
+      if (response.data) {
+        setTodaysBookings(response.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing bookings:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
       contentContainerStyle={
         todaysBookings.length === 0
           ? styles.noDataContainer
@@ -241,7 +263,6 @@ export default function Bookings() {
                   </View>
                 </View>
               </View>
-              {/* </View> */}
             </Pressable>
           ))
         )}
@@ -253,22 +274,6 @@ export default function Bookings() {
 const styles = StyleSheet.create({
   noDataContainer: {
     flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: color.black,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  viewButton: {
-    backgroundColor: color.white,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },

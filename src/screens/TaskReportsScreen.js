@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from "react-native";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -121,7 +127,9 @@ function TaskReportsScreen() {
           Category:
         </CustomText>
         <CustomText style={globalStyles.f10Regular}>
-          {item.CategoryNames}
+          {item.Packages?.map((pkg, index) => (
+            <CustomText key={index}>{pkg.Category.CategoryName}</CustomText>
+          ))}
         </CustomText>
       </View>
 
@@ -135,30 +143,36 @@ function TaskReportsScreen() {
           Package:
         </CustomText>
         <CustomText style={globalStyles.f10Regular}>
-          {item.PackageNames}
+          {item.Packages?.map((pkg, index) => (
+            <CustomText key={index}>{pkg.PackageName}</CustomText>
+          ))}
         </CustomText>
       </View>
     </TouchableOpacity>
   );
 
   const UpcomingRoute = () => (
-    <View style={{ flex: 1, padding: 16 }}>
-      {upcomingBookings.length > 0 ? (
-        upcomingBookings.map(renderBookingCard)
-      ) : (
-        <CustomText>No upcoming bookings</CustomText>
-      )}
-    </View>
+    <ScrollView>
+      <View style={[globalStyles.container, globalStyles.pv5]}>
+        {upcomingBookings.length > 0 ? (
+          upcomingBookings.map(renderBookingCard)
+        ) : (
+          <CustomText>No upcoming bookings</CustomText>
+        )}
+      </View>
+    </ScrollView>
   );
 
   const PastRoute = () => (
-    <View style={{ flex: 1, padding: 16 }}>
-      {pastBookings.length > 0 ? (
-        pastBookings.map(renderBookingCard)
-      ) : (
-        <CustomText>No past bookings</CustomText>
-      )}
-    </View>
+    <ScrollView>
+      <View style={[globalStyles.container, globalStyles.pv5]}>
+        {pastBookings.length > 0 ? (
+          pastBookings.map(renderBookingCard)
+        ) : (
+          <CustomText>No past bookings</CustomText>
+        )}
+      </View>
+    </ScrollView>
   );
 
   return (

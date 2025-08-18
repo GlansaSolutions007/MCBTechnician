@@ -10,7 +10,7 @@ import CustomText from "../components/CustomText";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import globalStyles from "../styles/globalStyles";
 import profile1 from "../../assets/images/person.jpg";
-import AvailabilityHeader from "../components/AvailabilityHeader";
+// import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 const reviews = [
   {
@@ -65,7 +65,7 @@ export default function Reviews() {
   };
   return (
     <View style={[globalStyles.container]}>
-      <AvailabilityHeader />
+      {/* <AvailabilityHeader /> */}
       <View
         style={[
           globalStyles.flexrow,

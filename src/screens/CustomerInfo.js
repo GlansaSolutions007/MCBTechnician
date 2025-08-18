@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import AvailabilityHeader from "../components/AvailabilityHeader";
+// import AvailabilityHeader from "../components/AvailabilityHeader";
 import profilepic from "../../assets/images/person.jpg";
 import carpic from "../../assets/images/Group 420.png";
 import { color } from "../styles/theme";
@@ -23,7 +23,7 @@ import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
-
+import { RefreshControl } from "react-native";
 export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -32,7 +32,29 @@ export default function CustomerInfo() {
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
 
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${booking.TechID}`
+      );
+
+      if (response.data && response.data.length > 0) {
+        const updatedBooking = response.data.find(
+          (b) => b.BookingID === booking.BookingID
+        );
+        if (updatedBooking) {
+          navigation.setParams({ booking: updatedBooking });
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing booking:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
@@ -219,12 +241,20 @@ export default function CustomerInfo() {
     await updateTechnicianTracking("Reached");
     navigation.navigate("ServiceStart", { booking: booking });
   };
+  const startTime = async () => {
+    navigation.navigate("ServiceStart", { booking: booking });
+  };
 
   return (
-    <ScrollView style={[globalStyles.bgcontainer]}>
+    <ScrollView
+      style={[globalStyles.bgcontainer]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
-          <AvailabilityHeader />
+          {/* <AvailabilityHeader /> */}
 
           <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
             Booking ID:{" "}
@@ -671,7 +701,7 @@ export default function CustomerInfo() {
             </View>
 
             <View>
-              {booking.BookingStatus === "Confirmed" && (
+              {/* {booking.BookingStatus === "Confirmed" && (
                 <TouchableOpacity
                   style={styles.startride}
                   onPress={handleStartRide}
@@ -686,11 +716,12 @@ export default function CustomerInfo() {
                     Start Ride
                   </CustomText>
                 </TouchableOpacity>
-              )}
-              {(booking.BookingStatus === "StartJourney" ||
-                booking.BookingStatus === "ServiceStarted") && (
+              )} */}
+
+              {/* {(booking.BookingStatus === "StartJourney" ||
+                booking.BookingStatus === "ServiceStarted") && ( */}
                 <View style={styles.startreach}>
-                  {booking.BookingStatus !== "Completed" && (
+                  {/* {booking.BookingStatus !== "Completed" && ( */}
                     <>
                       <TouchableOpacity
                         style={styles.ReachedButton}
@@ -709,7 +740,7 @@ export default function CustomerInfo() {
 
                       <TouchableOpacity
                         style={styles.startButton}
-                        onPress={openGoogleMaps}
+                       onPress={handleStartRide}
                       >
                         <Ionicons
                           name="rocket"
@@ -722,10 +753,23 @@ export default function CustomerInfo() {
                         </CustomText>
                       </TouchableOpacity>
                     </>
-                  )}
+                   {/* )} */}
                 </View>
-              )}
+              {/* )} */}
 
+              {/* {booking.BookingStatus === "ServiceStarted" && (
+                <TouchableOpacity style={styles.startride} onPress={startTime}>
+                  <Ionicons
+                    name="time"
+                    size={20}
+                    color="white"
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText style={styles.startButtonText}>
+                    Service Time
+                  </CustomText>
+                </TouchableOpacity>
+              )} */}
               {/* endddddddddd */}
             </View>
           </View>

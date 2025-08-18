@@ -16,7 +16,7 @@ import { color } from "../../styles/theme";
 import locationicon from "../../../assets/icons/Navigation/LocationsPin.png";
 import person from "../../../assets/icons/Navigation/techProfile.png";
 import { useNavigation } from "@react-navigation/native";
-import AvailabilityHeader from "../../components/AvailabilityHeader";
+// import AvailabilityHeader from "../../components/AvailabilityHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
@@ -162,7 +162,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={[globalStyles.bgcontainer]}>
       <View style={globalStyles.container}>
-        <AvailabilityHeader />
+        {/* <AvailabilityHeader /> */}
         <View style={[globalStyles.flexrow, globalStyles.mv5]}>
           <View
             style={[

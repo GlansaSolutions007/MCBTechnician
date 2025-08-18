@@ -7,7 +7,7 @@ import RegisterScreen from "../screens/Common/RegisterScreen";
 import CustomerTabNavigator from "./CustomerTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
 import CustomerStackNavigator from "./CustomerStackNavigator";
-import LiveTrackingMap from "../components/LiveTrackingMap";
+// import LiveTrackingMap from "../components/LiveTrackingMap";
 import { View, ActivityIndicator } from "react-native";
 
 const Stack = createNativeStackNavigator();
@@ -37,7 +37,7 @@ export default function RootNavigator() {
               name="CustomerTabs"
               component={CustomerStackNavigator}
             />
-            <Stack.Screen name="liveTrackingMap" component={LiveTrackingMap} />
+            {/* <Stack.Screen name="liveTrackingMap" component={LiveTrackingMap} /> */}
           </>
         )}
       </Stack.Navigator>
