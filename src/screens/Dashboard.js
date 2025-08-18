@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import schedule from "../../assets/icons/Navigation/schedule.png";
 import reports from "../../assets/icons/Navigation/reports.png";
 import axios from "axios";
+import defaultAvatar from "../../assets/images/buddy.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
@@ -27,7 +28,7 @@ export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
   const [totalAmount, setTotalAmount] = useState(0);
- const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     const fetchTotalAmount = async () => {
       try {
@@ -46,7 +47,6 @@ export default function Dashboard() {
 
         if (Array.isArray(res.data) && res.data.length > 0) {
           setTotalAmount(res.data[0].TotalAmountCollected || 0);
-
         }
       } catch (err) {
         console.error("Error fetching total amount:", err);
@@ -69,8 +69,11 @@ export default function Dashboard() {
   });
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
-    console.log("000000000000000000000000", item);
   };
+  const Schedules = () => {
+    navigation.navigate("Task & Reports");
+  };
+
   useEffect(() => {
     const fetchBookingCounts = async () => {
       try {
@@ -191,8 +194,7 @@ export default function Dashboard() {
   //     ) || []
   // );
 
-
- const fetchTotalAmount = async () => {
+  const fetchTotalAmount = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
       const token = await AsyncStorage.getItem("token");
@@ -248,15 +250,38 @@ export default function Dashboard() {
     }
   };
 
- const onRefresh = async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchTotalAmount(), fetchBookingCounts(), fetchBookings()]);
+    await Promise.all([
+      fetchTotalAmount(),
+      fetchBookingCounts(),
+      fetchBookings(),
+    ]);
     setRefreshing(false);
   };
 
   useEffect(() => {
-    onRefresh(); 
+    onRefresh();
   }, []);
+
+  const refreshData = async () => {
+    await Promise.all([
+      fetchTotalAmount(),
+      fetchBookingCounts(),
+      fetchBookings(),
+    ]);
+  };
+
+  useEffect(() => {
+    refreshData();
+
+    const interval = setInterval(() => {
+      refreshData();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
@@ -275,7 +300,8 @@ export default function Dashboard() {
           ]}
         >
           <View style={{ width: "48%" }}>
-            <View
+            <Pressable
+              onPress={Schedules}
               style={[
                 globalStyles.bgprimary,
                 globalStyles.borderRadiuslarge,
@@ -309,7 +335,7 @@ export default function Dashboard() {
                   {bookingCounts.ScheduledBookingsCount}
                 </CustomText>
               </View>
-            </View>
+            </Pressable>
 
             <View
               style={[
@@ -322,7 +348,6 @@ export default function Dashboard() {
                 globalStyles.pv3,
               ]}
             >
-            
               <CustomText
                 style={[globalStyles.f24Bold, globalStyles.textWhite]}
               >
@@ -331,7 +356,8 @@ export default function Dashboard() {
             </View>
           </View>
 
-          <View
+          <Pressable
+            onPress={Booking}
             style={[
               globalStyles.bgprimary,
               globalStyles.borderRadiuslarge,
@@ -368,7 +394,7 @@ export default function Dashboard() {
                 </CustomText>
               </View>
             </View>
-          </View>
+          </Pressable>
         </View>
 
         <Pressable
@@ -447,9 +473,11 @@ export default function Dashboard() {
                 >
                   <View style={[globalStyles.flexrow]}>
                     <Image
-                      source={{
-                        uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                      }}
+                      source={
+                        item.ProfileImage
+                          ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                          : defaultAvatar
+                      }
                       style={styles.avatar}
                     />
 

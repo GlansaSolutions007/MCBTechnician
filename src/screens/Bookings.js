@@ -17,6 +17,7 @@ import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
 import { API_BASE_URL_IMAGE } from "@env";
+import defaultAvatar from "../../assets/images/buddy.png";
 
 export default function Bookings() {
   const navigation = useNavigation();
@@ -58,9 +59,11 @@ export default function Bookings() {
             >
               <View style={globalStyles.flexrow}>
                 <Image
-                  source={{
-                    uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                  }}
+                  source={
+                    item.ProfileImage
+                      ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                      : defaultAvatar
+                  }
                   style={styles.avatar}
                 />
 
@@ -232,7 +235,7 @@ export default function Bookings() {
                         ]}
                         numberOfLines={3}
                       >
-                        {item.PackageName}
+                        {item.BrandName}
                       </CustomText>
                     </View>
                   </View>

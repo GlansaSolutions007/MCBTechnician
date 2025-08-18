@@ -22,6 +22,7 @@ import axios from "axios";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import defaultAvatar from "../../assets/images/buddy.png";
 
 export default function CustomerInfo() {
   const navigation = useNavigation();
@@ -31,7 +32,7 @@ export default function CustomerInfo() {
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
- 
+
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
@@ -68,7 +69,7 @@ export default function CustomerInfo() {
   //   navigation.navigate("ServiceStart", { booking });
   // };
 
-  const latitude = booking.latitude;
+  const latitude = booking.Latitude;
   const longitude = booking.Longitude;
   const bookingId = booking.BookingID;
   const destination = {
@@ -97,7 +98,6 @@ export default function CustomerInfo() {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           };
-
           setLocation(coords);
 
           if (mapRef.current) {
@@ -191,11 +191,11 @@ export default function CustomerInfo() {
     try {
       const payload = {
         bookingID: Number(bookingId),
-        actionType,
+        actionType: actionType,
       };
-      console.log("Sending payload:", payload);
+      console.log("Sending payload--------------------:", payload);
       await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         payload
       );
       console.log(`${actionType} action sent successfully`);
@@ -243,9 +243,14 @@ export default function CustomerInfo() {
           >
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <Image
-                source={{
-                  uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
-                }}
+                // source={{
+                //   uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
+                // }}
+                source={
+                  booking.ProfileImage
+                    ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                    : defaultAvatar
+                }
                 style={globalStyles.avatarside}
               />
               <View style={[globalStyles.ml50, globalStyles.flex1]}>
@@ -296,33 +301,40 @@ export default function CustomerInfo() {
           <View style={[styles.blackcard]}>
             <View
               style={[
-                styles.width70,
-                globalStyles.alineItemsEnd,
-                globalStyles.pr30,
+                styles.width60,
+                globalStyles.borderRadiuslarge,
+                globalStyles.alineItemscenter,
+                globalStyles.bgwhite,
               ]}
             >
-              <View style={[styles.width60]}>
-                <View
-                  style={[
-                    globalStyles.bgprimary,
-                    globalStyles.pb5,
-                    globalStyles.pt2,
-                    globalStyles.borderRadiuslarge,
-                    globalStyles.alineItemscenter,
-                  ]}
+              <CustomText
+                style={[
+                  globalStyles.f10Bold,
+                  globalStyles.mt1,
+                  globalStyles.primary,
+                ]}
+              >
+                Modal Name:{" "}
+                <CustomText
+                  style={[globalStyles.f12Bold, globalStyles.primary]}
                 >
-                  <CustomText
-                    style={[globalStyles.f10Light, globalStyles.textWhite]}
-                  >
-                    Modal Name
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                  >
-                    {booking.ModelName}
-                  </CustomText>
-                  <View style={styles.carimage}>
-                    <Image source={carpic} />
+                  {booking.ModelName}
+                </CustomText>
+              </CustomText>
+              <View style={[styles.width60]}>
+                <View>
+                  <View>
+                    <Image
+                      // source={carpic}
+                      source={
+                        booking.VehicleImage
+                          ? {
+                              uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
+                            }
+                          : defaultAvatar
+                      }
+                      style={styles.avatar}
+                    />
                   </View>
                 </View>
               </View>
@@ -659,7 +671,6 @@ export default function CustomerInfo() {
             </View>
 
             <View>
-              {/* starttttttttt */}
               {booking.BookingStatus === "Confirmed" && (
                 <TouchableOpacity
                   style={styles.startride}
@@ -676,7 +687,8 @@ export default function CustomerInfo() {
                   </CustomText>
                 </TouchableOpacity>
               )}
-              {booking.BookingStatus === "ServiceStarted" && (
+              {(booking.BookingStatus === "StartJourney" ||
+                booking.BookingStatus === "ServiceStarted") && (
                 <View style={styles.startreach}>
                   {booking.BookingStatus !== "Completed" && (
                     <>
@@ -783,14 +795,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  carimage: {
-    position: "absolute",
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    top: 45,
-    left: -80,
-  },
+
   pricecard: {
     backgroundColor: color.white,
     paddingVertical: 3,
@@ -807,6 +812,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 10,
     marginTop: 8,
+  },
+  avatar: {
+    width: 135,
+    height: 100,
   },
   width60: {
     width: "60%",
