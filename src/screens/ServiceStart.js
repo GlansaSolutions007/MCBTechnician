@@ -18,6 +18,7 @@ import helpcall from "../../assets/icons/Customer Care.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
@@ -31,10 +32,82 @@ export default function ServiceStart() {
   const [timerCompleted, setTimerCompleted] = useState(false);
   const [MAX_TIME, setMaxTime] = useState(0);
   const bookingId = booking.BookingID;
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadDone, setUploadDone] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType,
+      allowsMultipleSelection: true,
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      const selected = result.assets.map((asset) => asset.uri);
+      setImages((prev) => [...prev, ...selected].slice(0, 6));
+    }
+  };
+
+  const removeImage = (index) => {
+    const filtered = images.filter((_, i) => i !== index);
+    setImages(filtered);
+  };
+
+  const handleUpload = async () => {
+    try {
+      if (!images.length) return;
+      setIsUploading(true);
+
+      for (let i = 0; i < images.length; i++) {
+        const formData = new FormData();
+        formData.append("BookingID", booking.BookingID);
+        formData.append("UploadedBy", 1);
+        formData.append("TechID", booking.TechID);
+        formData.append("ImageUploadType", "before");
+        formData.append("ImagesType", "tech");
+
+        formData.append("ImageURL1", {
+          uri: images[i],
+          type: "image/jpeg",
+          name: `upload_${i + 1}.jpg`,
+        });
+
+        const response = await fetch(
+          `${API_BASE_URL}/ServiceImages/InsertServiceImages`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "multipart/form-data",
+            },
+            body: formData,
+          }
+        );
+
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+
+        console.log(`Image ${i + 1} uploaded:`, data);
+      }
+      setIsUploading(false);
+      setUploadDone(true);
+      setImages([]);
+      Alert.alert("Success", "Images uploaded successfully!");
+    } catch (error) {
+      setIsUploading(false);
+      Alert.alert("Error", "Failed to upload images. Please try again.");
+      console.error("Upload error:", error);
+    }
+  };
 
   const calculateElapsedFromAPI = (serviceStartedAt) => {
     const start = new Date(serviceStartedAt);
-     console.log("...................<<<<<<<<", start);
+    console.log("...................<<<<<<<<", start);
     const now = new Date();
     return Math.floor((now - start) / 1000);
   };
@@ -87,15 +160,13 @@ export default function ServiceStart() {
           setMaxTime(parsedState.maxTime);
           setTimerStarted(parsedState.timerStarted);
           setTimerCompleted(parsedState.timerCompleted);
-        }
-        // ⬇ Fallback: No saved state, but API says service already started
-        else if (booking.ServiceStartedAt) {
+        } else if (booking.ServiceStartedAt) {
           const elapsedFromAPI = calculateElapsedFromAPI(
             booking.ServiceStartedAt
           );
           setElapsedTime(elapsedFromAPI);
           setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
-          setTimerStarted(true); // show that the timer is running
+          setTimerStarted(true);
         }
       } catch (error) {
         console.error("Failed to load timer state", error);
@@ -141,34 +212,15 @@ export default function ServiceStart() {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType,
-      allowsMultipleSelection: true,
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      const selected = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 6));
-    }
-  };
-
-  const removeImage = (index) => {
-    const filtered = images.filter((_, i) => i !== index);
-    setImages(filtered);
-  };
-
   const updateTechnicianTracking = async (actionType) => {
     try {
       await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
           bookingID: bookingId,
           actionType: actionType,
         }
       );
-      console.log("=================", bookingId);
 
       console.log(`${actionType} action sent successfully`);
     } catch (error) {
@@ -182,78 +234,110 @@ export default function ServiceStart() {
       <View style={globalStyles.container}>
         {/* <AvailabilityHeader /> */}
 
-        <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
+        <CustomText style={[globalStyles.f20Bold, globalStyles.primary,globalStyles.mt3]}>
           Booking ID:{" "}
           <CustomText style={globalStyles.black}>
             {booking.BookingTrackID}
           </CustomText>
         </CustomText>
 
-        <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>
-          Want to upload before service images?
-        </CustomText>
-        <CustomText
-          style={[
-            globalStyles.f10Light,
-            globalStyles.neutral500,
-            globalStyles.mt1,
-          ]}
-        >
-          My dear buddy, upload maximum 4-5 images
-        </CustomText>
-
-        <TouchableOpacity
-          style={[globalStyles.inputBox, globalStyles.mt3]}
-          onPress={pickImage}
-        >
-          <CustomText style={[globalStyles.f16Light, globalStyles.neutral500]}>
-            Choose Files
-          </CustomText>
-        </TouchableOpacity>
-
-        {images.length > 0 && (
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.justifysb,
-              globalStyles.mt3,
-              { flexWrap: "wrap" },
-            ]}
-          >
-            {images.map((uri, index) => (
-              <View
-                key={index}
-                style={{
-                  width: "32%",
-                  marginBottom: 10,
-                  position: "relative",
-                }}
-              >
-                <Image
-                  source={{ uri }}
-                  style={{ width: 100, height: 100, borderRadius: 10 }}
-                />
-                <TouchableOpacity
-                  onPress={() => removeImage(index)}
-                  style={{
-                    position: "absolute",
-                    top: 5,
-                    right: 18,
-                    backgroundColor: "#000",
-                    borderRadius: 10,
-                    padding: 2,
-                    zIndex: 1,
-                  }}
-                >
-                  <Ionicons name="close" color="#fff" size={15} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
         {!timerStarted && booking.ServiceStartedAt === null && (
           <View>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>
+              Want to upload before service images?
+            </CustomText>
+            <CustomText
+              style={[
+                globalStyles.f10Light,
+                globalStyles.neutral500,
+                globalStyles.mt1,
+              ]}
+            >
+              My dear buddy, upload maximum 4-5 images
+            </CustomText>
+            <View
+              style={[
+                globalStyles.mt3,
+                globalStyles.bgwhite,
+                globalStyles.radius,
+                globalStyles.pt0,
+                globalStyles.pb3,
+                globalStyles.ph3,
+                globalStyles.card,
+              ]}
+            >
+              <TouchableOpacity
+                style={[globalStyles.inputBox, globalStyles.mt3]}
+                onPress={pickImage}
+              >
+                <CustomText
+                  style={[globalStyles.f16Light, globalStyles.neutral500]}
+                >
+                  Choose Files
+                </CustomText>
+              </TouchableOpacity>
+
+              {images.length > 0 && (
+                <View>
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.justifycenter,
+                      globalStyles.mt3,
+                      { flexWrap: "wrap" },
+                    ]}
+                  >
+                    {images.map((uri, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          width: "32%",
+                          marginBottom: 10,
+                          position: "relative",
+                        }}
+                      >
+                        <Image
+                          source={{ uri }}
+                          style={{ width: 100, height: 100, borderRadius: 10 }}
+                        />
+                        <TouchableOpacity
+                          onPress={() => removeImage(index)}
+                          style={{
+                            position: "absolute",
+                            top: 5,
+                            right: 18,
+                            backgroundColor: "#000",
+                            borderRadius: 10,
+                            padding: 2,
+                            zIndex: 1,
+                          }}
+                        >
+                          <Ionicons name="close" color="#fff" size={15} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={handleUpload}
+                    style={styles.imageupload}
+                  >
+                    <Ionicons
+                      name="cloud-upload-outline"
+                      size={20}
+                      color="#fff"
+                      style={{ marginRight: 8 }}
+                    />
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                    >
+                      Upload Images
+                    </CustomText>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
             <View
               style={[
                 globalStyles.flexrow,
@@ -283,7 +367,7 @@ export default function ServiceStart() {
                 style={styles.pricecard}
                 onPress={async () => {
                   await updateTechnicianTracking("ServiceStarted");
-
+                  handleUpload();
                   const totalSeconds =
                     booking.TotalEstimatedDurationMinutes * 60;
                   setMaxTime(totalSeconds);
@@ -630,5 +714,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
+  },
+  imageupload: {
+    backgroundColor: color.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    flexDirection: "row",
   },
 });

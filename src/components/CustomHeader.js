@@ -32,7 +32,7 @@ export default function CustomHeader() {
       <View style={styles.topRow}>
         <View>
           <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
-            Hello User
+            Hello Buddy
           </CustomText>
           {/* <Pressable>
             <CustomText style={[globalStyles.f10Regular, globalStyles.mt1]}>

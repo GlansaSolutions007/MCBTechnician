@@ -68,7 +68,7 @@ export default function Dashboard() {
     CompletedBookingsCount: 0,
   });
   const ServiceStart = async (item) => {
-    navigation.navigate("ServiceStart", { booking: item });
+    navigation.navigate("customerInfo", { booking: item });
   };
   const Schedules = () => {
     navigation.navigate("Task & Reports");

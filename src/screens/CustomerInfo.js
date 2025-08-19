@@ -33,6 +33,8 @@ export default function CustomerInfo() {
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
+
   const onRefresh = async () => {
     setRefreshing(true);
 
@@ -721,39 +723,40 @@ export default function CustomerInfo() {
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
               <View style={styles.startreach}>
-                {booking.BookingStatus !== "Completed" && (
-                  <>
-                    <TouchableOpacity
-                      style={styles.ReachedButton}
-                      onPress={Reached}
-                    >
-                      <Ionicons
-                        name="flag"
-                        size={20}
-                        color="white"
-                        style={{ marginRight: 8 }}
-                      />
-                      <CustomText style={styles.startButtonText}>
-                        Reached
-                      </CustomText>
-                    </TouchableOpacity>
+                {booking.BookingStatus !== "Completed" &&
+                  booking.BookingDate === today && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.ReachedButton}
+                        onPress={Reached}
+                      >
+                        <Ionicons
+                          name="flag"
+                          size={20}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText style={styles.startButtonText}>
+                          Reached
+                        </CustomText>
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={styles.startButton}
-                      onPress={handleStartRide}
-                    >
-                      <Ionicons
-                        name="rocket"
-                        size={20}
-                        color="white"
-                        style={{ marginRight: 8 }}
-                      />
-                      <CustomText style={styles.startButtonText}>
-                        Start Ride
-                      </CustomText>
-                    </TouchableOpacity>
-                  </>
-                )}
+                      <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={handleStartRide}
+                      >
+                        <Ionicons
+                          name="rocket"
+                          size={20}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText style={styles.startButtonText}>
+                          Start Ride
+                        </CustomText>
+                      </TouchableOpacity>
+                    </>
+                  )}
               </View>
               {/* )} */}
 

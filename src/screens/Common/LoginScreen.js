@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
@@ -36,7 +37,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://api.mycarsbuddy.com/api/Auth/Technician-login",
+        `${API_BASE_URL}Auth/Technician-login`,
         {
           PhoneNumber: phoneNumber,
           Password: password,
