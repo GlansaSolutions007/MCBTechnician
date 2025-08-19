@@ -13,13 +13,8 @@ import buddy from "../../assets/images/buddy.png";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
-import { API_BASE_URL_IMAGE } from "@env";
 import axios from "axios";
-const initialServices = [
-  { id: 1, label: "Leather Fabric Seat Polishing", completed: true },
-  { id: 2, label: "AC Vent Sanitization", completed: true },
-  { id: 3, label: "Mat Washing & Vacuuming", completed: true },
-];
+import { Alert } from "react-native";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -36,18 +31,25 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  const [services, setServices] = useState(initialServices);
+  // const [services, setServices] = useState(booking?.Packages || []);
+  const [services, setServices] = useState(
+    booking?.Packages.flatMap((pkg) =>
+      pkg.Category.SubCategories?.flatMap((sub) =>
+        sub.Includes?.map((inc) => ({ ...inc, completed: true }))
+      )
+    ) || []
+  );
+
   const [reason, setReason] = useState("");
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
   const [selectedReason, setSelectedReason] = useState(null);
   const anyServicePending = services.some((service) => !service.completed);
   const MAX_TIME = 5;
   const bookingId = booking.BookingID;
-  console.log(booking);
-const CollectPayment=async()=>{
-  await updateTechnicianTracking("Completed");
-  navigation.navigate("CollectPayment", { booking });
-}
+  const CollectPayment = async () => {
+    await updateTechnicianTracking("Completed");
+    navigation.navigate("CollectPayment", { booking });
+  };
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -68,7 +70,9 @@ const CollectPayment=async()=>{
 
   const toggleService = (id) => {
     setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+      prev.map((s) =>
+        s.IncludeID === id ? { ...s, completed: !s.completed } : s
+      )
     );
   };
 
@@ -89,13 +93,12 @@ const CollectPayment=async()=>{
   const updateTechnicianTracking = async (actionType) => {
     try {
       await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
           bookingID: bookingId,
           actionType: actionType,
         }
       );
-      console.log("=================", bookingId);
 
       console.log(`${actionType} action sent successfully`);
     } catch (error) {
@@ -107,9 +110,13 @@ const CollectPayment=async()=>{
   return (
     <ScrollView style={globalStyles.bgcontainer}>
       <View style={[globalStyles.container]}>
-        <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+        <CustomText
+          style={[globalStyles.f24Bold, globalStyles.primary, globalStyles.mt3]}
+        >
           Booking ID:{" "}
-          <CustomText style={[globalStyles.black]}>TG234518</CustomText>
+          <CustomText style={[globalStyles.black]}>
+            {booking.BookingTrackID}
+          </CustomText>
         </CustomText>
 
         <View style={{ marginTop: 12 }}>
@@ -119,22 +126,24 @@ const CollectPayment=async()=>{
 
           {services.map((service) => (
             <View
-              key={service.id}
+              key={service.IncludeID}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 marginBottom: 8,
               }}
             >
-              <TouchableOpacity onPress={() => toggleService(service.id)}>
+              <TouchableOpacity
+                onPress={() => toggleService(service.IncludeID)}
+              >
                 <Ionicons
                   name={service.completed ? "checkbox" : "square-outline"}
-                  size={24}
+                  size={30}
                   color={service.completed ? "#0D9276" : "#999"}
                 />
               </TouchableOpacity>
-              <CustomText style={[globalStyles.ml2]}>
-                {service.label}
+              <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
+                {service.IncludeName}
               </CustomText>
             </View>
           ))}
@@ -394,7 +403,6 @@ const CollectPayment=async()=>{
 
         <TouchableOpacity
           onPress={CollectPayment}
-          
           style={globalStyles.blackButton}
         >
           <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
