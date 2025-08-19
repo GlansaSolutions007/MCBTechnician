@@ -44,6 +44,10 @@ export default function ServiceEnd() {
   const MAX_TIME = 5;
   const bookingId = booking.BookingID;
   console.log(booking);
+const CollectPayment=async()=>{
+  await updateTechnicianTracking("Completed");
+  navigation.navigate("CollectPayment", { booking });
+}
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -389,11 +393,8 @@ export default function ServiceEnd() {
         )}
 
         <TouchableOpacity
-          // onPress={CollectPayment}
-          onPress={async () => {
-            await updateTechnicianTracking("Completed");
-            navigation.navigate("CollectPayment");
-          }}
+          onPress={CollectPayment}
+          
           style={globalStyles.blackButton}
         >
           <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>

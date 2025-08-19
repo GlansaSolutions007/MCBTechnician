@@ -4,30 +4,31 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import QRCode from "react-native-qrcode-svg";
-import Dashboard from "./Dashboard";
-import { useNavigation } from "@react-navigation/native";
+import QRImage from "../../assets/images/QRImage.png"; 
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function CollectPayment() {
-    const navigation = useNavigation();
-   const Dashboard = () => {
-      navigation.navigate("CustomerTabNavigator", { screen: "Dashboard" });
-    };
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { booking } = route.params;
+  const Dashboard = () => {
+    navigation.navigate("CustomerTabNavigator", { screen: "Dashboard" });
+  };
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const amount = 600;
 
   useEffect(() => {
     const mockPaymentLink = async () => {
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1500)); 
-        setPaymentUrl("https://paytm.me/your-test-link"); 
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setPaymentUrl("https://paytm.me/your-test-link");
       } catch (error) {
         setErrorMessage("Failed to create payment link.");
       } finally {
@@ -53,7 +54,7 @@ export default function CollectPayment() {
             globalStyles.black,
           ]}
         >
-          {amount}₹
+          ₹{booking?.TotalPrice}
         </CustomText>
 
         <View
@@ -65,18 +66,13 @@ export default function CollectPayment() {
             globalStyles.mb6,
           ]}
         >
-          {loading ? (
-            <ActivityIndicator size="large" color={color.black} />
-          ) : paymentUrl ? (
-            <QRCode value={paymentUrl} size={250} />
-          ) : (
-            <CustomText style={{ color: "red", textAlign: "center" }}>
-              {errorMessage || "Failed to load QR"}
-            </CustomText>
-          )}
+          <Image source={QRImage} style={{ width: 250, height: 250 }} />
         </View>
 
-        <TouchableOpacity onPress={Dashboard} style={[globalStyles.blackButton, globalStyles.w100]}>
+        <TouchableOpacity
+          onPress={Dashboard}
+          style={[globalStyles.blackButton, globalStyles.w100]}
+        >
           <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
             Collect Cash
           </CustomText>
