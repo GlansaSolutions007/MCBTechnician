@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomText from "./CustomText";
 import globalStyles from "../styles/globalStyles";
 import { useNavigation } from "@react-navigation/native";
+import { color } from "../styles/theme";
 
 export default function CustomHeader() {
   const navigation = useNavigation();
@@ -40,8 +41,8 @@ export default function CustomHeader() {
           </Pressable> */}
         </View>
 
-        <Pressable onPress={Notifications}>
-          <Ionicons name="notifications-outline" size={24} />
+        <Pressable style={[globalStyles.p1]} onPress={Notifications}>
+          <Ionicons name="notifications-outline" size={24} color={color.black} />
         </Pressable>
       </View>
     </View>

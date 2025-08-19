@@ -22,8 +22,8 @@ import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+// import * as ImagePicker from "expo-image-picker";
+// import * as FileSystem from "expo-file-system";
 
 export default function ProfileScreen() {
   const [profileData, setProfileData] = useState(null);
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   };
   const handleLogout = () => {
     setShowLogoutModal(false);
-    logout(); // real logout
+    logout();
   };
 
   // const [uploading, setUploading] = useState(false);
@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   //   }
 
   //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  // mediaTypes: ImagePicker.MediaType,
   //     allowsEditing: true,
   //     aspect: [4, 3],
   //     quality: 0.7,
@@ -171,19 +171,7 @@ export default function ProfileScreen() {
               globalStyles.mr4,
             ]}
           >
-            {/* <Image
-              source={
-                profileData?.ProfileImage
-                  ? {
-                      uri: `https://api.mycarsbuddy.com/Images/${encodeURI(
-                        profileData.ProfileImage
-                      )}`,
-                    }
-                  : require("../../../assets/images/persontwo.jpg")
-              }
-              style={styles.avatar}
-            /> */}
-            <View
+            <Pressable
               // onPress={pickImage}
               style={{ position: "relative" }}
             >
@@ -204,7 +192,7 @@ export default function ProfileScreen() {
                   <ActivityIndicator size="small" color="#fff" />
                 </View>
               )} */}
-            </View>
+            </Pressable>
           </View>
           <View>
             <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
@@ -371,6 +359,16 @@ export default function ProfileScreen() {
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
           >
+            <Pressable
+              style={styles.closeIcon}
+              onPress={() => setShowLogoutModal(false)}
+            >
+              <Ionicons
+                name="close-circle"
+                size={22}
+                color={color.neutral[500]}
+              />
+            </Pressable>
             <CustomText style={globalStyles.f14Bold}>
               Are you sure you want to log out?
             </CustomText>
@@ -385,13 +383,21 @@ export default function ProfileScreen() {
                 style={[styles.button, styles.cancelButton]}
                 onPress={() => setShowLogoutModal(false)}
               >
-                <CustomText>No</CustomText>
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                >
+                  No
+                </CustomText>
               </Pressable>
               <Pressable
                 style={[styles.button, styles.logoutButton]}
                 onPress={handleLogout}
               >
-                <CustomText style={{ color: "white" }}>Yes</CustomText>
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                >
+                  Yes
+                </CustomText>
               </Pressable>
             </View>
           </Pressable>
@@ -402,6 +408,14 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  closeIcon: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    padding: 5,
+    zIndex: 1,
+  },
+
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -429,7 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelButton: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: color.primary,
     marginRight: 10,
   },
   logoutButton: {

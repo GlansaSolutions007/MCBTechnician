@@ -108,6 +108,13 @@ export default function LeaveRequest() {
       showErrorModal("Something went wrong");
     }
   };
+  const handleCancel = () => {
+    setFromDate(null);
+    setToDate(null);
+    setLeaveReason("");
+    setSubject("");
+    setErrors({});
+  };
 
   return (
     <ScrollView
@@ -262,12 +269,12 @@ export default function LeaveRequest() {
         </View>
       </View>
 
-      <View style={styles.alertBox}>
+      {/* <View style={styles.alertBox}>
         <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
           ❗ You have bookings on the above selected dates.
           {"\n"}Please check with dealer
         </CustomText>
-      </View>
+      </View> */}
 
       {/* <View style={styles.alertBox}>
         <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
@@ -373,7 +380,7 @@ export default function LeaveRequest() {
             </CustomText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btntwo}>
+          <TouchableOpacity style={styles.btntwo} onPress={handleCancel}>
             <CustomText style={styles.cancelButtonText}>Cancel</CustomText>
           </TouchableOpacity>
         </View>

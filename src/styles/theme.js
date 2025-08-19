@@ -10,6 +10,7 @@ export const color = {
   fullredLight: "#FF6B6B",
   redverulight: "#FDEAEA",
   error: "#ff1a1a",
+  pending: "#FFD580",
 
   // Backgrounds
   background: "#F3F3F3",

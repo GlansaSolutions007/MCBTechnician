@@ -34,9 +34,19 @@ export default function ServiceStart() {
 
   const calculateElapsedFromAPI = (serviceStartedAt) => {
     const start = new Date(serviceStartedAt);
+     console.log("...................<<<<<<<<", start);
     const now = new Date();
     return Math.floor((now - start) / 1000);
   };
+
+  // const calculateElapsedFromAPI = (serviceStartedAt) => {
+  //   const startDate = new Date(serviceStartedAt);
+  //   const start = startDate.toLocaleTimeString("en-GB", { hour12: false });
+  //   console.log("...................>>>>>>>", start);
+  //   const now = new Date();
+  //   const diffInSeconds = Math.floor((now - startDate) / 1000);
+  //   return diffInSeconds;
+  // };
 
   useEffect(() => {
     let interval = null;
