@@ -10,8 +10,7 @@ import {
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import { Ionicons } from "@expo/vector-icons";
-import profilepic from "../../assets/images/person.jpg";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
@@ -25,7 +24,7 @@ import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import { RefreshControl } from "react-native";
 export default function Dashboard() {
-  const [isOnline, setIsOnline] = useState(true);
+  // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
   const [totalAmount, setTotalAmount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,8 +66,14 @@ export default function Dashboard() {
     TodayCustomerCount: 0,
     CompletedBookingsCount: 0,
   });
-  const ServiceStart = async (item) => {
+  const CollectPayment = async (item) => {
+    navigation.navigate("CollectPayment", { booking: item });
+  };
+  const CustomerInfo = async (item) => {
     navigation.navigate("customerInfo", { booking: item });
+  };
+  const ServiceStart = async (item) => {
+    navigation.navigate("ServiceStart", { booking: item });
   };
   const Schedules = () => {
     navigation.navigate("Task & Reports");
@@ -460,7 +465,13 @@ export default function Dashboard() {
 
           <View style={[globalStyles.mt3]}>
             {bookings
-              .filter((item) => item.BookingStatus === "ServiceStarted"|| item.BookingStatus == "StartJourney"|| item.BookingStatus == "Reached")
+              .filter(
+                (item) =>
+                  item.BookingStatus === "ServiceStarted" ||
+                  item.BookingStatus == "StartJourney" ||
+                  item.BookingStatus == "Reached" ||
+                  item.PaymentStatus === "Pending"
+              )
               .map((item, index) => (
                 <View
                   key={index}
@@ -518,12 +529,29 @@ export default function Dashboard() {
                       {item.TimeSlot}
                     </CustomText>
                     <TouchableOpacity
-                      // onPress={ServiceStart,item}
+                      key={index}
                       onPress={() => ServiceStart(item)}
                     >
                       <View
                         style={{
-                          backgroundColor: color.black,
+                          backgroundColor: color.pending,
+                          borderRadius: 50,
+                          padding: 8,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={24}
+                          color={color.white}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => CustomerInfo(item)}>
+                      <View
+                        style={{
+                          backgroundColor: color.primary,
                           borderRadius: 50,
                           padding: 8,
                           alignItems: "center",
@@ -532,6 +560,25 @@ export default function Dashboard() {
                       >
                         <Ionicons
                           name="navigate-outline"
+                          size={24}
+                          color={color.white}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => CollectPayment(item)}>
+                      <View
+                        style={{
+                          backgroundColor: color.primary,
+                          borderRadius: 50,
+                          padding: 8,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {/* <Ionicons name="logo-bitcoin" size={24} color={color.white} /> */}
+                        <MaterialCommunityIcons
+                          name="currency-inr"
                           size={24}
                           color={color.white}
                         />

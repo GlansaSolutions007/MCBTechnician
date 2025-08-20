@@ -217,7 +217,6 @@ export default function CustomerInfo() {
         bookingID: Number(bookingId),
         actionType: actionType,
       };
-      console.log("Sending payload--------------------:", payload);
       await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         payload

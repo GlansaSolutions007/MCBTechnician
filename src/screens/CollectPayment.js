@@ -3,41 +3,77 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Image,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import { color } from "../styles/theme";
-import QRImage from "../../assets/images/QRImage.png"; 
+import axios from "axios";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
+import base64 from "react-native-base64";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
+  const [qrImage, setQrImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const Dashboard = () => {
     navigation.navigate("CustomerTabNavigator", { screen: "Dashboard" });
   };
-  const [paymentUrl, setPaymentUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const mockPaymentLink = async () => {
+    const generateQR = async () => {
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setPaymentUrl("https://paytm.me/your-test-link");
+
+        const auth =
+          "Basic " + base64.encode(`${RAZORPAY_KEY}:${RAZORPAY_SECRET}`);
+        console.log("Auth header:", auth);
+
+        const amountInPaise = Math.round(Number(booking?.TotalPrice) * 100);
+
+        const qrResponse = await axios.post(
+          "https://api.razorpay.com/v1/qr_codes",
+          {
+            type: "upi_qr",
+            name: `Booking ${booking?.BookingTrackID}`,
+            usage: "single_use",
+            fixed_amount: true,
+            payment_amount: amountInPaise,
+            description: `Payment for Booking ${booking?.BookingTrackID}`,
+          },
+
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: auth,
+            },
+          }
+        );
+
+        if (qrResponse.data && qrResponse.data.image_url) {
+          setQrImage(qrResponse.data.image_url);
+        } else {
+          Alert.alert("Error", "Failed to generate QR code");
+        }
       } catch (error) {
-        setErrorMessage("Failed to create payment link.");
+        console.error("QR Generation Error:", error.response?.data || error);
+        Alert.alert(
+          "Error",
+          error.response?.data?.error?.description ||
+            "Something went wrong while generating QR code"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    mockPaymentLink();
-  }, []);
+    generateQR();
+  }, [booking]);
 
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
@@ -66,7 +102,18 @@ export default function CollectPayment() {
             globalStyles.mb6,
           ]}
         >
-          <Image source={QRImage} style={{ width: 250, height: 250 }} />
+          {loading ? (
+            <ActivityIndicator size="large" color="#fff" />
+          ) : qrImage ? (
+            <Image
+              source={{ uri: qrImage }}
+              style={{ width: 250, height: 250 }}
+            />
+          ) : (
+            <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
+              Failed to load QR code
+            </CustomText>
+          )}
         </View>
 
         <TouchableOpacity
