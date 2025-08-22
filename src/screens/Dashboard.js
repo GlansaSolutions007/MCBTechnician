@@ -78,6 +78,7 @@ export default function Dashboard() {
 
   const [bookings, setBookings] = useState([]);
   const [bookingCounts, setBookingCounts] = useState({
+
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,
     TodayCustomerCount: 0,
@@ -113,6 +114,7 @@ export default function Dashboard() {
                 },
               }
             );
+            
             if (Array.isArray(res.data) && res.data.length > 0) {
               setBookingCounts(res.data[0]);
             }
@@ -143,6 +145,8 @@ export default function Dashboard() {
               },
             }
           );
+          console.log("PaymentMode:", res.data?.[0]?.PaymentMode);
+
           setBookings(Array.isArray(res.data) ? res.data : []);
         } else {
           console.warn("No technicianId found");
@@ -486,7 +490,8 @@ export default function Dashboard() {
                   item.BookingStatus === "ServiceStarted" ||
                   item.BookingStatus === "StartJourney" ||
                   item.BookingStatus === "Reached" ||
-                  item.PaymentStatus === "Pending"
+                  item.Payments?.[0]?.PaymentStatus === "Pending"
+                  
               )
               .map((item, index) => (
                 <View
@@ -513,8 +518,6 @@ export default function Dashboard() {
                         style={[globalStyles.f24Bold, globalStyles.textWhite]}
                       >
                         {item.CustomerName}
-                        {" :"}
-                        {item.BookingStatus}
                       </CustomText>
                       <CustomText
                         style={[
@@ -546,28 +549,29 @@ export default function Dashboard() {
                     >
                       {item.TimeSlot}
                     </CustomText>
-                    {item.BookingStatus === "Reached" || item.BookingStatus === "ServiceStarted" && (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => ServiceStart(item)}
-                      >
-                        <View
-                          style={{
-                            backgroundColor: color.yellow,
-                            borderRadius: 50,
-                            padding: 8,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
+                    {item.BookingStatus === "Reached" ||
+                      (item.BookingStatus === "ServiceStarted" && (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => ServiceStart(item)}
                         >
-                          <Ionicons
-                            name="time-outline"
-                            size={24}
-                            color={color.white}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                    )}
+                          <View
+                            style={{
+                              backgroundColor: color.yellow,
+                              borderRadius: 50,
+                              padding: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Ionicons
+                              name="time-outline"
+                              size={24}
+                              color={color.white}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      ))}
 
                     {(item.BookingStatus === "Confirmed" ||
                       item.BookingStatus === "StartJourney") && (
@@ -590,7 +594,7 @@ export default function Dashboard() {
                       </TouchableOpacity>
                     )}
 
-                    {item.PaymentMode === "Cash" &&
+                    {item.Payments?.[0]?.PaymentMode === "Cash" &&
                       item.BookingStatus === "Completed" && (
                         <TouchableOpacity onPress={() => CollectPayment(item)}>
                           <View

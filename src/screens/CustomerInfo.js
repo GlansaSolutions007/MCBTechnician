@@ -62,6 +62,10 @@ export default function CustomerInfo() {
     }
   };
   useEffect(() => {
+   onRefresh();
+  }, [1000])
+  
+  useEffect(() => {
     const checkIfStarted = async () => {
       try {
         const flag = await AsyncStorage.getItem(
@@ -234,6 +238,7 @@ export default function CustomerInfo() {
 
   const handleStartRide = async () => {
     await updateTechnicianTracking("StartJourney");
+    onRefresh();
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
     } catch (error) {

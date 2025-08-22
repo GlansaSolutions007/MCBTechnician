@@ -42,7 +42,7 @@ export default function CollectPayment() {
       );
 
       if (response?.status === 200) {
-        setShowSuccessModal(true); // Show modal on success
+        setShowSuccessModal(true); 
       }
     } catch (error) {
       console.error("Finalize Payment Error:", error.response?.data || error);

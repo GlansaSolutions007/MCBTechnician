@@ -24,6 +24,7 @@ export default function ServiceStart() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
+  
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -216,7 +217,7 @@ export default function ServiceStart() {
       await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
-          bookingID: bookingId,
+          bookingID: Number(bookingId),
           actionType: actionType,
         }
       );

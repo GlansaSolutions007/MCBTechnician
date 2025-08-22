@@ -65,7 +65,6 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("email", email);
 
         login({ email, token, techID: techID });
-        console.log("iddddddddddddddd:", techID);
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },

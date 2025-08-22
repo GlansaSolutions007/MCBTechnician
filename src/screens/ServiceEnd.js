@@ -48,6 +48,7 @@ export default function ServiceEnd() {
   const CollectPayment = async () => {
     navigation.navigate("CollectPayment", { booking });
   };
+  const paymentMode = booking.PaymentMode?.toLowerCase();
   const Dashboard = async () => {
     await updateTechnicianTracking("Completed");
 
@@ -297,7 +298,7 @@ export default function ServiceEnd() {
         </View>
 
         {/* Reason for extended time */}
-        {extendedTime > 0 && (
+        {/* {extendedTime > 0 && (
           <View>
             <CustomText
               style={[
@@ -329,7 +330,7 @@ export default function ServiceEnd() {
                 globalStyles.borderRadiuslarge,
                 globalStyles.mt3,
               ]}
-            >
+            > */}
               {/* {reasonsList.map((item, index) => (
                 <TouchableOpacity
                   key={index}
@@ -359,7 +360,7 @@ export default function ServiceEnd() {
                 </TouchableOpacity>
               ))} */}
 
-              {leads.map((item, index) => (
+              {/* {leads.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item.ID)}
@@ -405,8 +406,8 @@ export default function ServiceEnd() {
               </View>
             </View>
           </View>
-        )}
-        {booking.PaymentMode === "Cash" && (
+        )} */}
+        {booking.PaymentMode === "COS" && (
           <TouchableOpacity
             onPress={CollectPayment}
             style={globalStyles.blackButton}
@@ -416,7 +417,7 @@ export default function ServiceEnd() {
             </CustomText>
           </TouchableOpacity>
         )}
-        {booking.PaymentMode === "Razorpay" && (
+        {booking.PaymentMode === "razorpay" && (
           <TouchableOpacity
             onPress={Dashboard}
             style={globalStyles.blackButton}
