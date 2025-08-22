@@ -484,8 +484,8 @@ export default function Dashboard() {
               .filter(
                 (item) =>
                   item.BookingStatus === "ServiceStarted" ||
-                  item.BookingStatus == "StartJourney" ||
-                  item.BookingStatus == "Reached" ||
+                  item.BookingStatus === "StartJourney" ||
+                  item.BookingStatus === "Reached" ||
                   item.PaymentStatus === "Pending"
               )
               .map((item, index) => (

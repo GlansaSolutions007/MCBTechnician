@@ -107,7 +107,6 @@ export default function ServiceStart() {
 
   const calculateElapsedFromAPI = (serviceStartedAt) => {
     const start = new Date(serviceStartedAt);
-    console.log("...................<<<<<<<<", start);
     const now = new Date();
     return Math.floor((now - start) / 1000);
   };

@@ -36,6 +36,9 @@ export default function CustomerInfo() {
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
+  const CollectPayment = async (booking) => {
+    navigation.navigate("CollectPayment", { booking: booking });
+  };
   const onRefresh = async () => {
     setRefreshing(true);
 
@@ -789,6 +792,25 @@ export default function CustomerInfo() {
                   ]}
                 >
                   Next
+                </CustomText>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+
+             {(booking.BookingStatus === "Completed"  && booking.Payments?.some(
+                  (payment) => payment.PaymentStatus !== "Success")) && (
+              <TouchableOpacity
+                onPress={() => CollectPayment(booking)}
+                style={styles.NextButton}
+              >
+                <CustomText
+                  style={[
+                    globalStyles.f14Bold,
+                    globalStyles.mr1,
+                    globalStyles.textWhite,
+                  ]}
+                >
+                  Collect Cash
                 </CustomText>
                 <Ionicons name="arrow-forward" size={20} color="#fff" />
               </TouchableOpacity>

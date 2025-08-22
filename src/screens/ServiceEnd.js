@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -14,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import axios from "axios";
-import { Alert } from "react-native";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -31,7 +31,6 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  console.log( "============",booking);
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg) =>
@@ -47,10 +46,11 @@ export default function ServiceEnd() {
   const anyServicePending = services.some((service) => !service.completed);
   const bookingId = booking.BookingID;
   const CollectPayment = async () => {
-    await updateTechnicianTracking("Completed");
     navigation.navigate("CollectPayment", { booking });
   };
-  const Dashboard = () => {
+  const Dashboard = async () => {
+    await updateTechnicianTracking("Completed");
+
     navigation.reset({
       index: 0,
       routes: [
@@ -95,18 +95,15 @@ export default function ServiceEnd() {
     "Customer said not to do",
     "Unable to do that service part",
   ];
-
-  // const CollectPayment = () => {
-  //   navigation.navigate("CollectPayment");
-  // };
   const updateTechnicianTracking = async (actionType) => {
     try {
+      const payload = {
+        bookingID: Number(bookingId),
+        actionType: actionType,
+      };
       await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: bookingId,
-          actionType: actionType,
-        }
+        payload
       );
 
       console.log(`${actionType} action sent successfully`);
@@ -409,7 +406,7 @@ export default function ServiceEnd() {
             </View>
           </View>
         )}
-        {booking.PaymentMode === "Razorpay" && (
+        {booking.PaymentMode === "Cash" && (
           <TouchableOpacity
             onPress={CollectPayment}
             style={globalStyles.blackButton}
@@ -419,7 +416,7 @@ export default function ServiceEnd() {
             </CustomText>
           </TouchableOpacity>
         )}
-        {booking.PaymentMode === "Cash" && (
+        {booking.PaymentMode === "Razorpay" && (
           <TouchableOpacity
             onPress={Dashboard}
             style={globalStyles.blackButton}

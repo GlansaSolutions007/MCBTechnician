@@ -26,6 +26,7 @@ export default function Bookings() {
   const route = useRoute();
   const { bookings, techId } = route.params;
   const [todaysBookings, setTodaysBookings] = useState(bookings);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const customerInfo = (booking) => {
@@ -71,7 +72,9 @@ export default function Bookings() {
               onPress={() => customerInfo(item)}
               key={index}
               style={[
-                item.BookingStatus == "Completed"
+                item.Payments?.some(
+                  (payment) => payment.PaymentStatus === "Success"
+                )
                   ? { backgroundColor: "#969696" }
                   : globalStyles.bgprimary,
                 globalStyles.p4,
