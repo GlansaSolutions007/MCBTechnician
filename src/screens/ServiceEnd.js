@@ -31,6 +31,7 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
+  console.log( "============",booking);
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg) =>
@@ -44,12 +45,20 @@ export default function ServiceEnd() {
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
   const [selectedReason, setSelectedReason] = useState(null);
   const anyServicePending = services.some((service) => !service.completed);
-  const MAX_TIME = 5;
   const bookingId = booking.BookingID;
   const CollectPayment = async () => {
     await updateTechnicianTracking("Completed");
     navigation.navigate("CollectPayment", { booking });
   };
+  const Dashboard = () => {
+    navigation.reset({
+      index: 0,
+      routes: [
+        { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+      ],
+    });
+  };
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -400,15 +409,26 @@ export default function ServiceEnd() {
             </View>
           </View>
         )}
-
-        <TouchableOpacity
-          onPress={CollectPayment}
-          style={globalStyles.blackButton}
-        >
-          <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-            Completed
-          </CustomText>
-        </TouchableOpacity>
+        {booking.PaymentMode === "Razorpay" && (
+          <TouchableOpacity
+            onPress={CollectPayment}
+            style={globalStyles.blackButton}
+          >
+            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+              Collect cash
+            </CustomText>
+          </TouchableOpacity>
+        )}
+        {booking.PaymentMode === "Cash" && (
+          <TouchableOpacity
+            onPress={Dashboard}
+            style={globalStyles.blackButton}
+          >
+            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+              Completed
+            </CustomText>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );

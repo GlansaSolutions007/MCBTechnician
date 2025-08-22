@@ -22,7 +22,12 @@ export default function CollectPayment() {
   const [loading, setLoading] = useState(true);
 
   const Dashboard = () => {
-    navigation.navigate("CustomerTabNavigator", { screen: "Dashboard" });
+    navigation.reset({
+      index: 0,
+      routes: [
+        { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+      ],
+    });
   };
 
   useEffect(() => {
@@ -121,7 +126,7 @@ export default function CollectPayment() {
           style={[globalStyles.blackButton, globalStyles.w100]}
         >
           <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
-            Collect Cash
+            Completed
           </CustomText>
         </TouchableOpacity>
       </View>

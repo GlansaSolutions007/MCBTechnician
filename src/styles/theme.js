@@ -11,6 +11,7 @@ export const color = {
   redverulight: "#FDEAEA",
   error: "#ff1a1a",
   pending: "#FFD580",
+  yellow: "#F8B400",
 
   // Backgrounds
   background: "#F3F3F3",

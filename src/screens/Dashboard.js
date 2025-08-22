@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ScrollView,
   StyleSheet,
@@ -6,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
-  Platform,
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
@@ -54,6 +54,23 @@ export default function Dashboard() {
 
     fetchTotalAmount();
   }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshData = async () => {
+        try {
+          await Promise.all([
+            fetchTotalAmount(),
+            fetchBookingCounts(),
+            fetchBookings(),
+          ]);
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+
+      refreshData();
+    }, [])
+  );
 
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
@@ -238,7 +255,6 @@ export default function Dashboard() {
     }
   };
 
-  // Fetch today's bookings
   const fetchBookings = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
@@ -251,7 +267,7 @@ export default function Dashboard() {
         setBookings(Array.isArray(res.data) ? res.data : []);
       }
     } catch (err) {
-      console.error("Fetch error", err);
+      console.error("fetchBookings error", err);
     }
   };
 
@@ -497,6 +513,8 @@ export default function Dashboard() {
                         style={[globalStyles.f24Bold, globalStyles.textWhite]}
                       >
                         {item.CustomerName}
+                        {" :"}
+                        {item.BookingStatus}
                       </CustomText>
                       <CustomText
                         style={[
@@ -528,62 +546,70 @@ export default function Dashboard() {
                     >
                       {item.TimeSlot}
                     </CustomText>
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => ServiceStart(item)}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: color.pending,
-                          borderRadius: 50,
-                          padding: 8,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                    {item.BookingStatus === "Reached" || item.BookingStatus === "ServiceStarted" && (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => ServiceStart(item)}
                       >
-                        <Ionicons
-                          name="time-outline"
-                          size={24}
-                          color={color.white}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => CustomerInfo(item)}>
-                      <View
-                        style={{
-                          backgroundColor: color.primary,
-                          borderRadius: 50,
-                          padding: 8,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Ionicons
-                          name="navigate-outline"
-                          size={24}
-                          color={color.white}
-                        />
-                      </View>
-                    </TouchableOpacity>
+                        <View
+                          style={{
+                            backgroundColor: color.yellow,
+                            borderRadius: 50,
+                            padding: 8,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Ionicons
+                            name="time-outline"
+                            size={24}
+                            color={color.white}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    )}
 
-                    <TouchableOpacity onPress={() => CollectPayment(item)}>
-                      <View
-                        style={{
-                          backgroundColor: color.primary,
-                          borderRadius: 50,
-                          padding: 8,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {/* <Ionicons name="logo-bitcoin" size={24} color={color.white} /> */}
-                        <MaterialCommunityIcons
-                          name="currency-inr"
-                          size={24}
-                          color={color.white}
-                        />
-                      </View>
-                    </TouchableOpacity>
+                    {(item.BookingStatus === "Confirmed" ||
+                      item.BookingStatus === "StartJourney") && (
+                      <TouchableOpacity onPress={() => CustomerInfo(item)}>
+                        <View
+                          style={{
+                            backgroundColor: color.primary,
+                            borderRadius: 50,
+                            padding: 8,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Ionicons
+                            name="navigate-outline"
+                            size={24}
+                            color={color.white}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    )}
+
+                    {item.PaymentMode === "Cash" &&
+                      item.BookingStatus === "Completed" && (
+                        <TouchableOpacity onPress={() => CollectPayment(item)}>
+                          <View
+                            style={{
+                              backgroundColor: color.primary,
+                              borderRadius: 50,
+                              padding: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <MaterialCommunityIcons
+                              name="currency-inr"
+                              size={24}
+                              color={color.white}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      )}
                   </View>
                 </View>
               ))}

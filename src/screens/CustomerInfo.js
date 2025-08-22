@@ -12,8 +12,6 @@ import {
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
-import profilepic from "../../assets/images/person.jpg";
-import carpic from "../../assets/images/Group 420.png";
 import { color } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -28,13 +26,16 @@ export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
+
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const today = new Date().toISOString().split("T")[0];
-
+  const ServiceStart = async (item) => {
+    navigation.navigate("ServiceStart", { booking: item });
+  };
   const onRefresh = async () => {
     setRefreshing(true);
 
@@ -242,9 +243,6 @@ export default function CustomerInfo() {
     await updateTechnicianTracking("Reached");
     navigation.navigate("ServiceStart", { booking: booking });
   };
-  const startTime = async () => {
-    navigation.navigate("ServiceStart", { booking: booking });
-  };
 
   return (
     <ScrollView
@@ -257,7 +255,13 @@ export default function CustomerInfo() {
         <View style={[globalStyles.container, globalStyles.pb4]}>
           {/* <AvailabilityHeader /> */}
 
-          <CustomText style={[globalStyles.f20Bold, globalStyles.primary]}>
+          <CustomText
+            style={[
+              globalStyles.f20Bold,
+              globalStyles.primary,
+              globalStyles.mt,
+            ]}
+          >
             Booking ID:{" "}
             <CustomText style={globalStyles.black}>
               {booking.BookingTrackID}
@@ -694,7 +698,7 @@ export default function CustomerInfo() {
                   style={styles.callIcon}
                 />
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f12Medium]}
+                  style={[globalStyles.f14Bold, globalStyles.textWhite]}
                 >
                   Call to customer
                 </CustomText>
@@ -721,10 +725,34 @@ export default function CustomerInfo() {
 
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
-              <View style={styles.startreach}>
-                {booking.BookingStatus !== "Completed" &&
-                  booking.BookingDate === today && (
-                    <>
+              {/* <View style={styles.startreach}> */}
+              {booking.BookingStatus !== "Completed" &&
+                booking.BookingDate === today && (
+                  <>
+                    {(booking.BookingStatus === "Confirmed" ||
+                      booking.BookingStatus === "StartJourney") &&
+                      booking.BookingStatus !== "Reached" && (
+                        <TouchableOpacity
+                          style={styles.startButton}
+                          onPress={handleStartRide}
+                        >
+                          <Ionicons
+                            name="rocket"
+                            size={20}
+                            color="white"
+                            style={{ marginRight: 8 }}
+                          />
+                          <CustomText
+                            style={[
+                              globalStyles.f14Bold,
+                              globalStyles.textWhite,
+                            ]}
+                          >
+                            Start Ride
+                          </CustomText>
+                        </TouchableOpacity>
+                      )}
+                    {booking.BookingStatus === "StartJourney" && (
                       <TouchableOpacity
                         style={styles.ReachedButton}
                         onPress={Reached}
@@ -735,45 +763,36 @@ export default function CustomerInfo() {
                           color="white"
                           style={{ marginRight: 8 }}
                         />
-                        <CustomText style={styles.startButtonText}>
+                        <CustomText
+                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                        >
                           Reached
                         </CustomText>
                       </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.startButton}
-                        onPress={handleStartRide}
-                      >
-                        <Ionicons
-                          name="rocket"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText style={styles.startButtonText}>
-                          Start Ride
-                        </CustomText>
-                      </TouchableOpacity>
-                    </>
-                  )}
-              </View>
+                    )}
+                  </>
+                )}
+              {/* </View> */}
               {/* )} */}
-
-              {/* {booking.BookingStatus === "ServiceStarted" && (
-                <TouchableOpacity style={styles.startride} onPress={startTime}>
-                  <Ionicons
-                    name="time"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText style={styles.startButtonText}>
-                    Service Time
-                  </CustomText>
-                </TouchableOpacity>
-              )} */}
-              {/* endddddddddd */}
             </View>
+            {(booking.BookingStatus === "Reached" ||
+              booking.BookingStatus === "ServiceStarted") && (
+              <TouchableOpacity
+                onPress={() => ServiceStart(booking)}
+                style={styles.NextButton}
+              >
+                <CustomText
+                  style={[
+                    globalStyles.f14Bold,
+                    globalStyles.mr1,
+                    globalStyles.textWhite,
+                  ]}
+                >
+                  Next
+                </CustomText>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -809,6 +828,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: 20,
+  },
+  NextButton: {
+    backgroundColor: color.yellow,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    marginTop: 10,
   },
   callButton: {
     backgroundColor: color.primary,
@@ -875,22 +905,23 @@ const styles = StyleSheet.create({
   startreach: {
     flexDirection: "row",
     justifyContent: "space-between",
+    width: "100%",
     marginTop: 15,
     gap: 10,
   },
   ReachedButton: {
-    backgroundColor: "#F8B400",
+    backgroundColor: color.yellow,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
     elevation: 5,
-    width: "48%",
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 10,
   },
   startride: {
-    backgroundColor: "#F8B400",
+    backgroundColor: color.yellow,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -902,19 +933,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   startButton: {
-    backgroundColor: color.primary,
+    backgroundColor: color.alertInfo,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+    marginTop: 10,
     elevation: 5,
-    width: "48%",
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
-  },
-  startButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });
