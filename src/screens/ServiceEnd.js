@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Pressable,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -78,13 +79,13 @@ export default function ServiceEnd() {
     fetchLeads();
   }, []);
 
-  const toggleService = (id) => {
-    setServices((prev) =>
-      prev.map((s) =>
-        s.IncludeID === id ? { ...s, completed: !s.completed } : s
-      )
-    );
-  };
+  // const toggleService = (id) => {
+  //   setServices((prev) =>
+  //     prev.map((s) =>
+  //       s.IncludeID === id ? { ...s, completed: !s.completed } : s
+  //     )
+  //   );
+  // };
 
   const extendedTime =
     actualTime > estimatedTime ? actualTime - estimatedTime : 0;
@@ -140,15 +141,15 @@ export default function ServiceEnd() {
                 marginBottom: 8,
               }}
             >
-              <TouchableOpacity
-                onPress={() => toggleService(service.IncludeID)}
+              <Pressable
+                // onPress={() => toggleService(service.IncludeID)}
               >
                 <Ionicons
                   name={service.completed ? "checkbox" : "square-outline"}
                   size={30}
                   color={service.completed ? "#0D9276" : "#999"}
                 />
-              </TouchableOpacity>
+              </Pressable>
               <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
                 {service.IncludeName}
               </CustomText>
@@ -156,7 +157,7 @@ export default function ServiceEnd() {
           ))}
 
           {/* Show this if any checkbox is not checked */}
-          {anyServicePending && (
+          {/* {anyServicePending && (
             <View>
               <CustomText style={[globalStyles.f14Bold, globalStyles.mt2]}>
                 Any obstacle for pending services?
@@ -215,7 +216,7 @@ export default function ServiceEnd() {
                 </View>
               </View>
             </View>
-          )}
+          )} */}
         </View>
 
         {/* Estimated and Extended Time */}

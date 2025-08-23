@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  Modal,
+  Pressable,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +39,9 @@ export default function ServiceStart() {
   const [uploadDone, setUploadDone] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [otpValid, setOtpValid] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -216,18 +221,32 @@ export default function ServiceStart() {
 
   const updateTechnicianTracking = async (actionType) => {
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
           bookingID: Number(bookingId),
           actionType: actionType,
+          bookingOTP: otp,
         }
       );
 
-      console.log(`${actionType} action sent successfully`);
+      if (
+        response?.data?.status === false ||
+        response?.data?.isValid === false
+      ) {
+        setOtpValid(false);
+        setModalMessage("Invalid OTP. Please try again.");
+        setModalVisible(true);
+        return false;
+      }
+      setOtpValid(true);
+      return true;
     } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
-      Alert.alert("Error", `Failed to send ${actionType} action.`);
+      // console.error(`Error sending ${actionType} action:`, error.message);
+      setOtpValid(false);
+      setModalMessage("Invalid OTP. Please try again.");
+      setModalVisible(true);
+      return false;
     }
   };
 
@@ -398,7 +417,16 @@ export default function ServiceStart() {
                     setError("Please enter a valid 6-digit OTP");
                     return;
                   }
-                  await updateTechnicianTracking("ServiceStarted");
+
+                  const isValid = await updateTechnicianTracking(
+                    "ServiceStarted"
+                  );
+                  if (!isValid) {
+                    // 🚫 Wrong OTP → show modal, stay here
+                    return;
+                  }
+
+                  // ✅ Correct OTP → continue
                   handleUpload();
                   const totalSeconds =
                     booking.TotalEstimatedDurationMinutes * 60;
@@ -416,6 +444,8 @@ export default function ServiceStart() {
                     `serviceStarted_${booking.BookingID}`,
                     "true"
                   );
+
+                  navigation.navigate("ServiceTracking", { booking });
                 }}
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
@@ -733,12 +763,69 @@ export default function ServiceStart() {
             </TouchableOpacity>
           </View>
         )}
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <CustomText
+                style={[
+                  globalStyles.f16Bold,
+                  globalStyles.textac,
+                  { marginTop: 10 },
+                ]}
+              >
+                {modalMessage}
+              </CustomText>
+
+              <TouchableOpacity
+                style={styles.okButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                >
+                  OK
+                </CustomText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  okButton: {
+    marginTop: 20,
+    backgroundColor: color.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
   pricecard: {
     backgroundColor: color.white,
     paddingHorizontal: 20,

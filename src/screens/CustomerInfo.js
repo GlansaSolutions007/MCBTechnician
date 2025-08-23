@@ -61,9 +61,17 @@ export default function CustomerInfo() {
       setRefreshing(false);
     }
   };
+  // useEffect(() => {
+  //  onRefresh();
+  // }, [])
   useEffect(() => {
-   onRefresh();
-  }, [1000])
+  const interval = setInterval(() => {
+    onRefresh();
+  }, 5000);
+
+  return () => clearInterval(interval); 
+}, []);
+
   
   useEffect(() => {
     const checkIfStarted = async () => {
@@ -806,8 +814,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
               </TouchableOpacity>
             )}
 
-             {(booking.BookingStatus === "Completed"  && booking.Payments?.some(
-                  (payment) => payment.PaymentStatus !== "Success")) && (
+             {(booking.BookingStatus === "Completed"  && booking.PaymentStatus === "Pending") && (
               <TouchableOpacity
                 onPress={() => CollectPayment(booking)}
                 style={styles.NextButton}

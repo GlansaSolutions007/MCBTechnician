@@ -480,7 +480,7 @@ export default function Dashboard() {
 
         <View style={[globalStyles.mt4]}>
           <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
-          {bookings.some((item) => item.BookingStatus === "StartJourney"|| item.BookingStatus === "ServiceStarted"|| item.BookingStatus === "Reached" || item.Payments?.[0]?.PaymentStatus === "Pending") ? (
+          {bookings.some((item) => item.BookingStatus === "StartJourney"|| item.BookingStatus === "ServiceStarted"|| item.BookingStatus === "Reached" || item.PaymentStatus === "Pending") ? (
             <View style={[globalStyles.mt3]}>
               {bookings
                 .filter(
