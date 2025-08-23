@@ -30,6 +30,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
 
   const { logout } = useAuth();
   const confirmLogout = () => {
@@ -39,6 +40,46 @@ export default function ProfileScreen() {
     setShowLogoutModal(false);
     logout();
   };
+
+  useEffect(() => {
+    const fetchTechnicianDetails = async () => {
+      try {
+        const techId = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
+
+        if (!techId) {
+          console.warn("No technicianId found");
+          setLoading(false);
+          return;
+        }
+
+        const res = await axios.get(
+          `${API_BASE_URL}TechniciansDetails/technicianid?technicianid=${techId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setProfileData(res.data.data?.[0] ?? null);
+
+        const reviewRes = await axios.get(
+          `${API_BASE_URL}Feedback/Review?techid=${techId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (reviewRes.data && reviewRes.data.length > 0) {
+          setReviewData(reviewRes.data[0]);
+        }
+      } catch (err) {
+        console.error("Fetch error", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTechnicianDetails();
+  }, []);
 
   // const [uploading, setUploading] = useState(false);
 
@@ -205,10 +246,7 @@ export default function ProfileScreen() {
             <CustomText style={globalStyles.f12Medium}>
               Mobile: {profileData.PhoneNumber}
             </CustomText>
-            <CustomText
-              numberOfLines={1}
-              style={[globalStyles.f12Medium]}
-            >
+            <CustomText numberOfLines={1} style={[globalStyles.f12Medium]}>
               Email: {profileData.Email}
             </CustomText>
             <View
@@ -240,10 +278,7 @@ export default function ProfileScreen() {
               <CustomText
                 numberOfLines={4}
                 ellipsizeMode="tail"
-                style={[
-                  globalStyles.f10Regular,
-                  {  width: "95%" },
-                ]}
+                style={[globalStyles.f10Regular, { width: "95%" }]}
               >
                 {profileData.AddressLine1}
               </CustomText>
@@ -254,13 +289,17 @@ export default function ProfileScreen() {
 
       <View style={styles.statsCard}>
         <View style={[globalStyles.flexrow, globalStyles.justifycenter]}>
-          {[1, 2, 3].map((_, i) => (
+          {[1, 2, 3, 4, 5].map((star, i) => (
             <Ionicons
               key={i}
               name="star"
-              size={18}
-              color={color.primary}
-              style={globalStyles.mr2}
+              size={20}
+              color={
+                reviewData?.OverallServiceRating >= star
+                  ? color.primary
+                  : color.neutral[300]
+              }
+              style={globalStyles.mr1}
             />
           ))}
         </View>
@@ -274,12 +313,13 @@ export default function ProfileScreen() {
                 globalStyles.primary,
               ]}
             >
-              {profileData.ServiceCompleted ?? "0"}
+              {/* {profileData.ServiceCompleted ?? "0"} */}
+              {reviewData?.TotalFeedbacks ?? "0.0"}
             </CustomText>
-            <CustomText>Services Completed</CustomText>
+            <CustomText>Total Feedbacks</CustomText>
           </View>
           <View style={styles.gridItem}>
-            <Pressable >
+            <Pressable>
               <CustomText
                 style={[
                   globalStyles.f40Bold,
@@ -287,7 +327,8 @@ export default function ProfileScreen() {
                   globalStyles.primary,
                 ]}
               >
-                {profileData.Rating ?? "0.0"}
+                {/* {profileData.Rating ?? "0.0"} */}
+                {reviewData?.OverallServiceRating ?? "0.0"}
               </CustomText>
               <CustomText>Review Ratings</CustomText>
             </Pressable>
@@ -373,7 +414,7 @@ export default function ProfileScreen() {
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
           >
-            <Pressable
+            {/* <Pressable
               style={styles.closeIcon}
               onPress={() => setShowLogoutModal(false)}
             >
@@ -382,7 +423,7 @@ export default function ProfileScreen() {
                 size={22}
                 color={color.neutral[500]}
               />
-            </Pressable>
+            </Pressable> */}
             <CustomText style={globalStyles.f14Bold}>
               Are you sure you want to log out?
             </CustomText>
