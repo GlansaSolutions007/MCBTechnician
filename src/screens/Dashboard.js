@@ -77,8 +77,8 @@ export default function Dashboard() {
   };
 
   const [bookings, setBookings] = useState([]);
+  console.log(bookings, "-----------------------");
   const [bookingCounts, setBookingCounts] = useState({
-
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,
     TodayCustomerCount: 0,
@@ -114,7 +114,7 @@ export default function Dashboard() {
                 },
               }
             );
-            
+
             if (Array.isArray(res.data) && res.data.length > 0) {
               setBookingCounts(res.data[0]);
             }
@@ -145,7 +145,6 @@ export default function Dashboard() {
               },
             }
           );
-          console.log("PaymentMode:", res.data?.[0]?.PaymentMode);
 
           setBookings(Array.isArray(res.data) ? res.data : []);
         } else {
@@ -482,80 +481,83 @@ export default function Dashboard() {
 
         <View style={[globalStyles.mt4]}>
           <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
-
-          <View style={[globalStyles.mt3]}>
-            {bookings
-              .filter(
-                (item) =>
-                  item.BookingStatus === "ServiceStarted" ||
-                  item.BookingStatus === "StartJourney" ||
-                  item.BookingStatus === "Reached" ||
-                  item.Payments?.[0]?.PaymentStatus === "Pending"
-                  
-              )
-              .map((item, index) => (
-                <View
-                  key={index}
-                  style={[
-                    globalStyles.bgprimary,
-                    globalStyles.p4,
-                    globalStyles.card,
-                    globalStyles.mt2,
-                  ]}
-                >
-                  <View style={[globalStyles.flexrow]}>
-                    <Image
-                      source={
-                        item.ProfileImage
-                          ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                          : defaultAvatar
-                      }
-                      style={styles.avatar}
-                    />
-
-                    <View style={[globalStyles.ml3, { flex: 1 }]}>
-                      <CustomText
-                        style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                      >
-                        {item.CustomerName}
-                      </CustomText>
-                      <CustomText
-                        style={[
-                          globalStyles.f12Regular,
-                          globalStyles.textWhite,
-                        ]}
-                      >
-                        Mobile: {item.PhoneNumber}
-                      </CustomText>
-                      <CustomText
-                        style={[globalStyles.f10Light, globalStyles.neutral100]}
-                      >
-                        {item.FullAddress}
-                      </CustomText>
-                    </View>
-                  </View>
-
-                  <View style={globalStyles.divider} />
+          {bookings.some((item) => item.BookingStatus === "StartJourney"|| item.BookingStatus === "ServiceStarted"|| item.BookingStatus === "Reached" || item.Payments?.[0]?.PaymentStatus === "Pending") ? (
+            <View style={[globalStyles.mt3]}>
+              {bookings
+                .filter(
+                  (item) =>
+                    item.BookingStatus === "ServiceStarted" ||
+                    item.BookingStatus === "StartJourney" ||
+                    item.BookingStatus === "Reached" ||
+                    item.Payments?.[0]?.PaymentStatus === "Pending"
+                )
+                .map((item, index) => (
                   <View
+                    key={index}
                     style={[
-                      globalStyles.flexrow,
-                      globalStyles.justifysb,
-                      globalStyles.alineItemscenter,
-                      styles.card,
+                      globalStyles.bgprimary,
+                      globalStyles.p4,
+                      globalStyles.card,
+                      globalStyles.mt2,
                     ]}
                   >
-                    <CustomText
-                      style={[globalStyles.f16Bold, globalStyles.black]}
-                    >
-                      {item.TimeSlot}
-                    </CustomText>
-                    {item.BookingStatus === "Reached" ||
-                      (item.BookingStatus === "ServiceStarted" && (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => ServiceStart(item)}
+                    <View style={[globalStyles.flexrow]}>
+                      <Image
+                        source={
+                          item.ProfileImage
+                            ? {
+                                uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                              }
+                            : defaultAvatar
+                        }
+                        style={styles.avatar}
+                      />
+
+                      <View style={[globalStyles.ml3, { flex: 1 }]}>
+                        <CustomText
+                          style={[globalStyles.f24Bold, globalStyles.textWhite]}
                         >
-                          <View
+                          {item.CustomerName}
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f12Regular,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Mobile: {item.PhoneNumber}
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f10Light,
+                            globalStyles.neutral100,
+                          ]}
+                        >
+                          {item.FullAddress}
+                        </CustomText>
+                      </View>
+                    </View>
+
+                    <View style={globalStyles.divider} />
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.justifysb,
+                        globalStyles.alineItemscenter,
+                        styles.card,
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f16Bold, globalStyles.black]}
+                      >
+                        {item.TimeSlot}
+                      </CustomText>
+                      {/* {(item.BookingStatus === "Reached") && (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => ServiceStart(item)}
+                      >
+                        <View
                             style={{
                               backgroundColor: color.yellow,
                               borderRadius: 50,
@@ -571,32 +573,13 @@ export default function Dashboard() {
                             />
                           </View>
                         </TouchableOpacity>
-                      ))}
+                      )} */}
 
-                    {(item.BookingStatus === "Confirmed" ||
-                      item.BookingStatus === "StartJourney") && (
-                      <TouchableOpacity onPress={() => CustomerInfo(item)}>
-                        <View
-                          style={{
-                            backgroundColor: color.primary,
-                            borderRadius: 50,
-                            padding: 8,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Ionicons
-                            name="navigate-outline"
-                            size={24}
-                            color={color.white}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                    )}
-
-                    {item.Payments?.[0]?.PaymentMode === "Cash" &&
-                      item.BookingStatus === "Completed" && (
-                        <TouchableOpacity onPress={() => CollectPayment(item)}>
+                      {(item.BookingStatus === "Confirmed" ||
+                        item.BookingStatus === "StartJourney" ||
+                        item.BookingStatus === "ServiceStarted" ||
+                        item.BookingStatus === "Reached") && (
+                        <TouchableOpacity onPress={() => CustomerInfo(item)}>
                           <View
                             style={{
                               backgroundColor: color.primary,
@@ -606,18 +589,62 @@ export default function Dashboard() {
                               justifyContent: "center",
                             }}
                           >
-                            <MaterialCommunityIcons
-                              name="currency-inr"
+                            <Ionicons
+                              name="navigate-outline"
                               size={24}
                               color={color.white}
                             />
                           </View>
                         </TouchableOpacity>
                       )}
+
+                      {item.PaymentMode === "COS" &&
+                        item.BookingStatus === "Completed" && (
+                          <TouchableOpacity
+                            onPress={() => CollectPayment(item)}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: color.primary,
+                                borderRadius: 50,
+                                padding: 8,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <MaterialCommunityIcons
+                                name="currency-inr"
+                                size={24}
+                                color={color.white}
+                              />
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                    </View>
                   </View>
-                </View>
-              ))}
-          </View>
+                ))}
+            </View>
+          ) : (
+            <View>
+              <CustomText
+                style={[globalStyles.f32Regular, globalStyles.neutral300]}
+              >
+                There are no{" "}
+              </CustomText>
+              <View style={[globalStyles.flexrow]}>
+                <CustomText
+                  style={[globalStyles.primary, globalStyles.f32Bold]}
+                >
+                  active services{" "}
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f32Regular, globalStyles.neutral200]}
+                >
+                  yet....
+                </CustomText>
+              </View>
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>

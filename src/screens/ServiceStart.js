@@ -505,7 +505,7 @@ export default function ServiceStart() {
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
                   {" "}
-                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}:${
+                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}h:${
                     booking.TotalEstimatedDurationMinutes % 60
                   }m`}
                 </CustomText>
@@ -529,7 +529,7 @@ export default function ServiceStart() {
                     >
                       {`${Math.floor(
                         booking.TotalEstimatedDurationMinutes / 60
-                      )}:${booking.TotalEstimatedDurationMinutes % 60}m`}
+                      )}h:${booking.TotalEstimatedDurationMinutes % 60}m`}
                     </CustomText>
                     <CustomText
                       style={[globalStyles.f12Medium, { color: color.black }]}

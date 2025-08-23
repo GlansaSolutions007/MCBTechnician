@@ -114,12 +114,15 @@ export default function LoginScreen() {
       )} */}
       <View />
       <View>
-        <View>
-          <Image
-            source={require("../../../assets/Logo/mycarbuddy.png")}
-            style={styles.logo}
-          />
-        </View>
+        {!keyboardVisible && (
+          <View>
+            <Image
+              source={require("../../../assets/Logo/mycarbuddy.png")}
+              style={styles.logo}
+            />
+          </View>
+        )}
+
         <TextInput
           placeholder="Enter Phone Number"
           placeholderTextColor={color.textWhite}
@@ -142,7 +145,7 @@ export default function LoginScreen() {
         />
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, keyboardVisible && globalStyles.mb40]}
           onPress={handleLoginWithPassword}
           disabled={loading}
         >
@@ -150,6 +153,7 @@ export default function LoginScreen() {
             Login
           </CustomText>
         </TouchableOpacity>
+        
       </View>
 
       <CustomAlert

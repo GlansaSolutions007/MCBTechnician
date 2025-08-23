@@ -58,15 +58,16 @@ function TaskReportsScreen() {
   today.setHours(0, 0, 0, 0);
 
   const upcomingBookings = bookings.filter((booking) => {
-    const bookingDate = new Date(booking.BookingDate);
-    const today = new Date();
-
-    bookingDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    return bookingDate > today;
+    const assignDate = new Date(booking.BookingDate);
+    assignDate.setHours(0, 0, 0, 0);
+    return assignDate > today;
   });
-  const pastBookings = bookings.filter((b) => new Date(b.BookingDate) < today);
+
+  const pastBookings = bookings.filter((booking) => {
+    const assignDate = new Date(booking.BookingDate);
+    assignDate.setHours(0, 0, 0, 0);
+    return assignDate <= today;
+  });
 
   const renderBookingCard = (item, index) => (
     <TouchableOpacity

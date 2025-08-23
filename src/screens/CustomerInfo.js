@@ -101,12 +101,15 @@ export default function CustomerInfo() {
   //   navigation.navigate("ServiceStart", { booking });
   // };
 
-  const latitude = booking.Latitude;
-  const longitude = booking.Longitude;
+  // const Latitude = booking.Latitude;
+  // const Longitude = booking.Longitude;
+  const Latitude = parseFloat(booking.latitude || booking.Latitude);
+const Longitude = parseFloat(booking.Longitude || booking.longitude);
+
   const bookingId = booking.BookingID;
   const destination = {
-    latitude: parseFloat(latitude),
-    longitude: parseFloat(longitude),
+    Latitude: parseFloat(Latitude),
+    Longitude: parseFloat(Longitude),
   };
 
   useEffect(() => {
@@ -125,8 +128,8 @@ export default function CustomerInfo() {
         },
         async (loc) => {
           const coords = {
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
+            Latitude: loc.coords.latitude,
+            Longitude: loc.coords.longitude,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           };
@@ -150,8 +153,8 @@ export default function CustomerInfo() {
         `https://maps.googleapis.com/maps/api/directions/json`,
         {
           params: {
-            origin: `${origin.latitude},${origin.longitude}`,
-            destination: `${destination.latitude},${destination.longitude}`,
+            origin: `${origin.Latitude},${origin.Longitude}`,
+            destination: `${destination.Latitude},${destination.Longitude}`,
             key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
           },
         }
@@ -195,15 +198,15 @@ export default function CustomerInfo() {
       lng += dlng;
 
       points.push({
-        latitude: lat / 1e5,
-        longitude: lng / 1e5,
+        Latitude: lat / 1e5,
+        Longitude: lng / 1e5,
       });
     }
     return points;
   };
   const openGoogleMaps = async () => {
     if (location && destination) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destination.Latitude},${destination.Longitude}&travelmode=driving`;
 
       try {
         const supported = await Linking.canOpenURL(url);

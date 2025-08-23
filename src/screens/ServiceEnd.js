@@ -31,6 +31,7 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
+  console.log(booking.PaymentMode,"llllllllllllllll")
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg) =>
@@ -407,7 +408,7 @@ export default function ServiceEnd() {
             </View>
           </View>
         )} */}
-        {booking.PaymentMode === "COS" && (
+        {booking.PaymentMode == "COS" && (
           <TouchableOpacity
             onPress={CollectPayment}
             style={globalStyles.blackButton}
@@ -417,7 +418,7 @@ export default function ServiceEnd() {
             </CustomText>
           </TouchableOpacity>
         )}
-        {booking.PaymentMode === "razorpay" && (
+        {(booking.PaymentMode === "razorpay"||booking.PaymentMode ==="Razorpay" )&& (
           <TouchableOpacity
             onPress={Dashboard}
             style={globalStyles.blackButton}
