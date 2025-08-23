@@ -5,8 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Modal,
-  Pressable,
+  RefreshControl,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -24,10 +23,18 @@ export default function LeaveRequestList() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // ✅ Added state
 
   useEffect(() => {
     fetchLeaveData();
   }, [selectedDate]);
+
+  // ✅ Corrected refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLeaveData();
+    setRefreshing(false);
+  };
 
   const fetchLeaveData = async () => {
     try {
@@ -81,20 +88,11 @@ export default function LeaveRequestList() {
   const getStatusStyle = (statusCode) => {
     switch (statusCode) {
       case 1:
-        return {
-          container: styles.approved,
-          text: styles.approvedText,
-        };
+        return { container: styles.approved, text: styles.approvedText };
       case 0:
-        return {
-          container: styles.pending,
-          text: styles.pendingText,
-        };
+        return { container: styles.pending, text: styles.pendingText };
       case 2:
-        return {
-          container: styles.denied,
-          text: styles.deniedText,
-        };
+        return { container: styles.denied, text: styles.deniedText };
       default:
         return {};
     }
@@ -106,11 +104,18 @@ export default function LeaveRequestList() {
       setSelectedDate(date);
     }
   };
+
   const clearFilter = () => {
     setSelectedDate(null);
   };
+
   return (
-    <ScrollView style={[globalStyles.bgcontainer]}>
+    <ScrollView
+      style={[globalStyles.bgcontainer]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> // ✅ Correct way
+      }
+    >
       <View style={[globalStyles.p4]}>
         <View
           style={[
@@ -126,16 +131,21 @@ export default function LeaveRequestList() {
           >
             <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
               Add Request
-              </CustomText>
+            </CustomText>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => setShowPicker(true)}
           >
             <Ionicons name="calendar-outline" size={25} color={color.white} />
           </TouchableOpacity>
+
           {selectedDate && (
-            <TouchableOpacity onPress={clearFilter} style={styles.iconButtonclear}>
+            <TouchableOpacity
+              onPress={clearFilter}
+              style={styles.iconButtonclear}
+            >
               <Ionicons name="close-circle" size={25} color={color.white} />
             </TouchableOpacity>
           )}
@@ -217,7 +227,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     borderRadius: 14,
   },
-
   iconButton: {
     alignItems: "center",
     width: "15%",
