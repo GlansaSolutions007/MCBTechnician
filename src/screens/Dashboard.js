@@ -100,6 +100,7 @@ export default function Dashboard() {
     const fetchBookingCounts = async () => {
       try {
         const techID = await AsyncStorage.getItem("techID");
+        // alert(`Tech ID: ${techID}`);
         const token = await AsyncStorage.getItem("token");
 
         if (techID) {
