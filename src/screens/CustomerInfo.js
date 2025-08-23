@@ -26,14 +26,19 @@ export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-
+  console.log("booking================:", booking);
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
-  const today = new Date().toISOString().split("T")[0];
+  // const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata",
+});
+
+  console.log(today)
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
