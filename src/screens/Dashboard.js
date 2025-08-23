@@ -77,7 +77,6 @@ export default function Dashboard() {
   };
 
   const [bookings, setBookings] = useState([]);
-  console.log(bookings, "-----------------------");
   const [bookingCounts, setBookingCounts] = useState({
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,

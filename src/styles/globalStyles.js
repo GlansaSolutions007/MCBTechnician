@@ -56,6 +56,9 @@ export default StyleSheet.create({
   textac: {
     textAlign: "center",
   },
+  w30: {
+    width: "30%",
+  },
   w40: {
     width: "40%",
   },

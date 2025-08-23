@@ -168,7 +168,7 @@ export default function ProfileScreen() {
             style={[
               globalStyles.alineItemscenter,
               globalStyles.mb3,
-              globalStyles.mr4,
+              globalStyles.mr2,
             ]}
           >
             <Pressable
@@ -194,44 +194,59 @@ export default function ProfileScreen() {
               )} */}
             </Pressable>
           </View>
-          <View>
-            <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+          <View style={[globalStyles.pr2, { flex: 1 }]}>
+            <CustomText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[globalStyles.f24Bold, globalStyles.primary]}
+            >
               {profileData.TechnicianName}
             </CustomText>
             <CustomText style={globalStyles.f12Medium}>
               Mobile: {profileData.PhoneNumber}
             </CustomText>
-            <CustomText style={globalStyles.f12Medium}>
+            <CustomText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[globalStyles.f12Medium, { flexShrink: 1, width: "100%" }]}
+            >
               Email: {profileData.Email}
             </CustomText>
-
             <View
               style={[
                 globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <View style={styles.iconbg}>
-                <Image source={locationicon} style={styles.icons} />
-              </View>
-              <CustomText style={globalStyles.f12Bold}>
-                {profileData.AddressLine1}
-              </CustomText>
-            </View>
-
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt1,
-                globalStyles.alineItemscenter,
+                { flexWrap: "wrap", width: "100%" },
               ]}
             >
               <View style={styles.iconbg}>
                 <Image source={person} style={styles.icons} />
               </View>
-              <CustomText style={globalStyles.f12Bold}>
+              <CustomText
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[globalStyles.f12Medium, { flexShrink: 1 }]}
+              >
                 Dealer: {profileData.DealerName}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                // { flexWrap: "wrap", width: "100%", marginTop: 2 },
+              ]}
+            >
+              <View style={[styles.iconbg, globalStyles.mt1]}>
+                <Image source={locationicon} style={styles.icons} />
+              </View>
+              <CustomText
+                numberOfLines={4}
+                ellipsizeMode="tail"
+                style={[
+                  globalStyles.f10Regular,
+                  { flexShrink: 1, width: "100%" },
+                ]}
+              >
+                {profileData.AddressLine1}
               </CustomText>
             </View>
           </View>
@@ -455,21 +470,20 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[100],
   },
   icons: {
-    width: 11,
-    height: 16,
+    width: 10,
+    height: 15,
   },
   iconbg: {
-    padding: 6,
-    height: 30,
-    width: 30,
-    backgroundColor: color.white,
+    height: 25,
+    width: 25,
     borderRadius: 50,
+    backgroundColor: color.white,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 5,
   },
   avatar: {
-    width: 130,
+    width: 120,
     height: 150,
     borderWidth: 8,
     borderColor: color.white,

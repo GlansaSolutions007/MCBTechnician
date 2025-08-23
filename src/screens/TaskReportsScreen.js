@@ -58,20 +58,28 @@ function TaskReportsScreen() {
   today.setHours(0, 0, 0, 0);
 
   const upcomingBookings = bookings.filter((booking) => {
-    const assignDate = new Date(booking.BookingDate);
+    const assignDate = booking.BookingDate
+      ? new Date(booking.BookingDate)
+      : null;
+    if (!assignDate || isNaN(assignDate)) return false;
+
     assignDate.setHours(0, 0, 0, 0);
     return assignDate > today;
   });
 
   const pastBookings = bookings.filter((booking) => {
-    const assignDate = new Date(booking.BookingDate);
+    const assignDate = booking.BookingDate
+      ? new Date(booking.BookingDate)
+      : null;
+    if (!assignDate || isNaN(assignDate)) return false;
+
     assignDate.setHours(0, 0, 0, 0);
     return assignDate <= today;
   });
 
   const renderBookingCard = (item, index) => (
     <TouchableOpacity
-      key={index}
+      key={item.BookingID}
       onPress={() => customerInfo(item)}
       style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}
       activeOpacity={0.8}
@@ -129,7 +137,7 @@ function TaskReportsScreen() {
         </CustomText>
         <CustomText style={globalStyles.f10Regular}>
           {item.Packages?.map((pkg, index) => (
-            <CustomText key={index}>{pkg.Category.CategoryName}</CustomText>
+            <CustomText key={index}>{pkg?.PackageName || "N/A"}</CustomText>
           ))}
         </CustomText>
       </View>
