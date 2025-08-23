@@ -5,7 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Alert
+  Alert,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -31,7 +31,6 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  console.log(booking.PaymentMode,"llllllllllllllll")
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg) =>
@@ -49,7 +48,6 @@ export default function ServiceEnd() {
   const CollectPayment = async () => {
     navigation.navigate("CollectPayment", { booking });
   };
-  const paymentMode = booking.PaymentMode?.toLowerCase();
   const Dashboard = async () => {
     await updateTechnicianTracking("Completed");
 
@@ -332,7 +330,7 @@ export default function ServiceEnd() {
                 globalStyles.mt3,
               ]}
             > */}
-              {/* {reasonsList.map((item, index) => (
+        {/* {reasonsList.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item)}
@@ -361,7 +359,7 @@ export default function ServiceEnd() {
                 </TouchableOpacity>
               ))} */}
 
-              {/* {leads.map((item, index) => (
+        {/* {leads.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item.ID)}
@@ -408,6 +406,12 @@ export default function ServiceEnd() {
             </View>
           </View>
         )} */}
+
+        <TextInput
+          placeholder="Enter OTP"
+          style={[globalStyles.inputBox, globalStyles.mt4]}
+          required
+        />
         {booking.PaymentMode == "COS" && (
           <TouchableOpacity
             onPress={CollectPayment}
@@ -418,7 +422,8 @@ export default function ServiceEnd() {
             </CustomText>
           </TouchableOpacity>
         )}
-        {(booking.PaymentMode === "razorpay"||booking.PaymentMode ==="Razorpay" )&& (
+        {(booking.PaymentMode === "razorpay" ||
+          booking.PaymentMode === "Razorpay") && (
           <TouchableOpacity
             onPress={Dashboard}
             style={globalStyles.blackButton}

@@ -24,7 +24,7 @@ export default function ServiceStart() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  
+
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -35,6 +35,8 @@ export default function ServiceStart() {
   const bookingId = booking.BookingID;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -234,7 +236,9 @@ export default function ServiceStart() {
       <View style={globalStyles.container}>
         {/* <AvailabilityHeader /> */}
 
-        <CustomText style={[globalStyles.f20Bold, globalStyles.primary,globalStyles.mt3]}>
+        <CustomText
+          style={[globalStyles.f20Bold, globalStyles.primary, globalStyles.mt3]}
+        >
           Booking ID:{" "}
           <CustomText style={globalStyles.black}>
             {booking.BookingTrackID}
@@ -338,6 +342,30 @@ export default function ServiceStart() {
               )}
             </View>
 
+            <TextInput
+              style={[
+                globalStyles.inputBox,
+                globalStyles.mt4,
+                { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
+              ]}
+              placeholder="Enter OTP"
+              value={otp}
+              onChangeText={(text) => {
+                if (/^\d{0,6}$/.test(text)) {
+                  setOtp(text);
+                  setError("");
+                }
+              }}
+              keyboardType="numeric"
+              maxLength={6}
+            />
+
+            {error ? (
+              <CustomText style={{ color: "red", marginTop: 5 }}>
+                {error}
+              </CustomText>
+            ) : null}
+
             <View
               style={[
                 globalStyles.flexrow,
@@ -366,6 +394,10 @@ export default function ServiceStart() {
               <TouchableOpacity
                 style={styles.pricecard}
                 onPress={async () => {
+                  if (!otp || otp.length !== 6) {
+                    setError("Please enter a valid 6-digit OTP");
+                    return;
+                  }
                   await updateTechnicianTracking("ServiceStarted");
                   handleUpload();
                   const totalSeconds =
@@ -505,9 +537,9 @@ export default function ServiceStart() {
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
                   {" "}
-                  {`${Math.floor(booking.TotalEstimatedDurationMinutes / 60)}h:${
-                    booking.TotalEstimatedDurationMinutes % 60
-                  }m`}
+                  {`${Math.floor(
+                    booking.TotalEstimatedDurationMinutes / 60
+                  )}h:${booking.TotalEstimatedDurationMinutes % 60}m`}
                 </CustomText>
               </View>
             </View>

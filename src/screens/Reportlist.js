@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   FlatList,
 } from "react-native";
@@ -16,9 +15,7 @@ import { API_BASE_URL } from "@env";
 import { color } from "../styles/theme";
 import { useNavigation } from "@react-navigation/native";
 
-const { width } = Dimensions.get("window");
-
-function TaskReportsScreen() {
+function Reportlist() {
   const navigation = useNavigation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,14 +59,15 @@ function TaskReportsScreen() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingBookings = bookings.filter((booking) => {
+  // ✅ Only show past bookings
+  const pastBookings = bookings.filter((booking) => {
     const assignDate = booking.BookingDate
       ? new Date(booking.BookingDate)
       : null;
     if (!assignDate || isNaN(assignDate)) return false;
 
     assignDate.setHours(0, 0, 0, 0);
-    return assignDate > today;
+    return assignDate <= today;
   });
 
   const renderBookingCard = ({ item, index }) => (
@@ -151,41 +149,44 @@ function TaskReportsScreen() {
     </TouchableOpacity>
   );
 
-  return (
-    <View
-      style={{ flex: 1, backgroundColor: color.white, paddingHorizontal: 16 }}
-    >
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={color.primary}
-          style={{ marginTop: 30 }}
-        />
-      ) : error ? (
-        <CustomText>{error}</CustomText>
-      ) : upcomingBookings.length === 0 ? (
+  const renderList = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color={color.primary} />;
+    }
+
+    if (error) {
+      return <CustomText>{error}</CustomText>;
+    }
+
+    if (pastBookings.length === 0) {
+      return (
         <View style={[globalStyles.container, globalStyles.alineSelfcenter]}>
-          <CustomText style={globalStyles.neutral500}>
-            {" "}
-            No upcoming bookings
-          </CustomText>
+          <CustomText style={globalStyles.neutral500}>No past bookings</CustomText>
         </View>
-      ) : (
-        <FlatList
-          data={upcomingBookings}
-          keyExtractor={(item, index) =>
-            item.BookingID?.toString() || index.toString()
-          }
-          renderItem={renderBookingCard}
-          contentContainerStyle={{ paddingVertical: 20 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </View>
-  );
+      );
+    }
+
+    return (
+      <FlatList
+        data={pastBookings}
+        keyExtractor={(item, index) =>
+          item.BookingID?.toString() || index.toString()
+        }
+        renderItem={renderBookingCard}
+        contentContainerStyle={{
+          paddingVertical: 20,
+          paddingHorizontal: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  };
+
+  return <View style={{ flex: 1, backgroundColor: color.white }}>{renderList()}</View>;
 }
 
 const styles = StyleSheet.create({
+  
   cardContainer: {
     backgroundColor: color.neutral[200],
     borderRadius: 16,
@@ -212,4 +213,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TaskReportsScreen;
+export default Reportlist;

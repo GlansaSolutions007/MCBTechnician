@@ -41,6 +41,9 @@ export default StyleSheet.create({
   alineItemscenter: {
     alignItems: "center",
   },
+  alineItemsstart: {
+    alignItems: "flex-start",
+  },
   alineItemsEnd: {
     alignItems: "flex-end",
   },

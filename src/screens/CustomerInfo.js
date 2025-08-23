@@ -155,7 +155,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
           params: {
             origin: `${origin.Latitude},${origin.Longitude}`,
             destination: `${destination.Latitude},${destination.Longitude}`,
-            key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
+            key: "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc",
           },
         }
       );
@@ -252,6 +252,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
 
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
+        onRefresh();
     navigation.navigate("ServiceStart", { booking: booking });
   };
 

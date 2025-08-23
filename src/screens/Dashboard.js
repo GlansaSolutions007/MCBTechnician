@@ -48,7 +48,7 @@ export default function Dashboard() {
           setTotalAmount(res.data[0].TotalAmountCollected || 0);
         }
       } catch (err) {
-        console.error("Error fetching total amount:", err);
+        // console.error("Error fetching total amount:", err);
       }
     };
 
@@ -233,7 +233,7 @@ export default function Dashboard() {
         setTotalAmount(res.data[0].TotalAmountCollected || 0);
       }
     } catch (err) {
-      console.error("Error fetching total amount:", err);
+      // console.error("Error fetching total amount:", err);
     }
   };
 

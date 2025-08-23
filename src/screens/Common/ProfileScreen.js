@@ -207,15 +207,14 @@ export default function ProfileScreen() {
             </CustomText>
             <CustomText
               numberOfLines={1}
-              ellipsizeMode="tail"
-              style={[globalStyles.f12Medium, { flexShrink: 1, width: "100%" }]}
+              style={[globalStyles.f12Medium]}
             >
               Email: {profileData.Email}
             </CustomText>
             <View
               style={[
                 globalStyles.flexrow,
-                { flexWrap: "wrap", width: "100%" },
+                // { flexWrap: "wrap", width: "100%" },
               ]}
             >
               <View style={styles.iconbg}>
@@ -224,7 +223,7 @@ export default function ProfileScreen() {
               <CustomText
                 numberOfLines={1}
                 ellipsizeMode="tail"
-                style={[globalStyles.f12Medium, { flexShrink: 1 }]}
+                style={[globalStyles.f12Medium]}
               >
                 Dealer: {profileData.DealerName}
               </CustomText>
@@ -243,7 +242,7 @@ export default function ProfileScreen() {
                 ellipsizeMode="tail"
                 style={[
                   globalStyles.f10Regular,
-                  { flexShrink: 1, width: "100%" },
+                  {  width: "95%" },
                 ]}
               >
                 {profileData.AddressLine1}
