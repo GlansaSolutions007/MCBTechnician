@@ -18,7 +18,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 // import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
 // import base64 from "react-native-base64";
 import { API_BASE_URL } from "@env";
-import qrImage from "../../assets/images/QRImage.png";
+import qrImage from "../../assets/images/QrCode.jpeg.jpg";
 import { color } from "../styles/theme";
 
 export default function CollectPayment() {
