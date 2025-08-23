@@ -279,7 +279,7 @@ export default function ProfileScreen() {
             <CustomText>Services Completed</CustomText>
           </View>
           <View style={styles.gridItem}>
-            <TouchableOpacity onPress={review}>
+            <Pressable >
               <CustomText
                 style={[
                   globalStyles.f40Bold,
@@ -290,9 +290,9 @@ export default function ProfileScreen() {
                 {profileData.Rating ?? "0.0"}
               </CustomText>
               <CustomText>Review Ratings</CustomText>
-            </TouchableOpacity>
+            </Pressable>
           </View>
-          <View style={styles.gridItem}>
+          {/* <View style={styles.gridItem}>
             <CustomText
               style={[
                 globalStyles.f40Bold,
@@ -303,8 +303,8 @@ export default function ProfileScreen() {
               {profileData.ServedCustomers ?? "0+"}
             </CustomText>
             <CustomText>Served Customers</CustomText>
-          </View>
-          <View style={styles.gridItem}>
+          </View> */}
+          {/* <View style={styles.gridItem}>
             <CustomText
               style={[
                 globalStyles.f40Bold,
@@ -315,7 +315,7 @@ export default function ProfileScreen() {
               {profileData.KilometersTravelled ?? "0"}
             </CustomText>
             <CustomText>Kilometers Traveled</CustomText>
-          </View>
+          </View> */}
         </View>
 
         <View style={globalStyles.mt4}>

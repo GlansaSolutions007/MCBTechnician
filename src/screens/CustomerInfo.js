@@ -32,6 +32,7 @@ export default function CustomerInfo() {
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [updatedBookings, setUpdatedBookings] = useState(booking);
   const today = new Date().toISOString().split("T")[0];
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
@@ -48,9 +49,11 @@ export default function CustomerInfo() {
       );
 
       if (response.data && response.data.length > 0) {
+
         const updatedBooking = response.data.find(
           (b) => b.BookingID === booking.BookingID
         );
+        setUpdatedBookings(updatedBooking);
         if (updatedBooking) {
           navigation.setParams({ booking: updatedBooking });
         }
@@ -61,18 +64,17 @@ export default function CustomerInfo() {
       setRefreshing(false);
     }
   };
-  // useEffect(() => {
-  //  onRefresh();
-  // }, [])
   useEffect(() => {
-  const interval = setInterval(() => {
-    onRefresh();
-  }, 5000);
+   onRefresh();
+  }, [])
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     onRefresh();
+  //   }, 5000);
 
-  return () => clearInterval(interval); 
-}, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
-  
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
@@ -112,7 +114,7 @@ export default function CustomerInfo() {
   // const Latitude = booking.Latitude;
   // const Longitude = booking.Longitude;
   const Latitude = parseFloat(booking.latitude || booking.Latitude);
-const Longitude = parseFloat(booking.Longitude || booking.longitude);
+  const Longitude = parseFloat(booking.Longitude || booking.longitude);
 
   const bookingId = booking.BookingID;
   const destination = {
@@ -260,7 +262,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
 
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
-        onRefresh();
+    onRefresh();
     navigation.navigate("ServiceStart", { booking: booking });
   };
 
@@ -814,9 +816,11 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
               </TouchableOpacity>
             )}
 
-             {(booking.BookingStatus === "Completed"  && booking.PaymentStatus === "Pending") && (
+            {updatedBookings.Payments?.some(
+              (payment) => payment.PaymentStatus === "Pending"
+            ) && (
               <TouchableOpacity
-                onPress={() => CollectPayment(booking)}
+                onPress={() => CollectPayment(updatedBookings)}
                 style={styles.NextButton}
               >
                 <CustomText
