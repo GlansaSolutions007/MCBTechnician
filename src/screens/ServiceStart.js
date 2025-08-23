@@ -723,7 +723,7 @@ export default function ServiceStart() {
                 setTimeTaken(elapsedTime);
                 await AsyncStorage.removeItem("serviceTimerState");
               }}
-              style={globalStyles.blackButton}
+              style={[globalStyles.blackButton, globalStyles.mb3]}
             >
               <CustomText
                 style={[globalStyles.f12Bold, globalStyles.textWhite]}

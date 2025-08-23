@@ -46,6 +46,7 @@ export default function ServiceEnd() {
   const anyServicePending = services.some((service) => !service.completed);
   const bookingId = booking.BookingID;
   const CollectPayment = async () => {
+    await updateTechnicianTracking("Completed");
     navigation.navigate("CollectPayment", { booking });
   };
   const Dashboard = async () => {
@@ -407,15 +408,10 @@ export default function ServiceEnd() {
           </View>
         )} */}
 
-        <TextInput
-          placeholder="Enter OTP"
-          style={[globalStyles.inputBox, globalStyles.mt4]}
-          required
-        />
-        {booking.PaymentMode == "COS" && (
+        {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
           <TouchableOpacity
             onPress={CollectPayment}
-            style={globalStyles.blackButton}
+            style={[globalStyles.blackButton]}
           >
             <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
               Collect cash

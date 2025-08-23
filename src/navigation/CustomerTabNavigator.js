@@ -70,7 +70,7 @@ export default function CustomerTabNavigator({ navigation }) {
             case "Dashboard":
               iconSource = dashboard;
               break;
-            case "Tasks & Reports":
+            case "Tasks":
               iconSource = TaskReportsicon;
               break;
             case "Reports":
@@ -101,7 +101,7 @@ export default function CustomerTabNavigator({ navigation }) {
       })}
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
-      <Tab.Screen name="Tasks & Reports" component={TaskReportsScreen} />
+      <Tab.Screen name="Tasks" component={TaskReportsScreen} />
       <Tab.Screen name="Reports" component={Reportlist} />
       {/* <Tab.Screen name="service locations" component={Servicelocations} /> */}
       <Tab.Screen name="Profile" component={ProfileScreen} />

@@ -190,7 +190,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[200],
     borderRadius: 16,
     padding: 16,
-    elevation: 2,
   },
   icon: {
     marginRight: 4,

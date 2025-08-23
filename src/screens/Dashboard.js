@@ -597,8 +597,8 @@ export default function Dashboard() {
                         </TouchableOpacity>
                       )}
 
-                      {item.PaymentMode === "COS" &&
-                        item.BookingStatus === "Completed" && (
+                      {((item.PaymentMode === "COS" || item.PaymentMode === "cos") && item.BookingStatus === "Completed") &&
+                          (
                           <TouchableOpacity
                             onPress={() => CollectPayment(item)}
                           >

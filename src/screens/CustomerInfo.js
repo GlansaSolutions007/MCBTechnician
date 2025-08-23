@@ -271,7 +271,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
             style={[
               globalStyles.f20Bold,
               globalStyles.primary,
-              globalStyles.mt,
+              globalStyles.mt3,
             ]}
           >
             Booking ID:{" "}
@@ -791,7 +791,7 @@ const Longitude = parseFloat(booking.Longitude || booking.longitude);
               booking.BookingStatus === "ServiceStarted") && (
               <TouchableOpacity
                 onPress={() => ServiceStart(booking)}
-                style={styles.NextButton}
+                style={[styles.NextButton, globalStyles.mb3]}
               >
                 <CustomText
                   style={[
