@@ -23,6 +23,9 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
+import { db } from "../config/firebaseConfig"; // Ensure this path is correct
+import * as Location from "expo-location";
+import { ref, onValue, set } from "firebase/database";
 
 export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
@@ -57,9 +60,47 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    const fetchOnlineStatus = async () => {
+      alert('hey am calling');
+      try {
+        const technicianId = await AsyncStorage.getItem("techID");
+        if (!technicianId) {
+          console.log("No technician ID found");
+          return;
+        }
+
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.log("Permission to access location denied");
+          return;
+        }
+
+        Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000,
+            distanceInterval: 10,
+          },
+          (location) => {
+            set(ref(db, `technicians/${technicianId}`), {
+              lat: location.coords.latitude,
+              lng: location.coords.longitude,
+              lastUpdated: Date.now(),
+            });
+          }
+        );
+      } catch (error) {
+        console.error("Error fetching online status:", error);
+      }
+    };
+    fetchOnlineStatus();
+  }, []);
+
+  useEffect(() => {
     const fetchBookingCounts = async () => {
       try {
         const techID = await AsyncStorage.getItem("techID");
+        // alert(`Tech ID: ${techID}`);
         const token = await AsyncStorage.getItem("token");
 
         if (techID) {
@@ -465,12 +506,12 @@ export default function Dashboard() {
                     console.log("Image load failed for:", item.ProfileImage)
                   }
                 /> */}
-                 <Image
-                    source={{
-                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                    }}
-                    style={styles.avatar}
-                  />
+                <Image
+                  source={{
+                    uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
+                  }}
+                  style={styles.avatar}
+                />
 
                 <View style={[globalStyles.ml3, { flex: 1 }]}>
                   <CustomText

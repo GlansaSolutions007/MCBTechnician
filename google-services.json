@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "992462668563",
+    "project_id": "mycarbuddyapp-9068a",
+    "storage_bucket": "mycarbuddyapp-9068a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992462668563:android:3651f292ee32196e5c90e6",
+        "android_client_info": {
+          "package_name": "com.itglansa.mcbt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU195LzS3fmtzPpBEGiKfSaf0O4FPqb3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
