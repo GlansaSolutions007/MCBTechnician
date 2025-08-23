@@ -5,6 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
+  Pressable,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -13,13 +15,7 @@ import buddy from "../../assets/images/buddy.png";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
-import { API_BASE_URL_IMAGE } from "@env";
 import axios from "axios";
-const initialServices = [
-  { id: 1, label: "Leather Fabric Seat Polishing", completed: true },
-  { id: 2, label: "AC Vent Sanitization", completed: true },
-  { id: 3, label: "Mat Washing & Vacuuming", completed: true },
-];
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -36,14 +32,35 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  const [services, setServices] = useState(initialServices);
+  // const [services, setServices] = useState(booking?.Packages || []);
+  const [services, setServices] = useState(
+    booking?.Packages.flatMap((pkg) =>
+      pkg.Category.SubCategories?.flatMap((sub) =>
+        sub.Includes?.map((inc) => ({ ...inc, completed: true }))
+      )
+    ) || []
+  );
+
   const [reason, setReason] = useState("");
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
   const [selectedReason, setSelectedReason] = useState(null);
   const anyServicePending = services.some((service) => !service.completed);
-  const MAX_TIME = 5;
   const bookingId = booking.BookingID;
-  console.log(booking);
+  const CollectPayment = async () => {
+    await updateTechnicianTracking("Completed");
+    navigation.navigate("CollectPayment", { booking });
+  };
+  const Dashboard = async () => {
+    await updateTechnicianTracking("Completed");
+
+    navigation.reset({
+      index: 0,
+      routes: [
+        { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+      ],
+    });
+  };
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -62,11 +79,13 @@ export default function ServiceEnd() {
     fetchLeads();
   }, []);
 
-  const toggleService = (id) => {
-    setServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
-    );
-  };
+  // const toggleService = (id) => {
+  //   setServices((prev) =>
+  //     prev.map((s) =>
+  //       s.IncludeID === id ? { ...s, completed: !s.completed } : s
+  //     )
+  //   );
+  // };
 
   const extendedTime =
     actualTime > estimatedTime ? actualTime - estimatedTime : 0;
@@ -78,20 +97,16 @@ export default function ServiceEnd() {
     "Customer said not to do",
     "Unable to do that service part",
   ];
-
-  // const CollectPayment = () => {
-  //   navigation.navigate("CollectPayment");
-  // };
   const updateTechnicianTracking = async (actionType) => {
     try {
+      const payload = {
+        bookingID: Number(bookingId),
+        actionType: actionType,
+      };
       await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
-        {
-          bookingID: bookingId,
-          actionType: actionType,
-        }
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
+        payload
       );
-      console.log("=================", bookingId);
 
       console.log(`${actionType} action sent successfully`);
     } catch (error) {
@@ -103,9 +118,13 @@ export default function ServiceEnd() {
   return (
     <ScrollView style={globalStyles.bgcontainer}>
       <View style={[globalStyles.container]}>
-        <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+        <CustomText
+          style={[globalStyles.f24Bold, globalStyles.primary, globalStyles.mt3]}
+        >
           Booking ID:{" "}
-          <CustomText style={[globalStyles.black]}>TG234518</CustomText>
+          <CustomText style={[globalStyles.black]}>
+            {booking.BookingTrackID}
+          </CustomText>
         </CustomText>
 
         <View style={{ marginTop: 12 }}>
@@ -115,28 +134,30 @@ export default function ServiceEnd() {
 
           {services.map((service) => (
             <View
-              key={service.id}
+              key={service.IncludeID}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 marginBottom: 8,
               }}
             >
-              <TouchableOpacity onPress={() => toggleService(service.id)}>
+              <Pressable
+                // onPress={() => toggleService(service.IncludeID)}
+              >
                 <Ionicons
                   name={service.completed ? "checkbox" : "square-outline"}
-                  size={24}
+                  size={30}
                   color={service.completed ? "#0D9276" : "#999"}
                 />
-              </TouchableOpacity>
-              <CustomText style={[globalStyles.ml2]}>
-                {service.label}
+              </Pressable>
+              <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
+                {service.IncludeName}
               </CustomText>
             </View>
           ))}
 
           {/* Show this if any checkbox is not checked */}
-          {anyServicePending && (
+          {/* {anyServicePending && (
             <View>
               <CustomText style={[globalStyles.f14Bold, globalStyles.mt2]}>
                 Any obstacle for pending services?
@@ -195,7 +216,7 @@ export default function ServiceEnd() {
                 </View>
               </View>
             </View>
-          )}
+          )} */}
         </View>
 
         {/* Estimated and Extended Time */}
@@ -278,7 +299,7 @@ export default function ServiceEnd() {
         </View>
 
         {/* Reason for extended time */}
-        {extendedTime > 0 && (
+        {/* {extendedTime > 0 && (
           <View>
             <CustomText
               style={[
@@ -310,8 +331,8 @@ export default function ServiceEnd() {
                 globalStyles.borderRadiuslarge,
                 globalStyles.mt3,
               ]}
-            >
-              {/* {reasonsList.map((item, index) => (
+            > */}
+        {/* {reasonsList.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item)}
@@ -340,7 +361,7 @@ export default function ServiceEnd() {
                 </TouchableOpacity>
               ))} */}
 
-              {leads.map((item, index) => (
+        {/* {leads.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item.ID)}
@@ -386,20 +407,29 @@ export default function ServiceEnd() {
               </View>
             </View>
           </View>
-        )}
+        )} */}
 
-        <TouchableOpacity
-          // onPress={CollectPayment}
-          onPress={async () => {
-            await updateTechnicianTracking("ServiceEnded");
-            navigation.navigate("CollectPayment");
-          }}
-          style={globalStyles.blackButton}
-        >
-          <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-            Completed
-          </CustomText>
-        </TouchableOpacity>
+        {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
+          <TouchableOpacity
+            onPress={CollectPayment}
+            style={[globalStyles.blackButton]}
+          >
+            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+              Collect cash
+            </CustomText>
+          </TouchableOpacity>
+        )}
+        {(booking.PaymentMode === "razorpay" ||
+          booking.PaymentMode === "Razorpay") && (
+          <TouchableOpacity
+            onPress={Dashboard}
+            style={globalStyles.blackButton}
+          >
+            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+              Completed
+            </CustomText>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );

@@ -4,14 +4,16 @@ import ProfileScreen from "../screens/Common/ProfileScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomHeader from "../components/CustomHeader";
 import { color } from "../styles/theme";
-import dashboard from '../../assets/icons/Navigation/techhom.png'
-import TaskReportsicon from '../../assets/icons/Navigation/reports.png'
+import dashboard from "../../assets/icons/Navigation/techhom.png";
+import TaskReportsicon from "../../assets/icons/Navigation/reports.png";
+import Reportlisticon from "../../assets/icons/Navigation/schedule.png";
 // import SchedulesTrackicon from '../../assets/icons/Navigation/schedule.png'
 // import servicelocationsicon from '../../assets/icons/Navigation/LocationsPin.png'
-import Profile from '../../assets/icons/Navigation/techProfile.png'
+import Profile from "../../assets/icons/Navigation/techProfile.png";
 import Dashboard from "../screens/Dashboard";
 // import SchedulesTrack from "../screens/SchedulesTrack";
 import TaskReportsScreen from "../screens/TaskReportsScreen";
+import Reportlist from "../screens/Reportlist";
 // import Servicelocations from "../screens/Servicelocations";
 const Tab = createBottomTabNavigator();
 export default function CustomerTabNavigator({ navigation }) {
@@ -21,9 +23,7 @@ export default function CustomerTabNavigator({ navigation }) {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        header: () => (
-          <CustomHeader/>
-        ),
+        header: () => <CustomHeader />,
         tabBarShowLabel: true,
         tabBarActiveTintColor: color.primary,
         tabBarInactiveTintColor: "#8e8e93",
@@ -58,52 +58,51 @@ export default function CustomerTabNavigator({ navigation }) {
             {...props}
           />
         ),
-       tabBarIcon: ({ color, focused }) => {
-  let iconSource;
-  let iconStyle = {
-    width: 26,
-    height: 26,
-    tintColor: focused ? color.primary : "#8e8e93",
-  };
+        tabBarIcon: ({ color, focused }) => {
+          let iconSource;
+          let iconStyle = {
+            width: 26,
+            height: 26,
+            tintColor: focused ? color.primary : "#8e8e93",
+          };
 
-  switch (route.name) {
-    case "Dashboard":
-      iconSource = dashboard;
-      break;
-    case "Task & Reports":
-      iconSource = TaskReportsicon;
-      break;
-    // case "Schedules Track":
-    //   iconSource = SchedulesTrackicon;
-    //   break;
-    // case "service locations":
-    //   iconSource = servicelocationsicon;
-    //   break;
-    case "Profile":
-      iconSource = Profile;
-      break;
-    default:
-      iconSource = null;
-  }
+          switch (route.name) {
+            case "Dashboard":
+              iconSource = dashboard;
+              break;
+            case "Tasks":
+              iconSource = TaskReportsicon;
+              break;
+            case "Reports":
+              iconSource = Reportlisticon;
+              break;
+            // case "service locations":
+            //   iconSource = servicelocationsicon;
+            //   break;
+            case "Profile":
+              iconSource = Profile;
+              break;
+            default:
+              iconSource = null;
+          }
 
-  if (iconSource) {
-    return (
-      <Image
-        source={iconSource}
-        style={iconStyle}
-        resizeMode="contain"
-      />
-    );
-  }
+          if (iconSource) {
+            return (
+              <Image
+                source={iconSource}
+                style={iconStyle}
+                resizeMode="contain"
+              />
+            );
+          }
 
-  return null;
-}
-
+          return null;
+        },
       })}
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
-      <Tab.Screen name="Task & Reports"component={TaskReportsScreen} />
-      {/* <Tab.Screen name="Schedules Track" component={SchedulesTrack} /> */}
+      <Tab.Screen name="Tasks" component={TaskReportsScreen} />
+      <Tab.Screen name="Reports" component={Reportlist} />
       {/* <Tab.Screen name="service locations" component={Servicelocations} /> */}
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

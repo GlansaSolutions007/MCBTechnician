@@ -1,9 +1,10 @@
 import {
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -15,34 +16,65 @@ import {
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
-import { API_BASE_URL_IMAGE } from "@env";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
+import defaultAvatar from "../../assets/images/buddy.png";
+import { useState } from "react";
+import axios from "axios";
 
 export default function Bookings() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { bookings } = route.params;
+  const { bookings, techId } = route.params;
+  
+  const [todaysBookings, setTodaysBookings] = useState(bookings);
+  const [refreshing, setRefreshing] = useState(false);
+
   const customerInfo = (booking) => {
     navigation.navigate("customerInfo", { booking });
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`
+      );
+      if (response.data) {
+        setTodaysBookings(response.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing bookings:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
       contentContainerStyle={
-        bookings.length === 0 ? styles.noDataContainer : { paddingBottom: 30 }
+        todaysBookings.length === 0
+          ? styles.noDataContainer
+          : { paddingBottom: 30 }
       }
     >
       <View style={globalStyles.container}>
-        {bookings.length === 0 ? (
+        {todaysBookings.length === 0 ? (
           <CustomText style={globalStyles.neutral500}>
             No bookings assigned
           </CustomText>
         ) : (
-          bookings.map((item, index) => (
-            <View
+          todaysBookings.map((item, index) => (
+            <Pressable
+              onPress={() => customerInfo(item)}
               key={index}
               style={[
-                globalStyles.bgprimary,
+                item.BookingStatus === "Completed"
+                  ? { backgroundColor: "#969696" }
+                  : globalStyles.bgprimary,
                 globalStyles.p4,
                 globalStyles.mt5,
                 globalStyles.card,
@@ -50,9 +82,11 @@ export default function Bookings() {
             >
               <View style={globalStyles.flexrow}>
                 <Image
-                  source={{
-                    uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                  }}
+                  source={
+                    item.ProfileImage
+                      ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                      : defaultAvatar
+                  }
                   style={styles.avatar}
                 />
 
@@ -224,34 +258,13 @@ export default function Bookings() {
                         ]}
                         numberOfLines={3}
                       >
-                        {item.PackageName}
+                        {item.BrandName}
                       </CustomText>
                     </View>
                   </View>
                 </View>
-
-                <View style={globalStyles.alineSelfend}>
-                  <TouchableOpacity style={styles.cancelButton}>
-                    <CustomText
-                      style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                    >
-                      Cancel
-                    </CustomText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => customerInfo(item)}
-                    style={[styles.viewButton, globalStyles.mt3]}
-                  >
-                    <CustomText
-                      style={[globalStyles.f12Bold, globalStyles.primary]}
-                    >
-                      View
-                    </CustomText>
-                  </TouchableOpacity>
-                </View>
               </View>
-            </View>
+            </Pressable>
           ))
         )}
       </View>
@@ -262,22 +275,6 @@ export default function Bookings() {
 const styles = StyleSheet.create({
   noDataContainer: {
     flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: color.black,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  viewButton: {
-    backgroundColor: color.white,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },

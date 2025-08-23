@@ -41,6 +41,9 @@ export default StyleSheet.create({
   alineItemscenter: {
     alignItems: "center",
   },
+  alineItemsstart: {
+    alignItems: "flex-start",
+  },
   alineItemsEnd: {
     alignItems: "flex-end",
   },
@@ -55,6 +58,9 @@ export default StyleSheet.create({
   },
   textac: {
     textAlign: "center",
+  },
+  w30: {
+    width: "30%",
   },
   w40: {
     width: "40%",
@@ -71,6 +77,11 @@ export default StyleSheet.create({
   divider: {
     height: 1.5,
     backgroundColor: color.neutral[200],
+    marginVertical: 10,
+  },
+  dividerWhite: {
+    height: 1.5,
+    backgroundColor: color.white,
     marginVertical: 10,
   },
 

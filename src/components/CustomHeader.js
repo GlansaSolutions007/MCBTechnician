@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomText from "./CustomText";
 import globalStyles from "../styles/globalStyles";
 import { useNavigation } from "@react-navigation/native";
+import { color } from "../styles/theme";
 
 export default function CustomHeader() {
   const navigation = useNavigation();
@@ -31,17 +32,17 @@ export default function CustomHeader() {
       <View style={styles.topRow}>
         <View>
           <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
-            Hello User
+            Hello Buddy
           </CustomText>
-          <Pressable>
+          {/* <Pressable>
             <CustomText style={[globalStyles.f10Regular, globalStyles.mt1]}>
               Hyderabad, Telangana <Ionicons name="chevron-down" size={14} />
             </CustomText>
-          </Pressable>
+          </Pressable> */}
         </View>
 
-        <Pressable onPress={Notifications}>
-          <Ionicons name="notifications-outline" size={24} />
+        <Pressable style={[globalStyles.p1]} onPress={Notifications}>
+          <Ionicons name="notifications-outline" size={24} color={color.black} />
         </Pressable>
       </View>
     </View>

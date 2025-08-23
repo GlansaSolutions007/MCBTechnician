@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ScrollView,
   StyleSheet,
@@ -6,50 +7,74 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
-  Platform,
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import { Ionicons } from "@expo/vector-icons";
-import profilepic from "../../assets/images/person.jpg";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
-import AvailabilityHeader from "../components/AvailabilityHeader";
+// import AvailabilityHeader from "../components/AvailabilityHeader";
 import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
 import { useNavigation } from "@react-navigation/native";
 import schedule from "../../assets/icons/Navigation/schedule.png";
 import reports from "../../assets/icons/Navigation/reports.png";
-import MiniMapRoute from "../components/MiniMapRoute";
 import axios from "axios";
+import defaultAvatar from "../../assets/images/buddy.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
-import { db } from "../config/firebaseConfig"; // Ensure this path is correct
-import * as Location from "expo-location";
-import { ref, onValue, set } from "firebase/database";
-
+import { RefreshControl } from "react-native";
 export default function Dashboard() {
-  const [isOnline, setIsOnline] = useState(true);
+  // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
-  const customerInfo = () => {
-    navigation.navigate("customerInfo");
-  };
-  const CollectPayment = () => {
-    navigation.navigate("CollectPayment");
-  };
-  const LiveTrackingMap = () => {
-    navigation.navigate("LiveTrackingMap");
-  };
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  useEffect(() => {
+    const fetchTotalAmount = async () => {
+      try {
+        const techID = await AsyncStorage.getItem("techID");
+        const token = await AsyncStorage.getItem("token");
+        if (!techID) return;
+
+        const res = await axios.get(
+          `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setTotalAmount(res.data[0].TotalAmountCollected || 0);
+        }
+      } catch (err) {
+        // console.error("Error fetching total amount:", err);
+      }
+    };
+
+    fetchTotalAmount();
+  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshData = async () => {
+        try {
+          await Promise.all([
+            fetchTotalAmount(),
+            fetchBookingCounts(),
+            fetchBookings(),
+          ]);
+        } catch (error) {
+          console.error("Error refreshing data:", error);
+        }
+      };
+
+      refreshData();
+    }, [])
+  );
+
   const Booking = () => {
     navigation.navigate("Booking", { bookings });
   };
-  // console.log(
-  //   "Fetching booking counts from:",
-  //   `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`
-  // );
-  // console.log(
-  //   "Fetching assigned bookings from:",
-  //   `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`
-  // );
 
   const [bookings, setBookings] = useState([]);
   const [bookingCounts, setBookingCounts] = useState({
@@ -58,43 +83,18 @@ export default function Dashboard() {
     TodayCustomerCount: 0,
     CompletedBookingsCount: 0,
   });
-
-  useEffect(() => {
-    const fetchOnlineStatus = async () => {
-      alert('hey am calling');
-      try {
-        const technicianId = await AsyncStorage.getItem("techID");
-        if (!technicianId) {
-          console.log("No technician ID found");
-          return;
-        }
-
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          console.log("Permission to access location denied");
-          return;
-        }
-
-        Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            timeInterval: 5000,
-            distanceInterval: 10,
-          },
-          (location) => {
-            set(ref(db, `technicians/${technicianId}`), {
-              lat: location.coords.latitude,
-              lng: location.coords.longitude,
-              lastUpdated: Date.now(),
-            });
-          }
-        );
-      } catch (error) {
-        console.error("Error fetching online status:", error);
-      }
-    };
-    fetchOnlineStatus();
-  }, []);
+  const CollectPayment = async (item) => {
+    navigation.navigate("CollectPayment", { booking: item });
+  };
+  const CustomerInfo = async (item) => {
+    navigation.navigate("customerInfo", { booking: item });
+  };
+  const ServiceStart = async (item) => {
+    navigation.navigate("ServiceStart", { booking: item });
+  };
+  const Schedules = () => {
+    navigation.navigate("Task & Reports");
+  };
 
   useEffect(() => {
     const fetchBookingCounts = async () => {
@@ -107,6 +107,7 @@ export default function Dashboard() {
           try {
             const res = await axios.get(
               `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+              `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -114,7 +115,6 @@ export default function Dashboard() {
               }
             );
 
-            // Use res here:
             if (Array.isArray(res.data) && res.data.length > 0) {
               setBookingCounts(res.data[0]);
             }
@@ -137,13 +137,15 @@ export default function Dashboard() {
         const token = await AsyncStorage.getItem("token");
         if (techID) {
           const res = await axios.get(
-            `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
+            `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
+
             {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
             }
           );
+
           setBookings(Array.isArray(res.data) ? res.data : []);
         } else {
           console.warn("No technicianId found");
@@ -155,6 +157,7 @@ export default function Dashboard() {
 
     fetchBookings();
   }, []);
+
   const [techID, setTechID] = useState(null);
   const [count, setCount] = useState(0);
   const [assignedTasks, setAssignedTasks] = useState([]);
@@ -216,13 +219,103 @@ export default function Dashboard() {
   //     ) || []
   // );
 
+  const fetchTotalAmount = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+      if (!techID) return;
+
+      const res = await axios.get(
+        `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setTotalAmount(res.data[0].TotalAmountCollected || 0);
+      }
+    } catch (err) {
+      // console.error("Error fetching total amount:", err);
+    }
+  };
+
+  // Fetch booking counts
+  const fetchBookingCounts = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+
+      if (techID) {
+        const res = await axios.get(
+          `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setBookingCounts(res.data[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching booking counts:", err);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const techID = await AsyncStorage.getItem("techID");
+      const token = await AsyncStorage.getItem("token");
+      if (techID) {
+        const res = await axios.get(
+          `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setBookings(Array.isArray(res.data) ? res.data : []);
+      }
+    } catch (err) {
+      console.error("fetchBookings error", err);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchTotalAmount(),
+      fetchBookingCounts(),
+      fetchBookings(),
+    ]);
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    onRefresh();
+  }, []);
+
+  const refreshData = async () => {
+    await Promise.all([
+      fetchTotalAmount(),
+      fetchBookingCounts(),
+      fetchBookings(),
+    ]);
+  };
+
+  useEffect(() => {
+    refreshData();
+
+    const interval = setInterval(() => {
+      refreshData();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       <View style={[globalStyles.container]}>
-        <AvailabilityHeader />
+        {/* <AvailabilityHeader /> */}
         <View
           style={[
             globalStyles.flexrow,
@@ -231,7 +324,8 @@ export default function Dashboard() {
           ]}
         >
           <View style={{ width: "48%" }}>
-            <View
+            <Pressable
+              onPress={Schedules}
               style={[
                 globalStyles.bgprimary,
                 globalStyles.borderRadiuslarge,
@@ -265,7 +359,7 @@ export default function Dashboard() {
                   {bookingCounts.ScheduledBookingsCount}
                 </CustomText>
               </View>
-            </View>
+            </Pressable>
 
             <View
               style={[
@@ -275,22 +369,19 @@ export default function Dashboard() {
                 globalStyles.alineItemscenter,
                 globalStyles.justifysb,
                 globalStyles.ph4,
-                globalStyles.pv2,
+                globalStyles.pv3,
               ]}
             >
-              <Image
-                source={schedule}
-                style={{ width: 20, height: 20, tintColor: "#fff" }}
-              />
               <CustomText
-                style={[globalStyles.f32Bold, globalStyles.textWhite]}
+                style={[globalStyles.f24Bold, globalStyles.textWhite]}
               >
-                2k
+                ₹ {totalAmount.toFixed(2)}
               </CustomText>
             </View>
           </View>
 
-          <View
+          <Pressable
+            onPress={Booking}
             style={[
               globalStyles.bgprimary,
               globalStyles.borderRadiuslarge,
@@ -327,7 +418,7 @@ export default function Dashboard() {
                 </CustomText>
               </View>
             </View>
-          </View>
+          </Pressable>
         </View>
 
         <Pressable
@@ -389,183 +480,171 @@ export default function Dashboard() {
         </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <CustomText style={[globalStyles.f14Bold]}>
-            Next Active Service
-          </CustomText>
+          <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
+          {bookings.some((item) => item.BookingStatus === "StartJourney"|| item.BookingStatus === "ServiceStarted"|| item.BookingStatus === "Reached" || item.PaymentStatus === "Pending") ? (
+            <View style={[globalStyles.mt3]}>
+              {bookings
+                .filter(
+                  (item) =>
+                    item.BookingStatus === "ServiceStarted" ||
+                    item.BookingStatus === "StartJourney" ||
+                    item.BookingStatus === "Reached" ||
+                    item.Payments?.[0]?.PaymentStatus === "Pending"
+                )
+                .map((item, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      globalStyles.bgprimary,
+                      globalStyles.p4,
+                      globalStyles.card,
+                      globalStyles.mt2,
+                    ]}
+                  >
+                    <View style={[globalStyles.flexrow]}>
+                      <Image
+                        source={
+                          item.ProfileImage
+                            ? {
+                                uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                              }
+                            : defaultAvatar
+                        }
+                        style={styles.avatar}
+                      />
 
-          {bookings.length === 0 ? (
-            <>
+                      <View style={[globalStyles.ml3, { flex: 1 }]}>
+                        <CustomText
+                          style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                        >
+                          {item.CustomerName}
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f12Regular,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Mobile: {item.PhoneNumber}
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f10Light,
+                            globalStyles.neutral100,
+                          ]}
+                        >
+                          {item.FullAddress}
+                        </CustomText>
+                      </View>
+                    </View>
+
+                    <View style={globalStyles.divider} />
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.justifysb,
+                        globalStyles.alineItemscenter,
+                        styles.card,
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f16Bold, globalStyles.black]}
+                      >
+                        {item.TimeSlot}
+                      </CustomText>
+                      {/* {(item.BookingStatus === "Reached") && (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => ServiceStart(item)}
+                      >
+                        <View
+                            style={{
+                              backgroundColor: color.yellow,
+                              borderRadius: 50,
+                              padding: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Ionicons
+                              name="time-outline"
+                              size={24}
+                              color={color.white}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      )} */}
+
+                      {(item.BookingStatus === "Confirmed" ||
+                        item.BookingStatus === "StartJourney" ||
+                        item.BookingStatus === "ServiceStarted" ||
+                        item.BookingStatus === "Reached") && (
+                        <TouchableOpacity onPress={() => CustomerInfo(item)}>
+                          <View
+                            style={{
+                              backgroundColor: color.primary,
+                              borderRadius: 50,
+                              padding: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Ionicons
+                              name="navigate-outline"
+                              size={24}
+                              color={color.white}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      )}
+
+                      {((item.PaymentMode === "COS" || item.PaymentMode === "cos") && item.BookingStatus === "Completed") &&
+                          (
+                          <TouchableOpacity
+                            onPress={() => CollectPayment(item)}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: color.primary,
+                                borderRadius: 50,
+                                padding: 8,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <MaterialCommunityIcons
+                                name="currency-inr"
+                                size={24}
+                                color={color.white}
+                              />
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                    </View>
+                  </View>
+                ))}
+            </View>
+          ) : (
+            <View>
               <CustomText
-                style={[globalStyles.f28Regular, globalStyles.neutral300]}
+                style={[globalStyles.f32Regular, globalStyles.neutral300]}
               >
                 There are no{" "}
               </CustomText>
               <View style={[globalStyles.flexrow]}>
                 <CustomText
-                  style={[globalStyles.primary, globalStyles.f28Bold]}
+                  style={[globalStyles.primary, globalStyles.f32Bold]}
                 >
                   active services{" "}
                 </CustomText>
                 <CustomText
-                  style={[globalStyles.f28Regular, globalStyles.neutral300]}
+                  style={[globalStyles.f32Regular, globalStyles.neutral200]}
                 >
                   yet....
                 </CustomText>
               </View>
-            </>
-          ) : (
-            bookings.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.mt5,
-                  globalStyles.card,
-                ]}
-              >
-                <View style={[globalStyles.flexrow]}>
-                  {/* <Image
-                    source={
-                      item.ProfileImage
-                        ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                        : profilepic
-                    }
-                    style={styles.avatar}
-                    onError={() =>
-                      console.log("Image load failed for:", item.ProfileImage)
-                    }
-                  /> */}
-                  <Image
-                    source={{
-                      uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                    }}
-                    style={styles.avatar}
-                  />
-
-                  <View style={[globalStyles.ml3, { flex: 1 }]}>
-                    <CustomText
-                      style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                    >
-                      {item.CustomerName}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                    >
-                      Mobile: {item.PhoneNumber}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f10Light, globalStyles.neutral100]}
-                    >
-                      {item.FullAddress}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View style={globalStyles.divider} />
-
-                <View>
-                  <MiniMapRoute
-                    origin={{
-                      latitude: 17.4445,
-                      longitude: 78.3772,
-                    }}
-                    destination={{
-                      latitude: 17.36191607830754,
-                      longitude: 78.47466965365447,
-                    }}
-                  />
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={[globalStyles.mt3]}>
-          {bookings.map((item, index) => (
-            <View
-              key={index}
-              style={[
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.card,
-                globalStyles.mt2,
-              ]}
-            >
-              <View style={[globalStyles.flexrow]}>
-                {/* <Image
-                  source={
-                    item.ProfileImage
-                      ? {
-                          uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                        }
-                      : profilepic
-                  }
-                  style={styles.avatar}
-                  onError={() =>
-                    console.log("Image load failed for:", item.ProfileImage)
-                  }
-                /> */}
-                <Image
-                  source={{
-                    uri: `${API_BASE_URL_IMAGE}${item.VehicleImage}`,
-                  }}
-                  style={styles.avatar}
-                />
-
-                <View style={[globalStyles.ml3, { flex: 1 }]}>
-                  <CustomText
-                    style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                  >
-                    {item.CustomerName}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.textWhite]}
-                  >
-                    Mobile: {item.PhoneNumber}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f10Light, globalStyles.neutral100]}
-                  >
-                    {item.FullAddress}
-                  </CustomText>
-                </View>
-              </View>
-
-              <View style={globalStyles.divider} />
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
-                  globalStyles.alineItemscenter,
-                  styles.card,
-                ]}
-              >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {item.TimeSlot}
-                </CustomText>
-                <TouchableOpacity
-                // onPress={LiveTrackingMap}
-                >
-                  <View
-                    style={{
-                      backgroundColor: color.black,
-                      borderRadius: 50,
-                      padding: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name="navigate-outline"
-                      size={24}
-                      color={color.white}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
             </View>
-          ))}
+          )}
         </View>
       </View>
     </ScrollView>

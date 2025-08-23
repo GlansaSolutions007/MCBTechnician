@@ -1,329 +1,328 @@
-import React, { useEffect, useState, useRef } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  Alert,
-  Image,
-  TouchableOpacity,
-  Linking,
-} from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
-import * as Location from "expo-location";
-import axios from "axios";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import globalStyles from "../styles/globalStyles";
-import CustomText from "./CustomText";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// import React, { useEffect, useState, useRef } from "react";
+// import {
+//   View,
+//   StyleSheet,
+//   Text,
+//   Alert,
+//   Image,
+//   TouchableOpacity,
+//   Linking,
+// } from "react-native";
+// import MapView, { Marker, Polyline } from "react-native-maps";
+// import * as Location from "expo-location";
+// import axios from "axios";
+// import { Ionicons } from "@expo/vector-icons";
+// import { useNavigation, useRoute } from "@react-navigation/native";
+// import globalStyles from "../styles/globalStyles";
+// import CustomText from "./CustomText";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function LiveTrackingWithRoute() {
-  const navigation = useNavigation();
-  const [location, setLocation] = useState(null);
-  const [routeCoords, setRouteCoords] = useState([]);
-  const route = useRoute();
-  const { bookings } = route.params;
-  const mapRef = useRef(null);
-  const Reached = () => {
-    navigation.navigate("ServiceStart", { bookings });
-  };
-  const { latitude, longitude, bookingId } = route.params;
+// export default function LiveTrackingWithRoute() {
+//   const navigation = useNavigation();
+//   const [location, setLocation] = useState(null);
+//   const [routeCoords, setRouteCoords] = useState([]);
+//   const route = useRoute();
+//   const { bookings } = route.params;
+//   const mapRef = useRef(null);
+//   const Reached = () => {
+//     navigation.navigate("ServiceStart", { bookings });
+//   };
+//   const { latitude, longitude, bookingId } = route.params;
 
-  console.log("Lat:", latitude, "Lng:", longitude, "BookingId:", bookingId);
+//   console.log("Lat:", latitude, "Lng:", longitude, "BookingId:", bookingId);
 
-  const destination = {
-    latitude: parseFloat(latitude),
-    longitude: parseFloat(longitude),
-  };
-  console.log("Destination:", destination);
+//   const destination = {
+//     latitude: parseFloat(latitude),
+//     longitude: parseFloat(longitude),
+//   };
+//   console.log("Destination:", destination);
 
-  useEffect(() => {
-    const startTracking = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location access is required.");
-        return;
-      }
+//   useEffect(() => {
+//     const startTracking = async () => {
+//       const { status } = await Location.requestForegroundPermissionsAsync();
+//       if (status !== "granted") {
+//         Alert.alert("Permission Denied", "Location access is required.");
+//         return;
+//       }
 
-      Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 1,
-        },
-        async (loc) => {
-          const coords = {
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          };
+//       Location.watchPositionAsync(
+//         {
+//           accuracy: Location.Accuracy.High,
+//           timeInterval: 5000,
+//           distanceInterval: 1,
+//         },
+//         async (loc) => {
+//           const coords = {
+//             latitude: loc.coords.latitude,
+//             longitude: loc.coords.longitude,
+//             latitudeDelta: 0.01,
+//             longitudeDelta: 0.01,
+//           };
 
-          setLocation(coords);
+//           setLocation(coords);
 
-          if (mapRef.current) {
-            mapRef.current.animateToRegion(coords, 1000);
-          }
+//           if (mapRef.current) {
+//             mapRef.current.animateToRegion(coords, 1000);
+//           }
 
-          fetchRoute(coords);
-        }
-      );
-    };
+//           fetchRoute(coords);
+//         }
+//       );
+//     };
 
-    startTracking();
-  }, []);
+//     startTracking();
+//   }, []);
 
-  const fetchRoute = async (origin) => {
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/directions/json`,
-        {
-          params: {
-            origin: `${origin.latitude},${origin.longitude}`,
-            destination: `${destination.latitude},${destination.longitude}`,
-            key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
-          },
-        }
-      );
+//   const fetchRoute = async (origin) => {
+//     try {
+//       const response = await axios.get(
+//         `https://maps.googleapis.com/maps/api/directions/json`,
+//         {
+//           params: {
+//             origin: `${origin.latitude},${origin.longitude}`,
+//             destination: `${destination.latitude},${destination.longitude}`,
+//             key: "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo",
+//           },
+//         }
+//       );
 
-      const points = response.data.routes[0].overview_polyline.points;
-      const decoded = decodePolyline(points);
-      setRouteCoords(decoded);
-    } catch (error) {
-      console.error("Google Directions API error:", error.message);
-    }
-  };
+//       const points = response.data.routes[0].overview_polyline.points;
+//       const decoded = decodePolyline(points);
+//       setRouteCoords(decoded);
+//     } catch (error) {
+//       console.error("Google Directions API error:", error.message);
+//     }
+//   };
 
-  const decodePolyline = (t) => {
-    let points = [];
-    let index = 0,
-      len = t.length;
-    let lat = 0,
-      lng = 0;
+//   const decodePolyline = (t) => {
+//     let points = [];
+//     let index = 0,
+//       len = t.length;
+//     let lat = 0,
+//       lng = 0;
 
-    while (index < len) {
-      let b,
-        shift = 0,
-        result = 0;
-      do {
-        b = t.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlat = result & 1 ? ~(result >> 1) : result >> 1;
-      lat += dlat;
+//     while (index < len) {
+//       let b,
+//         shift = 0,
+//         result = 0;
+//       do {
+//         b = t.charCodeAt(index++) - 63;
+//         result |= (b & 0x1f) << shift;
+//         shift += 5;
+//       } while (b >= 0x20);
+//       let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+//       lat += dlat;
 
-      shift = 0;
-      result = 0;
-      do {
-        b = t.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlng = result & 1 ? ~(result >> 1) : result >> 1;
-      lng += dlng;
+//       shift = 0;
+//       result = 0;
+//       do {
+//         b = t.charCodeAt(index++) - 63;
+//         result |= (b & 0x1f) << shift;
+//         shift += 5;
+//       } while (b >= 0x20);
+//       let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+//       lng += dlng;
 
-      points.push({
-        latitude: lat / 1e5,
-        longitude: lng / 1e5,
-      });
-    }
-    return points;
-  };
+//       points.push({
+//         latitude: lat / 1e5,
+//         longitude: lng / 1e5,
+//       });
+//     }
+//     return points;
+//   };
 
-  const updateTrackingStatus = async (status) => {
-    try {
-      const techID = await AsyncStorage.getItem("techID");
-      if (!techID) {
-        Alert.alert("Error", "Technician ID not found.");
-        return;
-      }
+//   const updateTrackingStatus = async (status) => {
+//     try {
+//       const techID = await AsyncStorage.getItem("techID");
+//       if (!techID) {
+//         Alert.alert("Error", "Technician ID not found.");
+//         return;
+//       }
 
-      if (!location) {
-        Alert.alert("Error", "Current location not available yet.");
-        return;
-      }
+//       if (!location) {
+//         Alert.alert("Error", "Current location not available yet.");
+//         return;
+//       }
 
-      const payload = {
-        BookingID: bookingId,
-        Status: status,
-        TechnicianID: techID,
-        Latitude: location.latitude,
-        Longitude: location.longitude,
-      };
+//       const payload = {
+//         BookingID: bookingId,
+//         Status: status,
+//         TechnicianID: techID,
+//         Latitude: location.latitude,
+//         Longitude: location.longitude,
+//       };
 
-      console.log("Sending Tracking Payload:", payload);
+//       console.log("Sending Tracking Payload:", payload);
 
-      const response = await axios.post(
-        "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
-        payload,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+//       const response = await axios.post(
+//         "https://api.mycarsbuddy.com/api/TechnicianTracking/UpdateTechnicianTracking",
+//         payload,
+//         {
+//           headers: { "Content-Type": "application/json" },
+//         }
+//       );
 
-      if (response.status === 200 && response.data?.success) {
-        console.log(`${status} status updated successfully`);
-        if (status === "Reached") {
-          navigation.navigate("ServiceStart");
-        }
-      } else {
-        console.warn("Unexpected response:", response);
-        Alert.alert("Error", `Failed to update ${status} status`);
-      }
-    } catch (error) {
-      console.error(
-        `Error updating tracking status (${status}):`,
-        error.message
-      );
-      if (error.response?.data) {
-        console.log("Response error data:", error.response.data);
-        Alert.alert(
-          "Error",
-          error.response.data.message || `Failed to update ${status} status`
-        );
-      } else {
-        Alert.alert("Error", `Failed to update ${status} status`);
-      }
-    }
-  };
+//       if (response.status === 200 && response.data?.success) {
+//         console.log(`${status} status updated successfully`);
+//         if (status === "Reached") {
+//           navigation.navigate("ServiceStart");
+//         }
+//       } else {
+//         console.warn("Unexpected response:", response);
+//         Alert.alert("Error", `Failed to update ${status} status`);
+//       }
+//     } catch (error) {
+//       console.error(
+//         `Error updating tracking status (${status}):`,
+//         error.message
+//       );
+//       if (error.response?.data) {
+//         console.log("Response error data:", error.response.data);
+//         Alert.alert(
+//           "Error",
+//           error.response.data.message || `Failed to update ${status} status`
+//         );
+//       } else {
+//         Alert.alert("Error", `Failed to update ${status} status`);
+//       }
+//     }
+//   };
 
-  const openGoogleMaps = () => {
-    if (location) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
-      Linking.openURL(url);
-    }
-  };
+//   const openGoogleMaps = () => {
+//     if (location) {
+//       const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+//       Linking.openURL(url);
+//     }
+//   };
 
-  return (
-    <View style={{ flex: 1 }}>
-      {location ? (
-        <MapView ref={mapRef} style={styles.map} region={location}>
-          <Marker coordinate={location}>
-            <View style={styles.markerContainer}>
-              <Image
-                source={require("../../assets/images/custpic.jpg")}
-                style={styles.markerImage}
-              />
-            </View>
-          </Marker>
-          <Marker coordinate={destination}>
-            <View style={styles.markerContainer2}>
-              <Image
-                source={require("../../assets/images/carbuddy.png")}
-                style={styles.markerImage}
-              />
-            </View>
-          </Marker>
+//   return (
+//     <View style={{ flex: 1 }}>
+//       {location ? (
+//         <MapView ref={mapRef} style={styles.map} region={location}>
+//           <Marker coordinate={location}>
+//             <View style={styles.markerContainer}>
+//               <Image
+//                 source={require("../../assets/images/custpic.jpg")}
+//                 style={styles.markerImage}
+//               />
+//             </View>
+//           </Marker>
+//           <Marker coordinate={destination}>
+//             <View style={styles.markerContainer2}>
+//               <Image
+//                 source={require("../../assets/images/carbuddy.png")}
+//                 style={styles.markerImage}
+//               />
+//             </View>
+//           </Marker>
 
-          {routeCoords.length > 0 && (
-            <Polyline
-              coordinates={routeCoords}
-              strokeWidth={4}
-              strokeColor="blue"
-            />
-          )}
-        </MapView>
-      ) : (
-        <View style={styles.loading}>
-          <Text>Getting location...</Text>
-        </View>
-      )}
+//           {routeCoords.length > 0 && (
+//             <Polyline
+//               coordinates={routeCoords}
+//               strokeWidth={4}
+//               strokeColor="blue"
+//             />
+//           )}
+//         </MapView>
+//       ) : (
+//         <View style={styles.loading}>
+//           <Text>Getting location...</Text>
+//         </View>
+//       )}
 
-      <TouchableOpacity
-        style={styles.centerButton}
-        onPress={() => {
-          if (location && mapRef.current) {
-            mapRef.current.animateToRegion(location, 1000);
-          }
-        }}
-      >
-        <Ionicons name="locate" size={24} color="#fff" />
-      </TouchableOpacity>
-      <View style={[styles.startreach]}>
-        <TouchableOpacity
-          style={styles.ReachedButton}
-          // onPress={() => updateTrackingStatus("Reached")}
-          onPress={Reached}
-        >
-          <Text style={styles.startButtonText}>Reached</Text>
-        </TouchableOpacity>
+//       <TouchableOpacity
+//         style={styles.centerButton}
+//         onPress={() => {
+//           if (location && mapRef.current) {
+//             mapRef.current.animateToRegion(location, 1000);
+//           }
+//         }}
+//       >
+//         <Ionicons name="locate" size={24} color="#fff" />
+//       </TouchableOpacity>
+//       <View style={[styles.startreach]}>
+//         <TouchableOpacity
+//           style={styles.ReachedButton}
+//           onPress={Reached}
+//         >
+//           <Text style={styles.startButtonText}>Reached</Text>
+//         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={() => {
-            updateTrackingStatus("StartJourney");
-            openGoogleMaps();
-          }}
-        >
-          <Text style={styles.startButtonText}>Start Navigation</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
+//         <TouchableOpacity
+//           style={styles.startButton}
+//           onPress={() => {
+//             updateTrackingStatus("StartJourney");
+//             openGoogleMaps();
+//           }}
+//         >
+//           <Text style={styles.startButtonText}>Start Navigation</Text>
+//         </TouchableOpacity>
+//       </View>
+//     </View>
+//   );
+// }
 
-const styles = StyleSheet.create({
-  map: { flex: 1 },
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  markerContainer: {
-    width: 30,
-    height: 30,
-    borderRadius: 50,
-    borderColor: "red",
-    borderWidth: 2,
-    overflow: "hidden",
-  },
-  markerContainer2: {
-    width: 38,
-    height: 18,
-    overflow: "hidden",
-  },
-  markerImage: {
-    width: "100%",
-    height: "100%",
-  },
-  centerButton: {
-    position: "absolute",
-    bottom: 90,
-    right: 20,
-    backgroundColor: "#2196F3",
-    padding: 12,
-    borderRadius: 30,
-    elevation: 5,
-  },
-  startreach: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  startButton: {
-    backgroundColor: "#28a745",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    elevation: 5,
-    width: "48%",
-  },
-  ReachedButton: {
-    backgroundColor: "#F8B400",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    elevation: 5,
-    width: "48%",
-  },
-  startButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
+// const styles = StyleSheet.create({
+//   map: { flex: 1 },
+//   loading: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   markerContainer: {
+//     width: 30,
+//     height: 30,
+//     borderRadius: 50,
+//     borderColor: "red",
+//     borderWidth: 2,
+//     overflow: "hidden",
+//   },
+//   markerContainer2: {
+//     width: 38,
+//     height: 18,
+//     overflow: "hidden",
+//   },
+//   markerImage: {
+//     width: "100%",
+//     height: "100%",
+//   },
+//   centerButton: {
+//     position: "absolute",
+//     bottom: 90,
+//     right: 20,
+//     backgroundColor: "#2196F3",
+//     padding: 12,
+//     borderRadius: 30,
+//     elevation: 5,
+//   },
+//   startreach: {
+//     position: "absolute",
+//     bottom: 20,
+//     left: 20,
+//     right: 20,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//   },
+//   startButton: {
+//     backgroundColor: "#28a745",
+//     paddingVertical: 14,
+//     borderRadius: 10,
+//     alignItems: "center",
+//     elevation: 5,
+//     width: "48%",
+//   },
+//   ReachedButton: {
+//     backgroundColor: "#F8B400",
+//     paddingVertical: 14,
+//     borderRadius: 10,
+//     alignItems: "center",
+//     elevation: 5,
+//     width: "48%",
+//   },
+//   startButtonText: {
+//     color: "#fff",
+//     fontSize: 16,
+//     fontWeight: "bold",
+//   },
+// });

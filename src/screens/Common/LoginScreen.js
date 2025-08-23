@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
@@ -36,7 +37,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://api.mycarsbuddy.com/api/Auth/Technician-login",
+        `${API_BASE_URL}Auth/Technician-login`,
         {
           PhoneNumber: phoneNumber,
           Password: password,
@@ -64,7 +65,6 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("email", email);
 
         login({ email, token, techID: techID });
-        console.log("iddddddddddddddd:", techID);
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
@@ -114,12 +114,15 @@ export default function LoginScreen() {
       )} */}
       <View />
       <View>
-        <View>
-          <Image
-            source={require("../../../assets/Logo/mycarbuddy.png")}
-            style={styles.logo}
-          />
-        </View>
+        {!keyboardVisible && (
+          <View>
+            <Image
+              source={require("../../../assets/Logo/mycarbuddy.png")}
+              style={styles.logo}
+            />
+          </View>
+        )}
+
         <TextInput
           placeholder="Enter Phone Number"
           placeholderTextColor={color.textWhite}
@@ -142,7 +145,7 @@ export default function LoginScreen() {
         />
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, keyboardVisible && globalStyles.mb40]}
           onPress={handleLoginWithPassword}
           disabled={loading}
         >
@@ -150,6 +153,7 @@ export default function LoginScreen() {
             Login
           </CustomText>
         </TouchableOpacity>
+        
       </View>
 
       <CustomAlert

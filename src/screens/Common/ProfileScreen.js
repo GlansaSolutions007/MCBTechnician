@@ -16,14 +16,14 @@ import { color } from "../../styles/theme";
 import locationicon from "../../../assets/icons/Navigation/LocationsPin.png";
 import person from "../../../assets/icons/Navigation/techProfile.png";
 import { useNavigation } from "@react-navigation/native";
-import AvailabilityHeader from "../../components/AvailabilityHeader";
+// import AvailabilityHeader from "../../components/AvailabilityHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+// import * as ImagePicker from "expo-image-picker";
+// import * as FileSystem from "expo-file-system";
 
 export default function ProfileScreen() {
   const [profileData, setProfileData] = useState(null);
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   };
   const handleLogout = () => {
     setShowLogoutModal(false);
-    logout(); // real logout
+    logout();
   };
 
   // const [uploading, setUploading] = useState(false);
@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   //   }
 
   //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  // mediaTypes: ImagePicker.MediaType,
   //     allowsEditing: true,
   //     aspect: [4, 3],
   //     quality: 0.7,
@@ -162,28 +162,16 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={[globalStyles.bgcontainer]}>
       <View style={globalStyles.container}>
-        <AvailabilityHeader />
+        {/* <AvailabilityHeader /> */}
         <View style={[globalStyles.flexrow, globalStyles.mv5]}>
           <View
             style={[
               globalStyles.alineItemscenter,
               globalStyles.mb3,
-              globalStyles.mr4,
+              globalStyles.mr2,
             ]}
           >
-            {/* <Image
-              source={
-                profileData?.ProfileImage
-                  ? {
-                      uri: `https://api.mycarsbuddy.com/Images/${encodeURI(
-                        profileData.ProfileImage
-                      )}`,
-                    }
-                  : require("../../../assets/images/persontwo.jpg")
-              }
-              style={styles.avatar}
-            /> */}
-            <View
+            <Pressable
               // onPress={pickImage}
               style={{ position: "relative" }}
             >
@@ -204,46 +192,60 @@ export default function ProfileScreen() {
                   <ActivityIndicator size="small" color="#fff" />
                 </View>
               )} */}
-            </View>
+            </Pressable>
           </View>
-          <View>
-            <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+          <View style={[globalStyles.pr2, { flex: 1 }]}>
+            <CustomText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[globalStyles.f24Bold, globalStyles.primary]}
+            >
               {profileData.TechnicianName}
             </CustomText>
             <CustomText style={globalStyles.f12Medium}>
               Mobile: {profileData.PhoneNumber}
             </CustomText>
-            <CustomText style={globalStyles.f12Medium}>
+            <CustomText
+              numberOfLines={1}
+              style={[globalStyles.f12Medium]}
+            >
               Email: {profileData.Email}
             </CustomText>
-
             <View
               style={[
                 globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <View style={styles.iconbg}>
-                <Image source={locationicon} style={styles.icons} />
-              </View>
-              <CustomText style={globalStyles.f12Bold}>
-                {profileData.AddressLine1}
-              </CustomText>
-            </View>
-
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt1,
-                globalStyles.alineItemscenter,
+                // { flexWrap: "wrap", width: "100%" },
               ]}
             >
               <View style={styles.iconbg}>
                 <Image source={person} style={styles.icons} />
               </View>
-              <CustomText style={globalStyles.f12Bold}>
+              <CustomText
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[globalStyles.f12Medium]}
+              >
                 Dealer: {profileData.DealerName}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                // { flexWrap: "wrap", width: "100%", marginTop: 2 },
+              ]}
+            >
+              <View style={[styles.iconbg, globalStyles.mt1]}>
+                <Image source={locationicon} style={styles.icons} />
+              </View>
+              <CustomText
+                numberOfLines={4}
+                ellipsizeMode="tail"
+                style={[
+                  globalStyles.f10Regular,
+                  {  width: "95%" },
+                ]}
+              >
+                {profileData.AddressLine1}
               </CustomText>
             </View>
           </View>
@@ -277,7 +279,7 @@ export default function ProfileScreen() {
             <CustomText>Services Completed</CustomText>
           </View>
           <View style={styles.gridItem}>
-            <TouchableOpacity onPress={review}>
+            <Pressable >
               <CustomText
                 style={[
                   globalStyles.f40Bold,
@@ -288,9 +290,9 @@ export default function ProfileScreen() {
                 {profileData.Rating ?? "0.0"}
               </CustomText>
               <CustomText>Review Ratings</CustomText>
-            </TouchableOpacity>
+            </Pressable>
           </View>
-          <View style={styles.gridItem}>
+          {/* <View style={styles.gridItem}>
             <CustomText
               style={[
                 globalStyles.f40Bold,
@@ -301,8 +303,8 @@ export default function ProfileScreen() {
               {profileData.ServedCustomers ?? "0+"}
             </CustomText>
             <CustomText>Served Customers</CustomText>
-          </View>
-          <View style={styles.gridItem}>
+          </View> */}
+          {/* <View style={styles.gridItem}>
             <CustomText
               style={[
                 globalStyles.f40Bold,
@@ -313,7 +315,7 @@ export default function ProfileScreen() {
               {profileData.KilometersTravelled ?? "0"}
             </CustomText>
             <CustomText>Kilometers Traveled</CustomText>
-          </View>
+          </View> */}
         </View>
 
         <View style={globalStyles.mt4}>
@@ -371,6 +373,16 @@ export default function ProfileScreen() {
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
           >
+            <Pressable
+              style={styles.closeIcon}
+              onPress={() => setShowLogoutModal(false)}
+            >
+              <Ionicons
+                name="close-circle"
+                size={22}
+                color={color.neutral[500]}
+              />
+            </Pressable>
             <CustomText style={globalStyles.f14Bold}>
               Are you sure you want to log out?
             </CustomText>
@@ -385,13 +397,21 @@ export default function ProfileScreen() {
                 style={[styles.button, styles.cancelButton]}
                 onPress={() => setShowLogoutModal(false)}
               >
-                <CustomText>No</CustomText>
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                >
+                  No
+                </CustomText>
               </Pressable>
               <Pressable
                 style={[styles.button, styles.logoutButton]}
                 onPress={handleLogout}
               >
-                <CustomText style={{ color: "white" }}>Yes</CustomText>
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                >
+                  Yes
+                </CustomText>
               </Pressable>
             </View>
           </Pressable>
@@ -402,6 +422,14 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  closeIcon: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    padding: 5,
+    zIndex: 1,
+  },
+
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -429,7 +457,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelButton: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: color.primary,
     marginRight: 10,
   },
   logoutButton: {
@@ -441,21 +469,20 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[100],
   },
   icons: {
-    width: 11,
-    height: 16,
+    width: 10,
+    height: 15,
   },
   iconbg: {
-    padding: 6,
-    height: 30,
-    width: 30,
-    backgroundColor: color.white,
+    height: 25,
+    width: 25,
     borderRadius: 50,
+    backgroundColor: color.white,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 5,
   },
   avatar: {
-    width: 130,
+    width: 120,
     height: 150,
     borderWidth: 8,
     borderColor: color.white,
