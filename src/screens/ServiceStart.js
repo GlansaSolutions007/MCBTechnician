@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  Linking,
+  Vibration,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -413,6 +415,7 @@ export default function ServiceStart() {
               <TouchableOpacity
                 style={styles.pricecard}
                 onPress={async () => {
+
                   if (!otp || otp.length !== 6) {
                     setError("Please enter a valid 6-digit OTP");
                     return;
@@ -422,11 +425,9 @@ export default function ServiceStart() {
                     "ServiceStarted"
                   );
                   if (!isValid) {
-                    // 🚫 Wrong OTP → show modal, stay here
                     return;
                   }
 
-                  // ✅ Correct OTP → continue
                   handleUpload();
                   const totalSeconds =
                     booking.TotalEstimatedDurationMinutes * 60;
@@ -453,7 +454,7 @@ export default function ServiceStart() {
                 </CustomText>
               </TouchableOpacity>
             </View>
-            <CustomText
+            {/* <CustomText
               style={[
                 globalStyles.f28Medium,
                 globalStyles.neutral500,
@@ -531,6 +532,40 @@ export default function ServiceStart() {
                 >
                   <Image source={helpcall} />
                   <CustomText style={globalStyles.textWhite}>
+                    Call help line
+                  </CustomText>
+                </View>
+              </TouchableOpacity>
+            </View> */}
+            <View>
+              <TouchableOpacity
+                style={[
+                  globalStyles.flex1,
+                  globalStyles.bgBlack,
+                  globalStyles.borderRadiuslarge,
+                  globalStyles.p4,
+                  globalStyles.justifycenter,
+                  globalStyles.alineItemscenter,
+                  globalStyles.mt4,
+                ]}
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  const phoneNumber = 9311931522;
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <Image source={helpcall} />
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.ml2]}
+                  >
                     Call help line
                   </CustomText>
                 </View>

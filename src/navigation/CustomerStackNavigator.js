@@ -32,7 +32,7 @@ export default function CustomerStackNavigator() {
         component={MyCars}
         options={{ title: "Select Your Car" }}
       />
-      <Stack.Screen name="Task & Reports" component={TaskReportsScreen} />
+      {/* <Stack.Screen name="Tasks" component={TaskReportsScreen} /> */}
 
       <Stack.Screen
         name="InteriorService"

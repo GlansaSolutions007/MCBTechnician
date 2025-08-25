@@ -124,6 +124,9 @@ export default StyleSheet.create({
   textWhite: {
     color: color.white,
   },
+  textyellow: {
+    color: color.yellow,
+  },
   black: {
     color: color.black,
   },

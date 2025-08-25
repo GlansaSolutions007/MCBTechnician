@@ -93,7 +93,10 @@ export default function Dashboard() {
     navigation.navigate("ServiceStart", { booking: item });
   };
   const Schedules = () => {
-    navigation.navigate("Task & Reports");
+    navigation.navigate("Tasks");
+  };
+  const Reports = () => {
+    navigation.navigate("Reports");
   };
 
   useEffect(() => {
@@ -349,8 +352,8 @@ export default function Dashboard() {
                 ]}
               >
                 <Image
-                  source={schedule}
-                  style={{ width: 20, height: 20, tintColor: "#fff" }}
+                  source={reports}
+                  style={{ width: 20, height: 28, tintColor: "#fff" }}
                 />
 
                 <CustomText
@@ -381,7 +384,7 @@ export default function Dashboard() {
           </View>
 
           <Pressable
-            onPress={Booking}
+            onPress={Reports}
             style={[
               globalStyles.bgprimary,
               globalStyles.borderRadiuslarge,
@@ -391,7 +394,7 @@ export default function Dashboard() {
             ]}
           >
             <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
-              Tasks Assigned
+              Reports
             </CustomText>
 
             <View
@@ -402,8 +405,8 @@ export default function Dashboard() {
               ]}
             >
               <Image
-                source={reports}
-                style={{ width: 20, height: 28, tintColor: "#fff" }}
+                source={schedule}
+                style={{ width: 25, height: 25, tintColor: "#fff" }}
               />
               {/* <CustomText
                 style={[globalStyles.f40Bold, globalStyles.textWhite]}
@@ -414,7 +417,7 @@ export default function Dashboard() {
                 <CustomText
                   style={[globalStyles.f40Bold, globalStyles.textWhite]}
                 >
-                  {bookingCounts.TodayAssignedBookingsCount}
+                  {bookingCounts.TotalBookingsCount}
                 </CustomText>
               </View>
             </View>
@@ -458,24 +461,24 @@ export default function Dashboard() {
           <View style={globalStyles.divider} />
 
           <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="time-outline" />
               <CustomText style={globalStyles.f12Bold}>
                 {bookingCounts.TodayCustomerCount} hrs
               </CustomText>
-            </View>
+            </View> */}
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="people-outline" />
               <CustomText style={globalStyles.f12Bold}>
                 {bookingCounts.TodayCustomerCount} customers
               </CustomText>
             </View>
-            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="checkmark-circle-outline" />
               <CustomText style={globalStyles.f12Bold}>
                 {bookingCounts.CompletedBookingsCount} Active
               </CustomText>
-            </View>
+            </View> */}
           </View>
         </Pressable>
 

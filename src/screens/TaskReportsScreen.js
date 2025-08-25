@@ -59,18 +59,21 @@ function TaskReportsScreen() {
     }
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+const todayIST = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata",
+});
 
   const upcomingBookings = Array.isArray(bookings)
-  ? bookings.filter((booking) => {
-      const assignDate = booking.BookingDate
-        ? new Date(booking.BookingDate)
-        : null;
-      if (!assignDate || isNaN(assignDate)) return false;
+     ? bookings.filter((booking) => {
+      if (!booking.BookingDate) return false;
 
-      assignDate.setHours(0, 0, 0, 0);
-      return assignDate > today;
+      const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+        "en-CA",
+        { timeZone: "Asia/Kolkata" }
+      );
+
+
+      return assignDateStr > todayIST;
     })
   : [];
 

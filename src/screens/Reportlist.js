@@ -56,20 +56,26 @@ function Reportlist() {
     }
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+const todayIST = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata",
+});
+console.log(todayIST,"<--- todayIST=================")
 
- const pastBookings = Array.isArray(bookings)
+const pastBookings = Array.isArray(bookings)
   ? bookings.filter((booking) => {
-      const assignDate = booking.BookingDate
-        ? new Date(booking.BookingDate)
-        : null;
-      if (!assignDate || isNaN(assignDate)) return false;
+      if (!booking.BookingDate) return false;
 
-      assignDate.setHours(0, 0, 0, 0);
-      return assignDate <= today;
+      const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+        "en-CA",
+        { timeZone: "Asia/Kolkata" }
+      );
+
+
+      return assignDateStr < todayIST;
     })
   : [];
+
+
 
   const renderBookingCard = ({ item, index }) => (
     <TouchableOpacity

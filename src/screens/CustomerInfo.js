@@ -8,6 +8,7 @@ import {
   Alert,
   Linking,
   Text,
+  Vibration,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -35,10 +36,10 @@ export default function CustomerInfo() {
   const [updatedBookings, setUpdatedBookings] = useState(booking);
   // const today = new Date().toISOString().split("T")[0];
   const today = new Date().toLocaleDateString("en-CA", {
-  timeZone: "Asia/Kolkata",
-});
+    timeZone: "Asia/Kolkata",
+  });
 
-  console.log(today)
+  console.log(today);
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
@@ -54,7 +55,6 @@ export default function CustomerInfo() {
       );
 
       if (response.data && response.data.length > 0) {
-
         const updatedBooking = response.data.find(
           (b) => b.BookingID === booking.BookingID
         );
@@ -70,8 +70,8 @@ export default function CustomerInfo() {
     }
   };
   useEffect(() => {
-   onRefresh();
-  }, [])
+    onRefresh();
+  }, []);
   // useEffect(() => {
   //   const interval = setInterval(() => {
   //     onRefresh();
@@ -331,7 +331,6 @@ export default function CustomerInfo() {
                     globalStyles.primary,
                   ]}
                 >
-                  dfds
                   {booking.FullAddress}
                 </CustomText>
               </View>
@@ -376,7 +375,7 @@ export default function CustomerInfo() {
                   globalStyles.primary,
                 ]}
               >
-                Modal Name:{" "}
+                Model Name:{" "}
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.primary]}
                 >
@@ -387,7 +386,6 @@ export default function CustomerInfo() {
                 <View>
                   <View>
                     <Image
-                      // source={carpic}
                       source={
                         booking.VehicleImage
                           ? {
@@ -677,11 +675,14 @@ export default function CustomerInfo() {
               globalStyles.mt2,
             ]}
           >
-            Customer Note
+            Customer Note:{" "}
+            <CustomText
+              style={[globalStyles.f12Regular, globalStyles.textyellow]}
+            >
+              {booking.Notes ? booking.Notes : "No notes from customer"}
+            </CustomText>
           </CustomText>
-          <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite]}>
-            {booking.Notes}
-          </CustomText>
+
           <View
             style={[
               globalStyles.flexrow,
@@ -710,6 +711,8 @@ export default function CustomerInfo() {
               <TouchableOpacity
                 style={styles.callButton}
                 onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
                   const phoneNumber = booking.PhoneNumber;
                   if (phoneNumber) {
                     Linking.openURL(`tel:${phoneNumber}`);
@@ -937,7 +940,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   avatar: {
-    width: 135,
+    width: 140,
     height: 100,
   },
   width60: {
