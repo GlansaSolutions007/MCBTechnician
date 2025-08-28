@@ -8,15 +8,16 @@ import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
 import axios from "axios";
 import Loader from "../components/Loader";
-
+import { API_BASE_URL } from "@env";
+import { API_BASE_URL_IMAGE } from "@env";
 export default function MyCars() {
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true)
 
     const getBrands = async () => {
         try {
-            const brandRes = await axios.get('https://api.mycarsbuddy.com/api/VehicleBrands/GetVehicleBrands');
-            const modelRes = await axios.get('https://api.mycarsbuddy.com/api/VehicleModels/GetListVehicleModel');
+            const brandRes = await axios.get(`${API_BASE_URL}VehicleBrands/GetVehicleBrands`);
+            const modelRes = await axios.get(`${API_BASE_URL}VehicleModels/GetListVehicleModel`);
 
             const brands = brandRes.data.data;
             const models = modelRes.data.data;
@@ -42,7 +43,7 @@ export default function MyCars() {
 
                 return {
                     brand: brand.BrandName,
-                    logo: `https://api.mycarsbuddy.com/Images/BrandLogo/${brand.BrandLogo.split('/').pop()}`,
+                    logo: `${API_BASE_URL_IMAGE}Images/BrandLogo/${brand.BrandLogo.split('/').pop()}`,
                     models: brandModels
                 };
             });

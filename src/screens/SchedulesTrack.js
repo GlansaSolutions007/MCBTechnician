@@ -3,14 +3,14 @@ import { View, Text, StyleSheet } from "react-native";
 import axios from "axios";
 import { Picker } from "@react-native-picker/picker";
 import CustomText from "../components/CustomText";
-
+import { API_BASE_URL_IMAGE } from "@env";
 export default function SchedulesTrack() {
   const [states, setStates] = useState([]);
   const [selectedState, setSelectedState] = useState("");
 
   const getStates = async () => {
     try {
-      const response = await axios.get("https://api.mycarsbuddy.com/api/State");
+      const response = await axios.get(`${API_BASE_URL_IMAGE}State`);
       setStates(response.data);
     } catch (error) {
       console.error("Error fetching states:", error);

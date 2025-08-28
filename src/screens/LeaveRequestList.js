@@ -16,7 +16,7 @@ import axios from "axios";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
-
+import { API_BASE_URL } from "@env";
 export default function LeaveRequestList() {
   const navigation = useNavigation();
   const [leaveData, setLeaveData] = useState([]);
@@ -47,7 +47,7 @@ export default function LeaveRequestList() {
       }
 
       const response = await axios.get(
-        `https://api.mycarsbuddy.com/api/LeaveRequest/Techid?TechId=${techID}`,
+        `${API_BASE_URL}LeaveRequest/Techid?TechId=${techID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
