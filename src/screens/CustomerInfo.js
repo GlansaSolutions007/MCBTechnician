@@ -22,6 +22,7 @@ import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
+import { startBackgroundTracking, stopBackgroundTracking } from "../utils/locationTracker";
 import { RefreshControl } from "react-native";
 export default function CustomerInfo() {
   const navigation = useNavigation();
@@ -262,12 +263,21 @@ export default function CustomerInfo() {
     } catch (error) {
       console.error("Error saving start ride flag", error);
     }
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      if (techId) {
+        await startBackgroundTracking(techId);
+      }
+    } catch (_) {}
     await openGoogleMaps();
   };
 
   const Reached = async () => {
     await updateTechnicianTracking("Reached");
     onRefresh();
+    try {
+      await stopBackgroundTracking();
+    } catch (_) {}
     navigation.navigate("ServiceStart", { booking: booking });
   };
 

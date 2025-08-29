@@ -18,6 +18,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
+import { startTechnicianLocationTracking } from "../../utils/locationTracker";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
@@ -65,6 +66,11 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("email", email);
 
         login({ email, token, techID: techID });
+        try {
+          if (techID) {
+            startTechnicianLocationTracking(techID);
+          }
+        } catch (e) {}
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
