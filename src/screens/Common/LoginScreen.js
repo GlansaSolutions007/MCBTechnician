@@ -145,7 +145,6 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={true}
-          F
           style={styles.textInput}
           editable={!inputsDisabled}
         />
