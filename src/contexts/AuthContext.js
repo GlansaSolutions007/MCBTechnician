@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { startTechnicianLocationTracking, stopTechnicianLocationTracking } from "../utils/locationTracker";
 
 const AuthContext = createContext();
 
@@ -29,10 +30,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     setUser(userData);
+    try {
+      if (userData?.techID) {
+        startTechnicianLocationTracking(userData.techID);
+      }
+    } catch (e) {}
   };
 
   const logout = async () => {
     setUser(null);
+    try {
+      stopTechnicianLocationTracking();
+    } catch (e) {}
     await AsyncStorage.clear();
   };
 
