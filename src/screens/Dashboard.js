@@ -28,6 +28,7 @@ export default function Dashboard() {
   const navigation = useNavigation();
   const [totalAmount, setTotalAmount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     const fetchTotalAmount = async () => {
       try {
@@ -484,7 +485,13 @@ export default function Dashboard() {
 
         <View style={[globalStyles.mt4]}>
           <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
-          {bookings.some((item) => item.BookingStatus === "StartJourney"|| item.BookingStatus === "ServiceStarted"|| item.BookingStatus === "Reached" || item.PaymentStatus === "Pending") ? (
+          {bookings.some(
+            (item) =>
+              item.BookingStatus === "StartJourney" ||
+              item.BookingStatus === "ServiceStarted" ||
+              item.BookingStatus === "Reached" ||
+              item.PaymentStatus === "Pending"
+          ) ? (
             <View style={[globalStyles.mt3]}>
               {bookings
                 .filter(
@@ -601,8 +608,9 @@ export default function Dashboard() {
                         </TouchableOpacity>
                       )}
 
-                      {((item.PaymentMode === "COS" || item.PaymentMode === "cos") && item.BookingStatus === "Completed") &&
-                          (
+                      {(item.PaymentMode === "COS" ||
+                        item.PaymentMode === "cos") &&
+                        item.BookingStatus === "Completed" && (
                           <TouchableOpacity
                             onPress={() => CollectPayment(item)}
                           >

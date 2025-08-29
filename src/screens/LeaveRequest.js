@@ -18,6 +18,7 @@ import { color } from "../styles/theme";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
+import { useNavigation } from "@react-navigation/native";
 
 export default function LeaveRequest() {
   const [fromDate, setFromDate] = useState(null);
@@ -30,12 +31,14 @@ export default function LeaveRequest() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+  const navigation = useNavigation();
+
   const formatDate = (date) => {
-    if (!date) return "";
     const d = new Date(date);
-    return `${String(d.getDate()).padStart(2, "0")}/${String(
-      d.getMonth() + 1
-    ).padStart(2, "0")}/${d.getFullYear()}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
   const showErrorModal = (message) => {
@@ -78,8 +81,8 @@ export default function LeaveRequest() {
 
       const payload = {
         techID: parseInt(techID),
-        fromDate: new Date(fromDate).toISOString(),
-        toDate: new Date(toDate).toISOString(),
+        fromDate: formatDate(fromDate),
+        toDate: formatDate(toDate),
         leaveReason: leaveReason.trim(),
         requestedToId: 4,
       };
@@ -114,6 +117,11 @@ export default function LeaveRequest() {
     setLeaveReason("");
     setSubject("");
     setErrors({});
+  };
+
+  const leaveList = () => {
+    setModalVisible(false);
+    navigation.navigate("leaveRequestList");
   };
 
   return (
@@ -399,7 +407,9 @@ export default function LeaveRequest() {
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
           >
-            <CustomText style={globalStyles.f14Bold}>{modalMessage}</CustomText>
+            <CustomText style={[globalStyles.f14Bold]}>
+              {modalMessage}
+            </CustomText>
             <View
               style={[
                 globalStyles.flexrow,
@@ -409,7 +419,7 @@ export default function LeaveRequest() {
             >
               <TouchableOpacity
                 style={[styles.button, styles.logoutButton]}
-                onPress={() => setModalVisible(false)}
+                onPress={leaveList}
               >
                 <CustomText style={{ color: "white" }}>OK</CustomText>
               </TouchableOpacity>
@@ -433,6 +443,9 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 12,
     width: "80%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
   },
   button: {
     borderRadius: 8,

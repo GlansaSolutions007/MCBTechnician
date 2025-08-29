@@ -101,7 +101,7 @@ export default StyleSheet.create({
     justifyContent: "center",
   },
   bgcontainer: {
-    backgroundColor: "#ededed",
+    backgroundColor: "#f3f3f3ff",
   },
   bgredverulight: {
     backgroundColor: color.redverulight,
