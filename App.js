@@ -1,6 +1,7 @@
 import "react-native-gesture-handler";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
+import * as Notifications from "expo-notifications";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -17,6 +18,32 @@ if (TextInput.defaultProps == null) TextInput.defaultProps = {};
 TextInput.defaultProps.allowFontScaling = false;
 
 export default function App() {
+  // Foreground notification handling for technician app
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true, // replaces shouldShowAlert
+      shouldShowList: true, // ensures it appears in Notification Center
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+
+  useEffect(() => {
+    const receivedSub = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log("Notification received (technician):", notification);
+      }
+    );
+    const responseSub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        console.log("Notification response (technician):", response);
+      }
+    );
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, []);
   const [fontsLoaded] = Font.useFonts({
     "Manrope-Medium": require("./assets/fonts/Manrope-Medium.ttf"),
     "Manrope-Bold": require("./assets/fonts/Manrope-Bold.ttf"),
@@ -37,7 +64,7 @@ export default function App() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <AuthProvider>
             {/* <AppLayout> */}
-              <RootNavigator />
+            <RootNavigator />
             {/* </AppLayout> */}
           </AuthProvider>
         </View>

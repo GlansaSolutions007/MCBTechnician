@@ -21,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL_IMAGE } from "@env";
 // import * as ImagePicker from "expo-image-picker";
 // import * as FileSystem from "expo-file-system";
@@ -33,6 +34,22 @@ export default function ProfileScreen() {
   const [reviewData, setReviewData] = useState(null);
 
   const { logout } = useAuth();
+  const sendTest = async () => {
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      const id = techId ? Number(techId) : 0;
+      if (!id) return;
+      await axios.post(`${API_BASE_URL}Push/sendToTechnician`, {
+        id,
+        title: "Test Notification",
+        body: "This is a test notification from the technician app.",
+        data: { type: "test" },
+      });
+    } catch (e) {
+      console.log('sendTest error (technician):', e?.response?.data || e?.message || e);
+      alert(`Send failed: ${e?.response?.data?.message || e?.message || 'Unknown error'}`);
+    }
+  };
   const confirmLogout = () => {
     setShowLogoutModal(true);
   };
@@ -398,6 +415,12 @@ export default function ProfileScreen() {
             Log Out
           </CustomText>
           <Ionicons name="chevron-forward" size={16} color={color.error} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={sendTest}
+          style={{ marginTop: 12, backgroundColor: color.primary, paddingVertical: 10, borderRadius: 8, alignItems: "center" }}
+        >
+          <CustomText style={[globalStyles.textWhite]}>Send Test Push</CustomText>
         </TouchableOpacity>
       </View>
       <Modal

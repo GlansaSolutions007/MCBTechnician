@@ -16,9 +16,13 @@ import CustomText from "../../components/CustomText";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import axios from "axios";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { startTechnicianLocationTracking } from "../../utils/locationTracker";
+import { registerForPushNotificationsAsync } from "../../utils/notifications";
+import { db } from "../../config/firebaseConfig";
+import { ref, set } from "firebase/database";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
@@ -71,6 +75,31 @@ export default function LoginScreen() {
             startTechnicianLocationTracking(techID);
           }
         } catch (e) {}
+        try {
+          const tokens = await registerForPushNotificationsAsync();
+          if (tokens) {
+            const { expoPushToken, fcmToken } = tokens;
+            if (expoPushToken) {
+              await set(ref(db, `technicianPushTokens/${techID}/expo/${encodeURIComponent(expoPushToken)}`), true);
+            }
+            if (fcmToken) {
+              await set(ref(db, `technicianPushTokens/${techID}/fcm/${encodeURIComponent(fcmToken)}`), true);
+            }
+            try {
+              await AsyncStorage.setItem("pushToken", fcmToken || expoPushToken || "");
+              await AsyncStorage.setItem("pushTokenType", fcmToken ? "fcm" : (expoPushToken ? "expo" : "unknown"));
+            } catch (_) {}
+            try {
+              await axios.post(`${API_BASE_URL}Push/register`, {
+                userType: "technician",
+                id: Number(techID),
+                fcmToken: fcmToken || null,
+                expoPushToken: expoPushToken || null,
+                platform: Platform.OS,
+              });
+            } catch (_) {}
+          }
+        } catch (_) {}
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
