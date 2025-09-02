@@ -551,7 +551,7 @@ export default function ServiceStart() {
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
-                  const phoneNumber = 9311931522;
+                  const phoneNumber = 7075243939;
                   if (phoneNumber) {
                     Linking.openURL(`tel:${phoneNumber}`);
                   } else {
