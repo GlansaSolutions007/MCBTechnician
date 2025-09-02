@@ -21,7 +21,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL_IMAGE } from "@env";
 // import * as ImagePicker from "expo-image-picker";
 // import * as FileSystem from "expo-file-system";
