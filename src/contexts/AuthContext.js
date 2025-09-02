@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { startTechnicianLocationTracking, stopTechnicianLocationTracking } from "../utils/locationTracker";
+import axios from "axios";
+import { API_BASE_URL } from "@env";
 
 const AuthContext = createContext();
 
@@ -38,9 +40,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    const techID = await AsyncStorage.getItem("techID");
+    const storedToken = await AsyncStorage.getItem("pushToken");
     setUser(null);
     try {
       stopTechnicianLocationTracking();
+    } catch (e) {}
+    try {
+      if (techID && storedToken) {
+        await axios.post(`${API_BASE_URL}Push/unregister`, {
+          userType: "technician",
+          id: Number(techID),
+          token: storedToken,
+        });
+      }
     } catch (e) {}
     await AsyncStorage.clear();
   };
