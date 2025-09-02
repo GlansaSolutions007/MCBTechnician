@@ -271,9 +271,9 @@ export default function ProfileScreen() {
                 // { flexWrap: "wrap", width: "100%" },
               ]}
             >
-              <View style={styles.iconbg}>
+              {/* <View style={styles.iconbg}>
                 <Image source={person} style={styles.icons} />
-              </View>
+              </View> */}
               <CustomText
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -288,9 +288,9 @@ export default function ProfileScreen() {
                 // { flexWrap: "wrap", width: "100%", marginTop: 2 },
               ]}
             >
-              <View style={[styles.iconbg, globalStyles.mt1]}>
+              {/* <View style={[styles.iconbg, globalStyles.mt1]}>
                 <Image source={locationicon} style={styles.icons} />
-              </View>
+              </View> */}
               <CustomText
                 numberOfLines={4}
                 ellipsizeMode="tail"
