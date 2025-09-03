@@ -17,6 +17,7 @@ import { color } from "../styles/theme";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
+import NotificationBadge from "./NotificationBadge";
 
 export default function CustomHeader() {
   const [name, setName] = useState("");
@@ -77,9 +78,7 @@ export default function CustomHeader() {
           </Pressable> */}
         </View>
 
-        <Pressable style={[globalStyles.p1]} onPress={Notifications}>
-          <Ionicons name="notifications-outline" size={24} color={color.black} />
-        </Pressable>
+        <NotificationBadge onPress={Notifications} size={24} color={color.black} />
       </View>
     </View>
   );

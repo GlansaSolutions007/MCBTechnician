@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { startTechnicianLocationTracking, stopTechnicianLocationTracking } from "../utils/locationTracker";
+import { startTechnicianLocationTracking, stopTechnicianLocationTracking, startBackgroundTracking } from "../utils/locationTracker";
+import notificationService from "../utils/notificationService";
 import axios from "axios";
 import { API_BASE_URL } from "@env";
 
@@ -19,6 +20,16 @@ export const AuthProvider = ({ children }) => {
 
         if (techID && token) {
           setUser({ techID, token, email });
+          // Start location tracking for existing session
+          try {
+            startTechnicianLocationTracking(techID);
+            // Also start background tracking for better reliability
+            startBackgroundTracking(techID);
+            // Initialize notification service
+            await notificationService.initialize(techID);
+          } catch (e) {
+            console.log("Error starting location tracking:", e);
+          }
         }
       } catch (error) {
         console.error("Error loading user data:", error);
@@ -30,13 +41,19 @@ export const AuthProvider = ({ children }) => {
     loadUserData();
   }, []);
 
-  const login = (userData) => {
+  const login = async (userData) => {
     setUser(userData);
     try {
       if (userData?.techID) {
-        startTechnicianLocationTracking(userData.techID);
+        // Start both foreground and background tracking
+        await startTechnicianLocationTracking(userData.techID);
+        await startBackgroundTracking(userData.techID);
+        // Initialize notification service
+        await notificationService.initialize(userData.techID);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log("Error starting location tracking during login:", e);
+    }
   };
 
   const logout = async () => {
@@ -45,7 +62,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     try {
       stopTechnicianLocationTracking();
-    } catch (e) {}
+    } catch (e) {
+      console.log("Error stopping location tracking during login:", e);
+    }
+    try {
+      // Clean up notification service
+      notificationService.cleanup();
+    } catch (e) {
+      console.log("Error cleaning up notification service:", e);
+    }
     try {
       if (techID && storedToken) {
         await axios.post(`${API_BASE_URL}Push/unregister`, {
@@ -54,7 +79,9 @@ export const AuthProvider = ({ children }) => {
           token: storedToken,
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log("Error unregistering push token:", e);
+    }
     await AsyncStorage.clear();
   };
 
