@@ -49,17 +49,17 @@ export default function CollectPayment() {
     }
   };
 
-  const Dashboard = async () => {
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: "CustomerTabNavigator",
-          params: { screen: "Dashboard" },
-        },
-      ],
-    });
-  };
+  // const Dashboard = async () => {
+  //   navigation.reset({
+  //     index: 0,
+  //     routes: [
+  //       {
+  //         name: "CustomerTabNavigator",
+  //         params: { screen: "Dashboard" },
+  //       },
+  //     ],
+  //   });
+  // };
 
   useEffect(() => {
     const generateQR = async () => {
@@ -92,7 +92,6 @@ export default function CollectPayment() {
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
       <View style={[globalStyles.container, globalStyles.alineItemscenter]}>
-
         <View
           style={[
             globalStyles.mt3,
@@ -167,7 +166,7 @@ export default function CollectPayment() {
         </View>
 
         <TouchableOpacity
-          onPress={Dashboard}
+          onPress={handleCompletePayment}
           style={[
             globalStyles.blackButton,
             globalStyles.w100,
@@ -192,20 +191,32 @@ export default function CollectPayment() {
             onPress={(e) => e.stopPropagation()}
           >
             <Ionicons
-              name="checkmark-circle"
-              size={60}
-              color="green"
-              style={{ alignSelf: "center" }}
+              name="gift"
+              size={64}
+              color={color.primary}
+              style={{ alignSelf: "center", marginBottom: 8 }}
             />
 
             <CustomText
               style={[
-                globalStyles.f16Bold,
-                globalStyles.textCenter,
-                { marginTop: 12 },
+                globalStyles.f20Bold,
+                globalStyles.textac,
+                { marginTop: 4 },
               ]}
             >
-              Payment Successful!
+              🎉 Payment Successful 🎉
+            </CustomText>
+
+            <CustomText
+              style={[
+                globalStyles.f16,
+                globalStyles.textac,
+                globalStyles.gray,
+                globalStyles.mt2,
+              ]}
+            >
+              Thank you for your payment!{"\n"}
+              We truly appreciate your trust and support
             </CustomText>
 
             <Pressable
@@ -226,7 +237,7 @@ export default function CollectPayment() {
               <CustomText
                 style={[globalStyles.textWhite, globalStyles.f14Bold]}
               >
-                Done
+                Back to Dashboard
               </CustomText>
             </Pressable>
           </Pressable>
@@ -268,10 +279,15 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: "#fff",
-    padding: 24,
-    borderRadius: 12,
-    width: "80%",
+    padding: 28,
+    borderRadius: 20,
+    width: "85%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 6,
   },
   button: {
     paddingVertical: 10,
