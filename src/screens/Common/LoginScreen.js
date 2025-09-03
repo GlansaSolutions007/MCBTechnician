@@ -76,6 +76,7 @@ export default function LoginScreen() {
         } catch (e) {}
         try {
           const tokens = await registerForPushNotificationsAsync();
+          console.log("Tokens Vishal:", tokens);
           if (tokens) {
             const { expoPushToken, fcmToken } = tokens;
             if (expoPushToken) {
@@ -90,10 +91,10 @@ export default function LoginScreen() {
             } catch (_) {}
             try {
               await axios.post(`${API_BASE_URL}Push/register`, {
-                userType: "technician",
-                id: Number(techID),
+                userRole: "technician",
+                userId: Number(techID),
                 fcmToken: fcmToken || null,
-                expoPushToken: expoPushToken || null,
+                expoToken: expoPushToken || null,
                 platform: Platform.OS,
               });
             } catch (_) {}

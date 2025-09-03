@@ -15,7 +15,14 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to track your current position on the map."
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to track your current position on the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to provide real-time tracking to customers even when the app is in the background.",
+        "UIBackgroundModes": [
+          "location",
+          "background-processing",
+          "background-fetch",
+          "remote-notification"
+        ]
       },
       "config": {
         "googleMapsApiKey": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
@@ -28,15 +35,20 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.itglansa.mcbt",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE"
+        "FOREGROUND_SERVICE",
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "apiKey": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
         }
       }
     },
@@ -46,7 +58,28 @@
     "extra": {
       "eas": {
         "projectId": "8e8b25c9-7fe9-49af-9a3c-61216354ad9e"
-      }
-    }
+      },
+      "API_BASE_URL": "https://api.mycarsbuddy.com/api/",
+      "API_BASE_URL_IMAGE": "https://api.mycarsbuddy.com/",
+      "RAZORPAY_KEY": "your_razorpay_key_here",
+      "RAZORPAY_SECRET": "your_razorpay_secret_here",
+      "GOOGLE_MAPS_APIKEY": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
+    },
+    "plugins": [
+      [
+        "expo-background-fetch",
+        {
+          "minimumInterval": 900
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/notification-icon.png",
+          "color": "#017F77",
+          "sounds": ["./assets/notificationtone.wav"]
+        }
+      ]
+    ]
   }
 }

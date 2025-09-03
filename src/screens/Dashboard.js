@@ -23,6 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import { RefreshControl } from "react-native";
+import TrackingStatusIndicator from "../components/TrackingStatusIndicator";
 export default function Dashboard() {
   // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
@@ -320,6 +321,10 @@ export default function Dashboard() {
     >
       <View style={[globalStyles.container]}>
         {/* <AvailabilityHeader /> */}
+        
+        {/* Location Tracking Status */}
+        <TrackingStatusIndicator  technicianId={techID} />
+        
         <View
           style={[
             globalStyles.flexrow,
@@ -490,7 +495,7 @@ export default function Dashboard() {
               item.BookingStatus === "StartJourney" ||
               item.BookingStatus === "ServiceStarted" ||
               item.BookingStatus === "Reached" ||
-              item.PaymentStatus !== "Pending"
+              item.Payments?.[0]?.PaymentStatus === "Pending"
           ) ? (
             <View style={[globalStyles.mt3]}>
               {bookings

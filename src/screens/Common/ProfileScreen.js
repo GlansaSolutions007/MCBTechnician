@@ -22,6 +22,7 @@ import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
+import testNotifications from "../../utils/notificationTestUtils";
 // import * as ImagePicker from "expo-image-picker";
 // import * as FileSystem from "expo-file-system";
 
@@ -47,6 +48,36 @@ export default function ProfileScreen() {
     } catch (e) {
       console.log('sendTest error (technician):', e?.response?.data || e?.message || e);
       alert(`Send failed: ${e?.response?.data?.message || e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const testLocalNotification = async () => {
+    try {
+      await testNotifications.testNewBooking();
+      alert('Test notification sent successfully!');
+    } catch (e) {
+      console.log('Test notification error:', e);
+      alert(`Test failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const testAllNotifications = async () => {
+    try {
+      await testNotifications.testAllTypes();
+      alert('All test notifications sent successfully!');
+    } catch (e) {
+      console.log('Test all notifications error:', e);
+      alert(`Test failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const clearTestNotifications = async () => {
+    try {
+      await testNotifications.clearAllTestNotifications();
+      alert('All test notifications cleared!');
+    } catch (e) {
+      console.log('Clear notifications error:', e);
+      alert(`Clear failed: ${e?.message || 'Unknown error'}`);
     }
   };
   const confirmLogout = () => {
@@ -415,12 +446,40 @@ export default function ProfileScreen() {
           </CustomText>
           <Ionicons name="chevron-forward" size={16} color={color.error} />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={sendTest}
-          style={{ marginTop: 12, backgroundColor: color.primary, paddingVertical: 10, borderRadius: 8, alignItems: "center" }}
-        >
-          <CustomText style={[globalStyles.textWhite]}>Send Test Push</CustomText>
-        </TouchableOpacity>
+        {/* Test Notification Buttons */}
+        <View style={styles.testSection}>
+          <CustomText style={[globalStyles.f12Bold, globalStyles.mt3, { color: color.primary }]}>
+            Test Notifications
+          </CustomText>
+          
+          <TouchableOpacity
+            onPress={sendTest}
+            style={[styles.testButton, { backgroundColor: color.primary }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Send Test Push (API)</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={testLocalNotification}
+            style={[styles.testButton, { backgroundColor: color.success || '#4CAF50' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Test Local Notification</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={testAllNotifications}
+            style={[styles.testButton, { backgroundColor: color.warning || '#FF9800' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Test All Types</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={clearTestNotifications}
+            style={[styles.testButton, { backgroundColor: color.error || '#F44336' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Clear All Notifications</CustomText>
+          </TouchableOpacity>
+        </View>
       </View>
       <Modal
         animationType="fade"
@@ -491,6 +550,21 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 5,
     zIndex: 1,
+  },
+  testSection: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  testButton: {
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   loadingOverlay: {
