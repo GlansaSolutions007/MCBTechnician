@@ -490,7 +490,7 @@ export default function Dashboard() {
               item.BookingStatus === "StartJourney" ||
               item.BookingStatus === "ServiceStarted" ||
               item.BookingStatus === "Reached" ||
-              item.PaymentStatus === "Pending"
+              item.PaymentStatus !== "Pending"
           ) ? (
             <View style={[globalStyles.mt3]}>
               {bookings

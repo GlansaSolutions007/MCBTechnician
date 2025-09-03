@@ -5,7 +5,6 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Pressable,
   Modal,
@@ -15,18 +14,19 @@ import globalStyles from "../styles/globalStyles";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-// import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
-// import base64 from "react-native-base64";
+import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
+import base64 from "react-native-base64";
 import { API_BASE_URL } from "@env";
-import qrImage from "../../assets/images/QrCode.jpeg.jpg";
+// import qrImage from "../../assets/images/QrCode.jpeg.jpg";
 import { color } from "../styles/theme";
+import { encode } from "base64-arraybuffer";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  // const [qrImage, setQrImage] = useState(null);
-  // const [loading, setLoading] = useState(true);
+  const [qrImage, setQrImage] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleCompletePayment = async () => {
@@ -42,143 +42,151 @@ export default function CollectPayment() {
       );
 
       if (response?.status === 200) {
-        setShowSuccessModal(true); 
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error("Finalize Payment Error:", error.response?.data || error);
     }
   };
 
-  // const Dashboard = async () => {
-  //   navigation.reset({
-  //     index: 0,
-  //     routes: [
-  //       {
-  //         name: "CustomerTabNavigator",
-  //         params: { screen: "Dashboard" },
-  //       },
-  //     ],
-  //   });
-  // };
+  const Dashboard = async () => {
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: "CustomerTabNavigator",
+          params: { screen: "Dashboard" },
+        },
+      ],
+    });
+  };
 
-  // useEffect(() => {
-  //   const generateQR = async () => {
-  //     try {
-  //       setLoading(true);
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        setLoading(true);
 
-  //       const auth =
-  //         "Basic " + base64.encode(`${RAZORPAY_KEY}:${RAZORPAY_SECRET}`);
-  //       console.log("Auth header:", auth);
+        const bookingID = booking?.BookingID;
+        const amount = Math.round(Number(booking?.TotalPrice));
 
-  //       const amountInPaise = Math.round(Number(booking?.TotalPrice) * 100);
+        const qrResponse = await axios.get(
+          `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
+          {
+            responseType: "arraybuffer",
+          }
+        );
 
-  //       const qrResponse = await axios.post(
-  //         "https://api.razorpay.com/v1/qr_codes",
-  //         {
-  //           type: "upi_qr",
-  //           name: `Booking ${booking?.BookingTrackID}`,
-  //           usage: "single_use",
-  //           fixed_amount: true,
-  //           payment_amount: amountInPaise,
-  //           description: `Payment for Booking ${booking?.BookingTrackID}`,
-  //         },
+        const base64Image = `data:image/png;base64,${encode(qrResponse.data)}`;
+        setQrImage(base64Image);
+      } catch (error) {
+        console.error("QR Generation Error:", error.response?.data || error);
+        console.log("Error", "Failed to generate QR code");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //         {
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: auth,
-  //           },
-  //         }
-  //       );
-
-  //       if (qrResponse.data && qrResponse.data.image_url) {
-  //         setQrImage(qrResponse.data.image_url);
-  //       } else {
-  //         Alert.alert("Error", "Failed to generate QR code");
-  //       }
-  //     } catch (error) {
-  //       console.error("QR Generation Error:", error.response?.data || error);
-  //       Alert.alert(
-  //         "Error",
-  //         error.response?.data?.error?.description ||
-  //           "Something went wrong while generating QR code"
-  //       );
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   generateQR();
-  // }, [booking]);
+    generateQR();
+  }, [booking]);
 
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
       <View style={[globalStyles.container, globalStyles.alineItemscenter]}>
-        <CustomText
-          style={[globalStyles.f14Bold, globalStyles.textac, globalStyles.mt4]}
-        >
-          Collect
-        </CustomText>
-        <CustomText
-          style={[
-            globalStyles.f32Bold,
-            globalStyles.textac,
-            globalStyles.black,
-          ]}
-        >
-          ₹{booking?.TotalPrice}
-        </CustomText>
 
         <View
           style={[
-            globalStyles.mt4,
-            globalStyles.bgprimary,
-            globalStyles.p30,
-            globalStyles.borderRadiuslarge,
+            globalStyles.mt3,
             globalStyles.mb6,
+            {
+              backgroundColor: "#f8f9fa",
+              paddingVertical: 16,
+              paddingHorizontal: 28,
+              borderRadius: 16,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOpacity: 0.1,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 6,
+              elevation: 4,
+            },
           ]}
         >
-          <Image source={qrImage} style={{ width: 250, height: 250 }} />
-          {/* {loading ? (
-            <ActivityIndicator size="large" color="#fff" />
+          <CustomText
+            style={[globalStyles.f18, globalStyles.textac, globalStyles.gray]}
+          >
+            Collect Amount
+          </CustomText>
+          <CustomText
+            style={[
+              globalStyles.f32Bold,
+              globalStyles.textac,
+              globalStyles.primary,
+              { marginTop: 4 },
+            ]}
+          >
+            ₹{booking?.TotalPrice}
+          </CustomText>
+        </View>
+
+        <View
+          style={[
+            globalStyles.mt2,
+            globalStyles.mb6,
+            {
+              backgroundColor: "#fff",
+              padding: 24,
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOpacity: 0.08,
+              shadowOffset: { width: 0, height: 3 },
+              shadowRadius: 5,
+              elevation: 3,
+            },
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator size="large" color="#000" />
           ) : qrImage ? (
             <Image
               source={{ uri: qrImage }}
-              style={{ width: 250, height: 250 }}
+              style={{ width: 260, height: 260 }}
             />
           ) : (
-            <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
+            <CustomText
+              style={[
+                globalStyles.f14Bold,
+                globalStyles.textac,
+                globalStyles.gray,
+              ]}
+            >
               Failed to load QR code
             </CustomText>
-          )} */}
+          )}
         </View>
-        <Pressable
-          onPress={handleCompletePayment}
-          style={[globalStyles.blackButton, globalStyles.w100]}
-          // disabled={loading}
-        >
-          <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
-            Completed
-          </CustomText>
-        </Pressable>
-        {/* <TouchableOpacity
+
+        <TouchableOpacity
           onPress={Dashboard}
-          style={[globalStyles.blackButton, globalStyles.w100]}
+          style={[
+            globalStyles.blackButton,
+            globalStyles.w100,
+            { marginTop: 12, borderRadius: 12, paddingVertical: 14 },
+          ]}
         >
-          <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
-            Completed
+          <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
+            Mark as Completed
           </CustomText>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
       </View>
+
       <Modal
         animationType="fade"
         transparent={true}
         visible={showSuccessModal}
         onRequestClose={() => setShowSuccessModal(false)}
       >
-        <Pressable
-          style={styles.modalBackground}
-        >
+        <Pressable style={styles.modalBackground}>
           <Pressable
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
