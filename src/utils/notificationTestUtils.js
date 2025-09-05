@@ -1,229 +1,154 @@
-import notificationService, { NOTIFICATION_TYPES } from './notificationService';
+import { db } from "../config/firebaseConfig";
+import { ref, set, get, push } from "firebase/database";
+import { registerForPushNotificationsAsync } from "./notifications";
+import { Platform } from "react-native";
+import * as Notifications from "expo-notifications";
 
-// Test utility functions for notifications
-export const testNotifications = {
-  // Test new booking notification
-  testNewBooking: async (bookingId = 'TEST123') => {
-    await notificationService.sendLocalNotification({
-      title: 'New Booking Assigned',
-      body: `You have been assigned a new booking. Please review the details and accept or decline.`,
-      data: {
-        type: NOTIFICATION_TYPES.NEW_BOOKING,
-        bookingId,
-        customerName: 'John Doe',
-        serviceType: 'Oil Change',
-        location: 'Hyderabad, Telangana'
-      },
-      channelId: 'bookings',
-      categoryIdentifier: 'bookings',
-      priority: 'high'
-    });
+export const testNotificationUtils = {
+  // Test FCM token generation
+  async testFCMTokenGeneration() {
+    try {
+      console.log("🔍 Testing FCM token generation...");
+      
+      const tokens = await registerForPushNotificationsAsync();
+      console.log("📱 Generated tokens:", tokens);
+      
+      if (tokens.expoPushToken) {
+        console.log("✅ Expo push token generated successfully");
+      } else {
+        console.log("❌ Expo push token is null");
+      }
+      
+      if (tokens.fcmToken) {
+        console.log("✅ FCM token generated successfully");
+      } else {
+        console.log("❌ FCM token is null");
+      }
+      
+      return tokens;
+    } catch (error) {
+      console.error("❌ Error testing FCM token generation:", error);
+      return null;
+    }
   },
 
-  // Test booking update notification
-  testBookingUpdate: async (bookingId = 'TEST123') => {
-    await notificationService.sendLocalNotification({
-      title: 'Booking Updated',
-      body: 'The booking details have been updated. Please check the new information.',
-      data: {
-        type: NOTIFICATION_TYPES.BOOKING_UPDATE,
-        bookingId,
-        updateType: 'time_change',
-        oldTime: '10:00 AM',
-        newTime: '11:00 AM'
-      },
-      channelId: 'bookings',
-      categoryIdentifier: 'bookings',
-      priority: 'default'
-    });
+  // Test saving tokens to Firebase
+  async testTokenSaving(technicianId) {
+    try {
+      console.log("💾 Testing token saving to Firebase...");
+      
+      const tokens = await registerForPushNotificationsAsync();
+      if (!tokens.expoPushToken && !tokens.fcmToken) {
+        console.log("❌ No tokens to save");
+        return false;
+      }
+      
+      // Save to Firebase
+      const tokenRef = ref(db, `technicianPushTokens/${technicianId}`);
+      await set(tokenRef, {
+        expo: tokens.expoPushToken || null,
+        fcm: tokens.fcmToken || null,
+        lastUpdated: new Date().toISOString(),
+        deviceInfo: {
+          platform: Platform.OS,
+          version: Platform.Version
+        }
+      });
+      
+      console.log("✅ Tokens saved to Firebase successfully");
+      return true;
+    } catch (error) {
+      console.error("❌ Error saving tokens to Firebase:", error);
+      return false;
+    }
   },
 
-  // Test booking cancellation notification
-  testBookingCancelled: async (bookingId = 'TEST123') => {
-    await notificationService.sendLocalNotification({
-      title: 'Booking Cancelled',
-      body: 'A booking has been cancelled by the customer.',
-      data: {
-        type: NOTIFICATION_TYPES.BOOKING_CANCELLED,
-        bookingId,
-        customerName: 'John Doe',
-        reason: 'Schedule conflict'
-      },
-      channelId: 'bookings',
-      categoryIdentifier: 'bookings',
-      priority: 'default'
-    });
+  // Test sending a test notification via Firebase
+  async testFirebaseNotification(technicianId, notificationData = {}) {
+    try {
+      console.log("🚀 Testing Firebase notification...");
+      
+      const defaultNotification = {
+        title: "Test Notification",
+        body: "This is a test notification from Firebase",
+        data: {
+          type: "test",
+          timestamp: new Date().toISOString(),
+          technicianId
+        },
+        ...notificationData
+      };
+      
+      // Save test notification to Firebase
+      const notificationRef = ref(db, `testNotifications/${technicianId}`);
+      await push(notificationRef, {
+        ...defaultNotification,
+        sentAt: new Date().toISOString(),
+        status: "sent"
+      });
+      
+      console.log("✅ Test notification sent to Firebase");
+      return true;
+    } catch (error) {
+      console.error("❌ Error sending test notification:", error);
+      return false;
+    }
   },
 
-  // Test payment received notification
-  testPaymentReceived: async (paymentId = 'PAY789') => {
-    await notificationService.sendLocalNotification({
-      title: 'Payment Received',
-      body: 'You have received a payment of ₹500 for your service.',
-      data: {
-        type: NOTIFICATION_TYPES.PAYMENT_RECEIVED,
-        paymentId,
-        amount: '₹500',
-        bookingId: 'TEST123',
-        customerName: 'John Doe'
-      },
-      channelId: 'payments',
-      categoryIdentifier: 'payments',
-      priority: 'default'
-    });
+  // Test notification permissions
+  async testNotificationPermissions() {
+    try {
+      console.log("🔐 Testing notification permissions...");
+      
+      const { status } = await Notifications.getPermissionsAsync();
+      console.log("📱 Current permission status:", status);
+      
+      if (status === 'granted') {
+        console.log("✅ Notification permissions granted");
+        return true;
+      } else {
+        console.log("❌ Notification permissions not granted:", status);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error checking notification permissions:", error);
+      return false;
+    }
   },
 
-  // Test location request notification
-  testLocationRequest: async () => {
-    await notificationService.sendLocalNotification({
-      title: 'Location Request',
-      body: 'A customer is requesting your current location for service tracking.',
-      data: {
-        type: NOTIFICATION_TYPES.LOCATION_REQUEST,
-        customerId: 'CUST456',
-        customerName: 'John Doe',
-        serviceType: 'Emergency Repair'
-      },
-      channelId: 'default',
-      priority: 'high'
-    });
-  },
-
-  // Test system alert notification
-  testSystemAlert: async () => {
-    await notificationService.sendLocalNotification({
-      title: 'System Maintenance',
-      body: 'The system will be under maintenance from 2:00 AM to 4:00 AM. Some features may be temporarily unavailable.',
-      data: {
-        type: NOTIFICATION_TYPES.SYSTEM_ALERT,
-        alertType: 'maintenance',
-        startTime: '2:00 AM',
-        endTime: '4:00 AM'
-      },
-      channelId: 'system',
-      priority: 'low'
-    });
-  },
-
-  // Test reminder notification
-  testReminder: async () => {
-    await notificationService.sendLocalNotification({
-      title: 'Service Reminder',
-      body: 'You have a scheduled service appointment in 1 hour. Please ensure you have all necessary tools.',
-      data: {
-        type: NOTIFICATION_TYPES.REMINDER,
-        bookingId: 'TEST123',
-        customerName: 'John Doe',
-        serviceType: 'Oil Change',
-        appointmentTime: '11:00 AM'
-      },
-      channelId: 'default',
-      priority: 'default'
-    });
-  },
-
-  // Test customer message notification
-  testCustomerMessage: async (customerId = 'CUST456') => {
-    await notificationService.sendLocalNotification({
-      title: 'New Customer Message',
-      body: 'John Doe: Hi, I have a question about the service. Can you call me?',
-      data: {
-        type: NOTIFICATION_TYPES.CUSTOMER_MESSAGE,
-        customerId,
-        customerName: 'John Doe',
-        message: 'Hi, I have a question about the service. Can you call me?',
-        timestamp: new Date().toISOString()
-      },
-      channelId: 'default',
-      categoryIdentifier: 'customer',
-      priority: 'default'
-    });
-  },
-
-  // Test service completed notification
-  testServiceCompleted: async (bookingId = 'TEST123') => {
-    await notificationService.sendLocalNotification({
-      title: 'Service Completed',
-      body: 'Great job! The service has been marked as completed. Customer feedback will be available soon.',
-      data: {
-        type: NOTIFICATION_TYPES.SERVICE_COMPLETED,
-        bookingId,
-        customerName: 'John Doe',
-        serviceType: 'Oil Change',
-        completionTime: new Date().toISOString()
-      },
-      channelId: 'default',
-      priority: 'default'
-    });
-  },
-
-  // Test earning update notification
-  testEarningUpdate: async () => {
-    await notificationService.sendLocalNotification({
-      title: 'Earning Update',
-      body: 'Your weekly earnings have been updated. You earned ₹2,500 this week.',
-      data: {
-        type: NOTIFICATION_TYPES.EARNING_UPDATE,
-        period: 'weekly',
-        amount: '₹2,500',
-        previousAmount: '₹2,000',
-        change: '+₹500'
-      },
-      channelId: 'payments',
-      categoryIdentifier: 'payments',
-      priority: 'default'
-    });
-  },
-
-  // Test scheduled notification
-  testScheduledNotification: async () => {
-    const trigger = new Date(Date.now() + 10000); // 10 seconds from now
+  // Comprehensive test
+  async runAllTests(technicianId) {
+    console.log("🧪 Running comprehensive notification tests...");
     
-    await notificationService.scheduleNotification({
-      title: 'Scheduled Reminder',
-      body: 'This is a scheduled notification that will appear in 10 seconds.',
-      data: {
-        type: NOTIFICATION_TYPES.REMINDER,
-        scheduled: true
-      },
-      trigger: { date: trigger },
-      channelId: 'default'
-    });
-  },
-
-  // Test all notification types
-  testAllTypes: async () => {
-    console.log('Testing all notification types...');
+    const results = {
+      permissions: false,
+      tokenGeneration: false,
+      tokenSaving: false,
+      firebaseNotification: false
+    };
     
-    await testNotifications.testNewBooking();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Test permissions
+    results.permissions = await this.testNotificationPermissions();
     
-    await testNotifications.testBookingUpdate();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Test token generation
+    const tokens = await this.testFCMTokenGeneration();
+    results.tokenGeneration = !!(tokens?.expoPushToken || tokens?.fcmToken);
     
-    await testNotifications.testPaymentReceived();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Test token saving
+    results.tokenSaving = await this.testTokenSaving(technicianId);
     
-    await testNotifications.testLocationRequest();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Test Firebase notification
+    results.firebaseNotification = await this.testFirebaseNotification(technicianId);
     
-    await testNotifications.testCustomerMessage();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Summary
+    console.log("📊 Test Results Summary:");
+    console.log("Permissions:", results.permissions ? "✅" : "❌");
+    console.log("Token Generation:", results.tokenGeneration ? "✅" : "❌");
+    console.log("Token Saving:", results.tokenSaving ? "✅" : "❌");
+    console.log("Firebase Notification:", results.firebaseNotification ? "✅" : "❌");
     
-    await testNotifications.testServiceCompleted();
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    await testNotifications.testEarningUpdate();
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log('All notification types tested successfully!');
-  },
-
-  // Clear all test notifications
-  clearAllTestNotifications: async () => {
-    await notificationService.clearAllNotifications();
-    console.log('All test notifications cleared');
+    return results;
   }
 };
 
-export default testNotifications;
+export default testNotificationUtils;

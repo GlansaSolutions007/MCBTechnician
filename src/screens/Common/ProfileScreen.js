@@ -23,6 +23,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import testNotifications from "../../utils/notificationTestUtils";
+import testNotificationUtils from "../../utils/notificationTestUtils";
 // import * as ImagePicker from "expo-image-picker";
 // import * as FileSystem from "expo-file-system";
 
@@ -78,6 +79,63 @@ export default function ProfileScreen() {
     } catch (e) {
       console.log('Clear notifications error:', e);
       alert(`Clear failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  // New FCM testing functions
+  const testFCMTokenGeneration = async () => {
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      const tokens = await testNotificationUtils.testFCMTokenGeneration();
+      if (tokens) {
+        alert(`FCM Test Results:\nExpo Token: ${tokens.expoPushToken ? '✅ Generated' : '❌ Null'}\nFCM Token: ${tokens.fcmToken ? '✅ Generated' : '❌ Null'}`);
+      } else {
+        alert('❌ FCM token generation failed');
+      }
+    } catch (e) {
+      console.log('FCM token test error:', e);
+      alert(`FCM test failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const testTokenSaving = async () => {
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      const result = await testNotificationUtils.testTokenSaving(techId);
+      if (result) {
+        alert('✅ Tokens saved to Firebase successfully!');
+      } else {
+        alert('❌ Token saving failed');
+      }
+    } catch (e) {
+      console.log('Token saving test error:', e);
+      alert(`Token saving test failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const testFirebaseNotification = async () => {
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      const result = await testNotificationUtils.testFirebaseNotification(techId);
+      if (result) {
+        alert('✅ Firebase notification test successful!');
+      } else {
+        alert('❌ Firebase notification test failed');
+      }
+    } catch (e) {
+      console.log('Firebase notification test error:', e);
+      alert(`Firebase notification test failed: ${e?.message || 'Unknown error'}`);
+    }
+  };
+
+  const runAllFCMTests = async () => {
+    try {
+      const techId = await AsyncStorage.getItem("techID");
+      const results = await testNotificationUtils.runAllTests(techId);
+      alert(`🧪 FCM Test Results:\nPermissions: ${results.permissions ? '✅' : '❌'}\nToken Generation: ${results.tokenGeneration ? '✅' : '❌'}\nToken Saving: ${results.tokenSaving ? '✅' : '❌'}\nFirebase Notification: ${results.firebaseNotification ? '✅' : '❌'}`);
+    } catch (e) {
+      console.log('All FCM tests error:', e);
+      alert(`All FCM tests failed: ${e?.message || 'Unknown error'}`);
     }
   };
   const confirmLogout = () => {
@@ -478,6 +536,38 @@ export default function ProfileScreen() {
             style={[styles.testButton, { backgroundColor: color.error || '#F44336' }]}
           >
             <CustomText style={[globalStyles.textWhite]}>Clear All Notifications</CustomText>
+          </TouchableOpacity>
+
+          <CustomText style={[globalStyles.f12Bold, globalStyles.mt3, { color: color.primary }]}>
+            FCM Token & Firebase Tests
+          </CustomText>
+
+          <TouchableOpacity
+            onPress={testFCMTokenGeneration}
+            style={[styles.testButton, { backgroundColor: '#9C27B0' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Test FCM Token Generation</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={testTokenSaving}
+            style={[styles.testButton, { backgroundColor: '#607D8B' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Test Token Saving</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={testFirebaseNotification}
+            style={[styles.testButton, { backgroundColor: '#795548' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Test Firebase Notification</CustomText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={runAllFCMTests}
+            style={[styles.testButton, { backgroundColor: '#E91E63' }]}
+          >
+            <CustomText style={[globalStyles.textWhite]}>Run All FCM Tests</CustomText>
           </TouchableOpacity>
         </View>
       </View>

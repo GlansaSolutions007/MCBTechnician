@@ -34,7 +34,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.itglansa.mcbt",
+
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -79,7 +79,8 @@
           "color": "#017F77",
           "sounds": ["./assets/notificationtone.wav"]
         }
-      ]
+      ],
+
     ]
   }
 }
