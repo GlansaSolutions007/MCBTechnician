@@ -132,7 +132,7 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={idx} style={globalStyles.f10Regular}>
+            <CustomText  key={`category-${item.BookingID}-${idx}`} style={globalStyles.f10Regular}>
               {pkg?.Category?.CategoryName || "N/A"}
             </CustomText>
           ))}
@@ -147,7 +147,7 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={idx} style={globalStyles.f10Regular}>
+            <CustomText  key={`package-${item.BookingID}-${idx}`} style={globalStyles.f10Regular}>
               {pkg?.PackageName || "N/A"}
             </CustomText>
           ))}
