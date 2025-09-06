@@ -505,7 +505,7 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={16} color={color.error} />
         </TouchableOpacity>
         {/* Test Notification Buttons */}
-        <View style={styles.testSection}>
+        {/* <View style={styles.testSection}>
           <CustomText style={[globalStyles.f12Bold, globalStyles.mt3, { color: color.primary }]}>
             Test Notifications
           </CustomText>
@@ -569,7 +569,7 @@ export default function ProfileScreen() {
           >
             <CustomText style={[globalStyles.textWhite]}>Run All FCM Tests</CustomText>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
       <Modal
         animationType="fade"

@@ -262,12 +262,8 @@ export default function CustomerInfo() {
     } catch (error) {
       console.error("Error saving start ride flag", error);
     }
-    try {
-      const techId = await AsyncStorage.getItem("techID");
-      if (techId) {
-        await startBackgroundTracking(techId);
-      }
-    } catch (_) {}
+    // Background tracking should already be controlled by user via toggle
+    // No need to start it here automatically
     await openGoogleMaps();
   };
 

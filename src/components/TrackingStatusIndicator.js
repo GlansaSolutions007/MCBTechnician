@@ -10,6 +10,7 @@ import Animated, {
   interpolateColor,
 } from "react-native-reanimated";
 import { Pressable } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   getTrackingStatus,
   startBackgroundTracking,
@@ -32,8 +33,8 @@ export default function TrackingStatusIndicator({ technicianId }) {
   useEffect(() => {
     if (technicianId) {
       updateTrackingStatus();
-      const interval = setInterval(updateTrackingStatus, 10000);
-      return () => clearInterval(interval);
+      // const interval = setInterval(updateTrackingStatus, 10000);
+      // return () => clearInterval(interval);
     }
   }, [technicianId]);
 
