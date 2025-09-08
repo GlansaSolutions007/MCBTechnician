@@ -22,7 +22,10 @@ import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
-import { startBackgroundTracking, stopBackgroundTracking } from "../utils/locationTracker";
+import {
+  startBackgroundTracking,
+  stopBackgroundTracking,
+} from "../utils/locationTracker";
 import { RefreshControl } from "react-native";
 export default function CustomerInfo() {
   const navigation = useNavigation();
@@ -389,7 +392,7 @@ export default function CustomerInfo() {
               </CustomText>
               <View style={[styles.width60]}>
                 <View>
-                  <View>
+                  <View style={styles.imageContainer}>
                     <Image
                       source={
                         booking.VehicleImage
@@ -399,6 +402,7 @@ export default function CustomerInfo() {
                           : defaultAvatar
                       }
                       style={styles.avatar}
+                      resizeMode="cover"
                     />
                   </View>
                 </View>
@@ -944,10 +948,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginTop: 8,
   },
-  avatar: {
-    width: 140,
-    height: 100,
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 1.4,
+    overflow: "hidden",
   },
+
+  avatar: {
+    width: "100%",
+    height: "70%",
+    marginTop: 10,
+  },
+
   width60: {
     width: "60%",
   },

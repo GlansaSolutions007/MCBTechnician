@@ -362,11 +362,19 @@ export default function ServiceStart() {
                 </View>
               )}
             </View>
-
+            <CustomText
+              style={[
+                globalStyles.f16Light,
+                globalStyles.mt3,
+                globalStyles.neutral500,
+              ]}
+            >
+              Enter OTP
+            </CustomText>
             <TextInput
               style={[
                 globalStyles.inputBox,
-                globalStyles.mt4,
+                globalStyles.mt1,
                 { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
               ]}
               placeholder="Enter OTP"
@@ -415,7 +423,6 @@ export default function ServiceStart() {
               <TouchableOpacity
                 style={styles.pricecard}
                 onPress={async () => {
-
                   if (!otp || otp.length !== 6) {
                     setError("Please enter a valid 6-digit OTP");
                     return;
