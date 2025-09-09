@@ -6,6 +6,7 @@ import {
   View,
   RefreshControl,
   Animated,
+  TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -30,6 +31,10 @@ export default function Bookings() {
   const [todaysBookings, setTodaysBookings] = useState(bookings);
   const [refreshing, setRefreshing] = useState(false);
   const [pulse] = useState(new Animated.Value(0));
+  const [filterType, setFilterType] = useState('all'); // 'all', 'completed', 'pending'
+  const [fadeAnim] = useState(new Animated.Value(1));
+  const [slideAnim] = useState(new Animated.Value(0));
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (refreshing) {
@@ -90,6 +95,58 @@ export default function Bookings() {
     navigation.navigate("customerInfo", { booking });
   };
 
+  const getFilteredBookings = () => {
+    switch (filterType) {
+      case 'completed':
+        return todaysBookings.filter(booking => booking.BookingStatus === 'Completed');
+      case 'pending':
+        return todaysBookings.filter(booking => booking.BookingStatus !== 'Completed');
+      default:
+        return todaysBookings;
+    }
+  };
+
+  const filteredBookings = getFilteredBookings();
+
+  const handleFilterChange = (newFilterType) => {
+    if (newFilterType === filterType) return;
+    
+    setIsAnimating(true);
+    
+    // Start smooth transition animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0.3,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -20,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Change filter after fade out
+      setFilterType(newFilterType);
+      
+      // Fade back in with new content
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsAnimating(false);
+      });
+    });
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -119,26 +176,101 @@ export default function Bookings() {
       }
     >
       <View style={globalStyles.container}>
-        {todaysBookings.length === 0 ? (
-          <CustomText style={globalStyles.neutral500}>
-            No bookings assigned
-          </CustomText>
+        {/* Filter Section */}
+        {todaysBookings.length > 0 && (
+          <View style={[styles.filterCard, globalStyles.card, globalStyles.mt3]}>
+            {/* <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb3]}>
+              Filter Bookings
+            </CustomText> */}
+            
+            <View style={styles.filterButtons}>
+              <TouchableOpacity
+                onPress={() => handleFilterChange('all')}
+                style={[
+                  styles.filterButton,
+                  filterType === 'all' && styles.filterButtonActive
+                ]}
+                activeOpacity={0.7}
+              >
+               
+                <CustomText style={[
+                  globalStyles.f12Medium,
+                  filterType === 'all' ? globalStyles.textWhite : globalStyles.neutral500
+                ]}>
+                  All
+                </CustomText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => handleFilterChange('pending')}
+                style={[
+                  styles.filterButton,
+                  filterType === 'pending' && styles.filterButtonActive
+                ]}
+                activeOpacity={0.7}
+              >
+               
+                <CustomText style={[
+                  globalStyles.f12Medium,
+                  filterType === 'pending' ? globalStyles.textWhite : globalStyles.neutral500
+                ]}>
+                  Pending
+                </CustomText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => handleFilterChange('completed')}
+                style={[
+                  styles.filterButton,
+                  filterType === 'completed' && styles.filterButtonActive
+                ]}
+                activeOpacity={0.7}
+              >
+              
+                <CustomText style={[
+                  globalStyles.f12Medium,
+                  filterType === 'completed' ? globalStyles.textWhite : globalStyles.neutral500
+                ]}>
+                  Completed
+                </CustomText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {filteredBookings.length === 0 ? (
+          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, { paddingVertical: 40 }]}>
+            <Ionicons name="document-outline" size={48} color={color.neutral[300]} />
+            <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt2, globalStyles.textac]}>
+              {todaysBookings.length === 0 
+                ? "No bookings assigned" 
+                : `No ${filterType === 'all' ? '' : filterType} bookings found`
+              }
+            </CustomText>
+          </View>
         ) : refreshing ? (
           [0,1,2,3,4,5].map((i) => <SkeletonBookingCard key={`s-${i}`} index={i} />)
         ) : (
-          todaysBookings.map((item, index) => (
+          <Animated.View style={{ 
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }}>
+            {filteredBookings.map((item, index) => (
             <Pressable
               onPress={() => customerInfo(item)}
               key={item.BookingID?.toString() || `idx-${index}`}
               style={[
-                globalStyles.bgwhite,
+                item.BookingStatus === 'Completed' ? globalStyles.bgneutral100 : globalStyles.bgwhite,
                 globalStyles.p4,
                 globalStyles.mt4,
-                globalStyles.card,
+                isAnimating ? globalStyles.radius : globalStyles.card,
                 styles.cardWrapper,
               ]}
             >
-              <View style={styles.accent} />
+              <View style={[
+                styles.accent,
+                { backgroundColor: item.BookingStatus === 'Completed' ? color.alertError : color.primary }
+              ]} />
               <View style={globalStyles.flexrow}>
                 <Image
                   source={
@@ -160,6 +292,14 @@ export default function Bookings() {
                     <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                       {item.CustomerName}
                     </CustomText>
+                    {/* <View style={[
+                      styles.statusChip,
+                      { backgroundColor: item.BookingStatus === 'Completed' ? color.alertSuccess : color.primary }
+                    ]}>
+                      <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
+                        {item.BookingStatus || 'Pending'}
+                      </CustomText>
+                    </View> */}
                   </View>
 
                   <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}>
@@ -262,7 +402,8 @@ export default function Bookings() {
                 </View>
               </View>
             </Pressable>
-          ))
+            ))}
+          </Animated.View>
         )}
       </View>
     </ScrollView>
@@ -275,9 +416,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // Filter Card
+  filterCard: {
+    backgroundColor: color.white,
+    padding: 12,
+    marginBottom: 0,
+  },
+  filterButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: color.neutral[100],
+    alignItems: "center",
+    marginHorizontal: 3,
+    minHeight: 40,
+  },
+  filterButtonActive: {
+    backgroundColor: color.primary,
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   cardWrapper: {
     position: "relative",
     overflow: "hidden",
+    borderRadius: 16,
   },
   accent: {
     position: "absolute",

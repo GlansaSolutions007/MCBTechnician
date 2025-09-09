@@ -632,132 +632,119 @@ export default function Dashboard() {
                   <View
                     key={index}
                     style={[
-                      globalStyles.bgprimary,
+                      globalStyles.bgwhite,
                       globalStyles.p4,
                       globalStyles.card,
-                      globalStyles.mt2,
+                      globalStyles.mt4,
+                      styles.activeServiceCard,
                     ]}
                   >
+                    {/* Status Indicator */}
+                    
                     <View style={[globalStyles.flexrow]}>
-                      <Image
-                        source={
-                          item.ProfileImage
-                            ? {
-                                uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                              }
-                            : defaultAvatar
-                        }
-                        style={styles.avatar}
-                      />
+                      <View style={styles.avatarContainer}>
+                        <Image
+                          source={
+                            item.ProfileImage
+                              ? {
+                                  uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                                }
+                              : defaultAvatar
+                          }
+                          style={styles.avatar}
+                        />
+                      </View>
 
                       <View style={[globalStyles.ml3, { flex: 1 }]}>
-                        <CustomText
-                          style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                        >
-                          {item.CustomerName}
-                        </CustomText>
-                        <CustomText
-                          style={[
-                            globalStyles.f12Regular,
-                            globalStyles.textWhite,
-                          ]}
-                        >
-                          Mobile: {item.PhoneNumber}
-                        </CustomText>
-                        <CustomText
-                          style={[
-                            globalStyles.f10Light,
-                            globalStyles.neutral100,
-                          ]}
-                        >
-                          {item.FullAddress}
-                        </CustomText>
+                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
+                          <CustomText
+                            style={[globalStyles.f16Bold, globalStyles.black]}
+                          >
+                            {item.CustomerName}
+                          </CustomText>
+                         
+                        </View>
+                        
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
+                          <Ionicons name="call-outline" size={14} color={color.neutral[500]} />
+                          <CustomText
+                            style={[
+                              globalStyles.f12Medium,
+                              globalStyles.neutral500,
+                              globalStyles.ml1,
+                            ]}
+                          >
+                            {item.PhoneNumber}
+                          </CustomText>
+                        </View>
+                        
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
+                          <Ionicons name="location-outline" size={14} color={color.neutral[500]} />
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.neutral500,
+                              globalStyles.ml1,
+                              { flex: 1 },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {item.FullAddress}
+                          </CustomText>
+                        </View>
                       </View>
                     </View>
 
-                    <View style={globalStyles.divider} />
+                    <View style={[globalStyles.divider, globalStyles.mt3]} />
+                    
                     <View
                       style={[
                         globalStyles.flexrow,
                         globalStyles.justifysb,
                         globalStyles.alineItemscenter,
-                        styles.card,
+                        globalStyles.mt3,
                       ]}
                     >
-                      <CustomText
-                        style={[globalStyles.f16Bold, globalStyles.black]}
-                      >
-                        {item.TimeSlot}
-                      </CustomText>
-                      {/* {(item.BookingStatus === "Reached") && (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => ServiceStart(item)}
-                      >
-                        <View
-                            style={{
-                              backgroundColor: color.yellow,
-                              borderRadius: 50,
-                              padding: 8,
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Ionicons
-                              name="time-outline"
-                              size={24}
-                              color={color.white}
-                            />
-                          </View>
-                        </TouchableOpacity>
-                      )} */}
-
-                      {(item.BookingStatus === "Confirmed" ||
-                        item.BookingStatus === "StartJourney" ||
-                        item.BookingStatus === "ServiceStarted" ||
-                        item.BookingStatus === "Reached") && (
-                        <TouchableOpacity onPress={() => CustomerInfo(item)}>
-                          <View
-                            style={{
-                              backgroundColor: color.primary,
-                              borderRadius: 50,
-                              padding: 8,
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
+                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                        <Ionicons name="time-outline" size={16} color={color.primary} />
+                        <CustomText
+                          style={[globalStyles.f14Bold, globalStyles.primary, globalStyles.ml1]}
+                        >
+                          {item.TimeSlot}
+                        </CustomText>
+                      </View>
+                      <View style={styles.actionButtons}>
+                        {(item.BookingStatus === "Confirmed" ||
+                          item.BookingStatus === "StartJourney" ||
+                          item.BookingStatus === "ServiceStarted" ||
+                          item.BookingStatus === "Reached") && (
+                          <TouchableOpacity 
+                            onPress={() => CustomerInfo(item)}
+                            style={[styles.actionButton, { backgroundColor: color.primary }]}
                           >
                             <Ionicons
                               name="navigate-outline"
-                              size={24}
+                              size={20}
                               color={color.white}
                             />
-                          </View>
-                        </TouchableOpacity>
-                      )}
+                          </TouchableOpacity>
+                        )}
 
-                      {(item.PaymentMode === "COS" ||
-                        item.PaymentMode === "cos") &&
-                        item.BookingStatus === "Completed" && (
-                          <TouchableOpacity
-                            onPress={() => CollectPayment(item)}
-                          >
-                            <View
-                              style={{
-                                backgroundColor: color.primary,
-                                borderRadius: 50,
-                                padding: 8,
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
+                        {(item.PaymentMode === "COS" ||
+                          item.PaymentMode === "cos") &&
+                          item.BookingStatus === "Completed" && (
+                            <TouchableOpacity
+                              onPress={() => CollectPayment(item)}
+                              style={[styles.actionButton, { backgroundColor: color.primary }]}
                             >
                               <MaterialCommunityIcons
                                 name="currency-inr"
-                                size={24}
+                                size={20}
                                 color={color.white}
                               />
-                            </View>
-                          </TouchableOpacity>
-                        )}
+                            </TouchableOpacity>
+                          )}
+                      </View>
                     </View>
                   </View>
                 ))}
@@ -864,6 +851,55 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     alignItems: "center",
+  },
+  // Active Service Card Styles
+  activeServiceCard: {
+    position: "relative",
+    overflow: "hidden",
+  },
+  statusIndicator: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  statusDot: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: color.white,
+  },
+  statusChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   // Skeleton primitives
   skelLineSmall: { height: 12, borderRadius: 6 },

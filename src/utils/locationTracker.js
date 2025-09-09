@@ -161,16 +161,24 @@ export async function startTechnicianLocationTracking(technicianId) {
     }
   );
 
-  // Start background fetch for additional reliability
-  try {
-    await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-      minimumInterval: 15 * 60, // 15 minutes
-      stopOnTerminate: false,
-      startOnBoot: true,
-    });
-  } catch (error) {
-    console.log("Error registering background fetch task:", error);
-  }
+  // Start background fetch for additional reliability with delay
+  setTimeout(async () => {
+    try {
+      // Ensure task is defined before registering
+      if (TaskManager.isTaskDefined(BACKGROUND_FETCH_TASK)) {
+        await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+          minimumInterval: 15 * 60, // 15 minutes
+          stopOnTerminate: false,
+          startOnBoot: true,
+        });
+        console.log("Background fetch task registered successfully");
+      } else {
+        console.log("Background fetch task not defined, skipping registration");
+      }
+    } catch (error) {
+      console.log("Error registering background fetch task:", error);
+    }
+  }, 1000); // 1 second delay to ensure task definitions are loaded
 }
 
 export function stopTechnicianLocationTracking() {
