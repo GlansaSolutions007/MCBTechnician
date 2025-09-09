@@ -10,6 +10,7 @@ import {
   Pressable,
   Linking,
   Vibration,
+  Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -306,7 +307,7 @@ export default function ServiceStart() {
                 globalStyles.w40,
               ]}
             >
-              {" "}
+             
               <MaterialCommunityIcons
                 name="card-account-details-outline"
                 size={16}
@@ -330,7 +331,7 @@ export default function ServiceStart() {
                 globalStyles.alineItemscenter,
               ]}
             >
-              {" "}
+             
               <Ionicons name="calendar" size={16} color={color.primary} />
               <CustomText
                 style={[
@@ -352,7 +353,7 @@ export default function ServiceStart() {
                 globalStyles.w40,
               ]}
             >
-              {" "}
+              
               <Ionicons name="car" size={16} color={color.primary} />
               <CustomText
                 style={[
@@ -371,7 +372,6 @@ export default function ServiceStart() {
                 globalStyles.alineItemscenter,
               ]}
             >
-              {" "}
               <Ionicons name="time-outline" size={16} color={color.primary} />
               <CustomText
                 style={[
@@ -573,7 +573,11 @@ export default function ServiceStart() {
                     "true"
                   );
 
-                  navigation.navigate("ServiceTracking", { booking });
+                  navigation.navigate("ServiceEnd", { 
+                    booking,
+                    estimatedTime: totalSeconds,
+                    actualTime: elapsedFromAPI
+                  });
                 }}
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
