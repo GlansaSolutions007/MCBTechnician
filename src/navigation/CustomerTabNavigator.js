@@ -104,7 +104,7 @@ export default function CustomerTabNavigator({ navigation }) {
       <Tab.Screen name="Tasks" component={TaskReportsScreen} />
       <Tab.Screen name="Reports" component={Reportlist} />
       {/* <Tab.Screen name="service locations" component={Servicelocations} /> */}
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
 }

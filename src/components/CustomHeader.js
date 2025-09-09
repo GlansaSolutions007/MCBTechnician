@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  Text,
-  TextInput,
   StyleSheet,
-  Pressable,
-  Image,
-  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,7 +30,6 @@ export default function CustomHeader() {
 
         if (!techId) {
           console.warn("No technicianId found");
-          setLoading(false);
           return;
         }
 
@@ -47,11 +41,13 @@ export default function CustomHeader() {
             },
           }
         );
-        setName(res.data.data?.[0]?.TechnicianName ?? null);
+
+        // ✅ Set technician name OR fallback to Buddy
+        const fetchedName = res.data.data?.[0]?.TechnicianName;
+        setName(fetchedName && fetchedName.trim() !== "" ? fetchedName : "Buddy");
       } catch (err) {
         console.error("Fetch error", err);
-      } finally {
-        setLoading(false);
+        setName("Buddy"); // fallback on error too
       }
     };
 
@@ -69,13 +65,8 @@ export default function CustomHeader() {
       <View style={styles.topRow}>
         <View>
           <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
-            Hello, {name}
+            Hello, {name || "Buddy"}
           </CustomText>
-          {/* <Pressable>
-            <CustomText style={[globalStyles.f10Regular, globalStyles.mt1]}>
-              Hyderabad, Telangana <Ionicons name="chevron-down" size={14} />
-            </CustomText>
-          </Pressable> */}
         </View>
 
         <NotificationBadge onPress={Notifications} size={24} color={color.black} />
@@ -91,22 +82,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 0,
     backgroundColor: "#fff",
-    // borderBottomColor: "#eee",
-    // borderBottomWidth: 1,
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
-  },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f1f1f1",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 50,
   },
 });

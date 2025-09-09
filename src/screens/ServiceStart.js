@@ -12,7 +12,7 @@ import {
   Vibration,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
@@ -22,7 +22,8 @@ import helpcall from "../../assets/icons/Customer Care.png";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
+import defaultAvatar from "../../assets/images/buddy.png";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
@@ -257,29 +258,136 @@ export default function ServiceStart() {
       <View style={globalStyles.container}>
         {/* <AvailabilityHeader /> */}
 
-        <CustomText
-          style={[globalStyles.f20Bold, globalStyles.primary, globalStyles.mt3]}
+        {/* Booking Summary */}
+        <View
+          style={[
+            globalStyles.bgwhite,
+            globalStyles.radius,
+            globalStyles.card,
+            globalStyles.p3,
+            globalStyles.mt3,
+          ]}
         >
-          Booking ID:{" "}
-          <CustomText style={globalStyles.black}>
-            {booking.BookingTrackID}
-          </CustomText>
-        </CustomText>
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            {/* <Image
+              source={{
+                uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  booking.CustomerName
+                )}&background=E8E8E8`,
+              }}
+              style={{ width: 46, height: 46, borderRadius: 10 }}
+            /> */}
+             <Image
+                  source={
+                    booking.ProfileImage
+                      ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                      : defaultAvatar
+                  }
+                  style={{ width: 46, height: 46, borderRadius: 10 }}
+                  />
+            <View style={[globalStyles.ml3, { flex: 1 }]}>
+              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                {booking.CustomerName}
+              </CustomText>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500]}
+              >
+                Mobile: {booking.PhoneNumber}
+              </CustomText>
+            </View>
+          </View>
+          <View style={[globalStyles.divider, globalStyles.mt2]} />
+          <View style={[globalStyles.flexrow]}>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+                globalStyles.w40,
+              ]}
+            >
+              {" "}
+              <MaterialCommunityIcons
+                name="card-account-details-outline"
+                size={16}
+                color={color.primary}
+                style={{ marginRight: 6 }}
+              />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.BookingTrackID}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              {" "}
+              <Ionicons name="calendar" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.BookingDate}
+              </CustomText>
+            </View>
+          </View>
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+                globalStyles.w40,
+              ]}
+            >
+              {" "}
+              <Ionicons name="car" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.VehicleNumber}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              {" "}
+              <Ionicons name="time-outline" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.TimeSlot}
+              </CustomText>
+            </View>
+          </View>
+        </View>
 
         {!timerStarted && booking.ServiceStartedAt === null && (
           <View>
-            <CustomText style={[globalStyles.f14Bold, globalStyles.mt4]}>
-              Want to upload before service images?
-            </CustomText>
-            <CustomText
-              style={[
-                globalStyles.f10Light,
-                globalStyles.neutral500,
-                globalStyles.mt1,
-              ]}
-            >
-              My dear buddy, upload maximum 4-5 images
-            </CustomText>
             <View
               style={[
                 globalStyles.mt3,
@@ -291,6 +399,18 @@ export default function ServiceStart() {
                 globalStyles.card,
               ]}
             >
+              <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+                Pre-service checklist
+              </CustomText>
+              <CustomText
+                style={[
+                  globalStyles.f10Light,
+                  globalStyles.neutral500,
+                  globalStyles.mt1,
+                ]}
+              >
+                Upload up to 5 images and enter OTP to start
+              </CustomText>
               <TouchableOpacity
                 style={[globalStyles.inputBox, globalStyles.mt3]}
                 onPress={pickImage}

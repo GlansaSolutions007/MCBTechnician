@@ -6,6 +6,7 @@ import {
   Dimensions,
   ActivityIndicator,
   FlatList,
+  Animated,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -23,10 +24,31 @@ function TaskReportsScreen() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pulse] = useState(new Animated.Value(0));
 
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Start skeleton pulse when loading
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, pulse]);
 
   const fetchBookings = async () => {
     try {
@@ -156,23 +178,94 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
     </TouchableOpacity>
   );
 
+  const SkeletonCard = ({ index }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}>
+        {/* Header skeleton */}
+        <View style={styles.header}>
+          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelCircleSm, { backgroundColor: bg }]} />
+        </View>
+
+        <View style={globalStyles.dividerWhite} />
+
+        {/* Date row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+        </View>
+
+        {/* Time Slot row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+        </View>
+
+        {/* Category row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <View style={{ flex: 1 }}>
+            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
+            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+          </View>
+        </View>
+
+        {/* Package row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <View style={{ flex: 1 }}>
+            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
+            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View
       style={{ flex: 1, backgroundColor: color.white, paddingHorizontal: 16 }}
     >
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={color.primary}
-          style={{ marginTop: 30 }}
+        <FlatList
+          data={[...Array(6).keys()]}
+          keyExtractor={(i) => `skeleton-${i}`}
+          renderItem={({ item, index }) => <SkeletonCard index={index} />}
+          contentContainerStyle={{ paddingVertical: 20 }}
+          showsVerticalScrollIndicator={false}
         />
       ) : error ? (
-        <CustomText>{error}</CustomText>
+        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
+          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, globalStyles.flexrow]}>
+            <Ionicons name="alert-circle-outline" size={20} color={color.alertError} />
+            <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.ml1, globalStyles.textac]}>
+              {error}
+            </CustomText>
+          </View>
+          <TouchableOpacity
+            style={[globalStyles.bgprimary, globalStyles.p3, globalStyles.alineItemscenter, globalStyles.borderRadiuslarge, globalStyles.mt4]}
+            onPress={fetchBookings}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Try Again</CustomText>
+          </TouchableOpacity>
+        </View>
       ) : upcomingBookings.length === 0 ? (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter]}>
-          <CustomText style={globalStyles.neutral500}>
-            {" "}
-            No upcoming bookings
+        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
+          <Ionicons name="calendar-outline" size={64} color={color.neutral[400]} />
+          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
+            No upcoming bookings found
+          </CustomText>
+          <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+            Your assigned services will appear here
           </CustomText>
         </View>
       ) : (
@@ -195,6 +288,42 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[200],
     borderRadius: 16,
     padding: 16,
+  },
+  // skeleton primitives
+  skelLineMedium: {
+    width: 160,
+    height: 14,
+    borderRadius: 7,
+  },
+  skelCircleSm: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  skelIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  skelLineSmall: {
+    width: 70,
+    height: 12,
+    borderRadius: 6,
+  },
+  skelFlexLine: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+  },
+  skelLineLong: {
+    width: '70%',
+    height: 12,
+    borderRadius: 6,
+  },
+  skelLineLonger: {
+    width: '85%',
+    height: 12,
+    borderRadius: 6,
   },
   icon: {
     marginRight: 4,

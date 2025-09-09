@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  StatusBar,
 } from "react-native";
 import CustomText from "../../components/CustomText";
 import globalStyles from "../../styles/globalStyles";
@@ -306,21 +307,14 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={[globalStyles.bgcontainer]}>
-      <View style={globalStyles.container}>
-        {/* <AvailabilityHeader /> */}
-        <View style={[globalStyles.flexrow, globalStyles.mv5]}>
-          <View
-            style={[
-              globalStyles.alineItemscenter,
-              globalStyles.mb3,
-              globalStyles.mr2,
-            ]}
-          >
-            <Pressable
-              // onPress={pickImage}
-              style={{ position: "relative" }}
-            >
+    <ScrollView style={[globalStyles.bgcontainer]} showsVerticalScrollIndicator={false}>
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      {/* Header Section with Gradient Background */}
+      <View style={styles.headerSection}>
+        <View style={[globalStyles.container, globalStyles.pt5]}>
+          {/* Profile Avatar with Modern Design */}
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb4]}>
+            <View style={styles.avatarContainer}>
               <Image
                 source={
                   profileData?.ProfileImage
@@ -331,59 +325,48 @@ export default function ProfileScreen() {
                       }
                     : require("../../../assets/images/persontwo.jpg")
                 }
-                style={styles.avatar}
+                style={styles.modernAvatar}
               />
-              {/* {uploading && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="small" color="#fff" />
-                </View>
-              )} */}
-            </Pressable>
+              {/* <View style={styles.onlineIndicator} /> */}
+            </View>
           </View>
-          <View style={[globalStyles.pr2, { flex: 1 }]}>
+
+          {/* Profile Information */}
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb4]}>
             <CustomText
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={[globalStyles.f24Bold, globalStyles.primary]}
+              style={[globalStyles.f24Bold, globalStyles.textWhite, globalStyles.textac]}
             >
               {profileData.TechnicianName}
             </CustomText>
-            <CustomText style={globalStyles.f12Medium}>
-              Mobile: {profileData.PhoneNumber}
+            <CustomText style={[globalStyles.f14Medium, globalStyles.textWhite, globalStyles.mt1]}>
+              {profileData.DealerName}
             </CustomText>
-            <CustomText numberOfLines={1} style={[globalStyles.f12Medium]}>
-              Email: {profileData.Email}
-            </CustomText>
-            <View
-              style={[
-                globalStyles.flexrow,
-                // { flexWrap: "wrap", width: "100%" },
-              ]}
-            >
-              {/* <View style={styles.iconbg}>
-                <Image source={person} style={styles.icons} />
-              </View> */}
-              <CustomText
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={[globalStyles.f12Medium]}
-              >
-                Dealer: {profileData.DealerName}
+          </View>
+
+          {/* Contact Information Cards */}
+          <View style={styles.contactCards}>
+            <View style={[styles.contactCard, globalStyles.mb2]}>
+              <Ionicons name="call-outline" size={18} color={color.primary} />
+              <CustomText style={[globalStyles.f12Medium, globalStyles.ml2]}>
+                {profileData.PhoneNumber}
               </CustomText>
             </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                // { flexWrap: "wrap", width: "100%", marginTop: 2 },
-              ]}
-            >
-              {/* <View style={[styles.iconbg, globalStyles.mt1]}>
-                <Image source={locationicon} style={styles.icons} />
-              </View> */}
-              <CustomText
-                numberOfLines={4}
+            <View style={[styles.contactCard, globalStyles.mb2]}>
+              <Ionicons name="mail-outline" size={18} color={color.primary} />
+              <CustomText 
+                numberOfLines={1} 
                 ellipsizeMode="tail"
-                style={[globalStyles.f10Regular, { width: "95%" }]}
+                style={[globalStyles.f12Medium, globalStyles.ml2, { flex: 1 }]}
+              >
+                {profileData.Email}
+              </CustomText>
+            </View>
+            <View style={styles.contactCard}>
+              <Ionicons name="location-outline" size={18} color={color.primary} />
+              <CustomText 
+                numberOfLines={2} 
+                ellipsizeMode="tail"
+                style={[globalStyles.f12Medium, globalStyles.ml2, { flex: 1 }]}
               >
                 {profileData.AddressLine1}
               </CustomText>
@@ -392,184 +375,142 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.statsCard}>
-        <View style={[globalStyles.flexrow, globalStyles.justifycenter]}>
-          {[1, 2, 3, 4, 5].map((star, i) => (
-            <Ionicons
-              key={i}
-              name="star"
-              size={20}
-              color={
-                reviewData?.OverallServiceRating >= star
-                  ? color.primary
-                  : color.neutral[300]
-              }
-              style={globalStyles.mr1}
-            />
-          ))}
-        </View>
-
-        <View style={styles.gridContainer}>
-          <View style={styles.gridItem}>
-            <CustomText
-              style={[
-                globalStyles.f40Bold,
-                globalStyles.alineSelfcenter,
-                globalStyles.primary,
-              ]}
-            >
-              {/* {profileData.ServiceCompleted ?? "0"} */}
-              {reviewData?.TotalFeedbacks ?? "0.0"}
+      {/* Rating Section */}
+      <View style={[globalStyles.container, globalStyles.mt4]}>
+        <View style={[styles.ratingCard, globalStyles.card]}>
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb3]}>
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              {[1, 2, 3, 4, 5].map((star, i) => (
+                <Ionicons
+                  key={i}
+                  name="star"
+                  size={24}
+                  color={
+                    reviewData?.OverallServiceRating >= star
+                      ? color.yellow
+                      : color.neutral[300]
+                  }
+                  style={globalStyles.mr1}
+                />
+              ))}
+            </View>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mt2]}>
+              {reviewData?.OverallServiceRating ?? "0.0"} Rating
             </CustomText>
-            <CustomText>Total Feedbacks</CustomText>
           </View>
-          <View style={styles.gridItem}>
-            <Pressable>
+
+          {/* Stats Grid */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
               <CustomText
-                style={[
-                  globalStyles.f40Bold,
-                  globalStyles.alineSelfcenter,
-                  globalStyles.primary,
-                ]}
+                style={[globalStyles.f32Bold, globalStyles.primary, globalStyles.textac]}
               >
-                {/* {profileData.Rating ?? "0.0"} */}
+                {reviewData?.TotalFeedbacks ?? "0"}
+              </CustomText>
+              <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.textac]}>
+                Total Reviews
+              </CustomText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <CustomText
+                style={[globalStyles.f32Bold, globalStyles.primary, globalStyles.textac]}
+              >
                 {reviewData?.OverallServiceRating ?? "0.0"}
               </CustomText>
-              <CustomText>Review Ratings</CustomText>
-            </Pressable>
+              <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.textac]}>
+                Average Rating
+              </CustomText>
+            </View>
           </View>
-          {/* <View style={styles.gridItem}>
-            <CustomText
-              style={[
-                globalStyles.f40Bold,
-                globalStyles.alineSelfcenter,
-                globalStyles.primary,
-              ]}
-            >
-              {profileData.ServedCustomers ?? "0+"}
-            </CustomText>
-            <CustomText>Served Customers</CustomText>
-          </View> */}
-          {/* <View style={styles.gridItem}>
-            <CustomText
-              style={[
-                globalStyles.f40Bold,
-                globalStyles.alineSelfcenter,
-                globalStyles.primary,
-              ]}
-            >
-              {profileData.KilometersTravelled ?? "0"}
-            </CustomText>
-            <CustomText>Kilometers Traveled</CustomText>
-          </View> */}
         </View>
+      </View>
 
-        <View style={globalStyles.mt4}>
+      {/* Menu Section */}
+      <View style={[globalStyles.container, globalStyles.mt4]}>
+        <View style={[styles.menuCard, globalStyles.card]}>
+          <CustomText style={[globalStyles.f18Bold, globalStyles.primary, globalStyles.mb3]}>
+            Account & Settings
+          </CustomText>
+          
           {[
-            { label: "Leave Request List", route: "leaveRequestList" },
-            { label: "Leave Request", route: "leaveRequest" },
-            { label: "About App" },
-            { label: "Technician Privacy Policy", route: "privacyPolicy" },
-            { label: "Terms & Conditions", route: "termsAndConditions" },
-            { label: "Inventory Items Request" },
+            { 
+              label: "Leave Request List", 
+              route: "leaveRequestList", 
+              icon: "list-outline",
+              color: color.primary
+            },
+            { 
+              label: "Leave Request", 
+              route: "leaveRequest", 
+              icon: "calendar-outline",
+              color: color.primary
+            },
+            { 
+              label: "About App", 
+              icon: "information-circle-outline",
+              color: color.neutral[500]
+            },
+            { 
+              label: "Privacy Policy", 
+              route: "privacyPolicy", 
+              icon: "shield-checkmark-outline",
+              color: color.primary
+            },
+            { 
+              label: "Terms & Conditions", 
+              route: "termsAndConditions", 
+              icon: "document-text-outline",
+              color: color.primary
+            },
+            { 
+              label: "Inventory Items Request", 
+              icon: "cube-outline",
+              color: color.neutral[500]
+            },
           ].map((item, idx) => (
             <View key={idx}>
               <TouchableOpacity
                 onPress={() => item.route && navigation.navigate(item.route)}
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
-                  globalStyles.mv3,
-                ]}
+                style={[styles.menuItem, globalStyles.flexrow, globalStyles.alineItemscenter]}
+                disabled={!item.route}
               >
-                <CustomText style={[globalStyles.f12Bold]}>
+                <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
+                  <Ionicons name={item.icon} size={20} color={item.color} />
+                </View>
+                <CustomText 
+                  style={[
+                    globalStyles.f14Medium, 
+                    globalStyles.ml3, 
+                    globalStyles.flex1,
+                    !item.route && globalStyles.neutral500
+                  ]}
+                >
                   {item.label}
                 </CustomText>
-                <Ionicons name="chevron-forward" size={16} color="#333" />
+                {item.route && (
+                  <Ionicons name="chevron-forward" size={16} color={color.neutral[500]} />
+                )}
               </TouchableOpacity>
-              {idx < 6 && <View style={styles.divider} />}
+              {idx < 5 && <View style={styles.menuDivider} />}
             </View>
           ))}
         </View>
+      </View>
+
+      {/* Logout Section */}
+      <View style={[globalStyles.container, globalStyles.mt4, globalStyles.mb5]}>
         <TouchableOpacity
           onPress={confirmLogout}
-          style={[
-            globalStyles.flexrow,
-            globalStyles.justifysb,
-            globalStyles.mt3,
-          ]}
+          style={[styles.logoutButton, globalStyles.flexrow, globalStyles.alineItemscenter]}
         >
-          <CustomText style={[globalStyles.f12Bold, globalStyles.error]}>
+          <View style={[styles.logoutIcon, { backgroundColor: color.error + '15' }]}>
+            <Ionicons name="log-out-outline" size={20} color={color.error} />
+          </View>
+          <CustomText style={[globalStyles.f14Bold, globalStyles.error, globalStyles.ml3]}>
             Log Out
           </CustomText>
-          <Ionicons name="chevron-forward" size={16} color={color.error} />
         </TouchableOpacity>
-        {/* Test Notification Buttons */}
-        {/* <View style={styles.testSection}>
-          <CustomText style={[globalStyles.f12Bold, globalStyles.mt3, { color: color.primary }]}>
-            Test Notifications
-          </CustomText>
-          
-          <TouchableOpacity
-            onPress={sendTest}
-            style={[styles.testButton, { backgroundColor: color.primary }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Send Test Push (API)</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={testLocalNotification}
-            style={[styles.testButton, { backgroundColor: color.success || '#4CAF50' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Test Local Notification</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={testAllNotifications}
-            style={[styles.testButton, { backgroundColor: color.warning || '#FF9800' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Test All Types</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={clearTestNotifications}
-            style={[styles.testButton, { backgroundColor: color.error || '#F44336' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Clear All Notifications</CustomText>
-          </TouchableOpacity>
-
-          <CustomText style={[globalStyles.f12Bold, globalStyles.mt3, { color: color.primary }]}>
-            FCM Token & Firebase Tests
-          </CustomText>
-
-          <TouchableOpacity
-            onPress={testFCMTokenGeneration}
-            style={[styles.testButton, { backgroundColor: '#9C27B0' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Test FCM Token Generation</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={testTokenSaving}
-            style={[styles.testButton, { backgroundColor: '#607D8B' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Test Token Saving</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={testFirebaseNotification}
-            style={[styles.testButton, { backgroundColor: '#795548' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Test Firebase Notification</CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={runAllFCMTests}
-            style={[styles.testButton, { backgroundColor: '#E91E63' }]}
-          >
-            <CustomText style={[globalStyles.textWhite]}>Run All FCM Tests</CustomText>
-          </TouchableOpacity>
-        </View> */}
       </View>
       <Modal
         animationType="fade"
@@ -610,19 +551,19 @@ export default function ProfileScreen() {
                 onPress={() => setShowLogoutModal(false)}
               >
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                  style={[globalStyles.f14Bold, globalStyles.neutral500]}
                 >
-                  No
+                  Cancel
                 </CustomText>
               </Pressable>
               <Pressable
-                style={[styles.button, styles.logoutButton]}
+                style={[styles.button, styles.logoutButtonModal]}
                 onPress={handleLogout}
               >
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f12Bold]}
+                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
                 >
-                  Yes
+                  Log Out
                 </CustomText>
               </Pressable>
             </View>
@@ -634,6 +575,161 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Header Section
+  headerSection: {
+    backgroundColor: color.primary,
+    paddingBottom: 30,
+    paddingTop: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  
+  // Avatar Styles
+  avatarContainer: {
+    position: "relative",
+    marginBottom: 10,
+  },
+  modernAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: color.white,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  // onlineIndicator: {
+  //   position: "absolute",
+  //   bottom: 5,
+  //   right: 5,
+  //   width: 20,
+  //   height: 20,
+  //   borderRadius: 10,
+  //   backgroundColor: color.alertSuccess,
+  //   borderWidth: 3,
+  //   borderColor: color.white,
+  // },
+
+  // Contact Cards
+  contactCards: {
+    backgroundColor: color.white,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 10,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  contactCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+
+  // Rating Card
+  ratingCard: {
+    backgroundColor: color.white,
+    padding: 20,
+    marginBottom: 0,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: color.neutral[200],
+    marginHorizontal: 20,
+  },
+
+  // Menu Card
+  menuCard: {
+    backgroundColor: color.white,
+    padding: 20,
+    marginBottom: 0,
+  },
+  menuItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+  },
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: color.neutral[100],
+    marginLeft: 52,
+  },
+
+  // Logout Button
+  logoutButton: {
+    backgroundColor: color.white,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Modal Styles
+  modalBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContainer: {
+    backgroundColor: color.white,
+    padding: 24,
+    borderRadius: 16,
+    width: "85%",
+    alignItems: "center",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: color.neutral[200],
+    marginRight: 12,
+  },
+  logoutButtonModal: {
+    backgroundColor: color.error,
+  },
+
+  // Legacy styles (keeping for compatibility)
   closeIcon: {
     position: "absolute",
     top: 0,
@@ -656,7 +752,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -664,33 +759,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
   },
-
-  modalBackground: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalContainer: {
-    backgroundColor: "#fff",
-    padding: 24,
-    borderRadius: 12,
-    width: "80%",
-    alignItems: "center",
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    backgroundColor: color.primary,
-    marginRight: 10,
-  },
-  logoutButton: {
-    backgroundColor: color.error,
-  },
-
   divider: {
     height: 1,
     backgroundColor: color.neutral[100],

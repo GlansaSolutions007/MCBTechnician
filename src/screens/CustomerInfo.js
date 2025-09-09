@@ -20,6 +20,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
+import { GOOGLE_MAPS_APIKEY } from "../config/env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
 import {
@@ -30,7 +31,17 @@ import { RefreshControl } from "react-native";
 export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { booking } = route.params;
+  const bookingParam = route?.params?.booking;
+  if (!bookingParam) {
+    return (
+      <ScrollView style={[globalStyles.bgcontainer]}>
+        <View style={[globalStyles.container, globalStyles.justifycenter]}>
+          <CustomText style={[globalStyles.f16Bold]}>No booking data.</CustomText>
+        </View>
+      </ScrollView>
+    );
+  }
+  const booking = bookingParam;
   const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
@@ -38,11 +49,7 @@ export default function CustomerInfo() {
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
   // const today = new Date().toISOString().split("T")[0];
-  const today = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Kolkata",
-  });
-
-  console.log(today);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
@@ -121,8 +128,10 @@ export default function CustomerInfo() {
 
   // const Latitude = booking.Latitude;
   // const Longitude = booking.Longitude;
-  const Latitude = parseFloat(booking.latitude || booking.Latitude);
-  const Longitude = parseFloat(booking.Longitude || booking.longitude);
+  const rawLat = booking?.latitude ?? booking?.Latitude;
+  const rawLng = booking?.longitude ?? booking?.Longitude;
+  const Latitude = Number(rawLat);
+  const Longitude = Number(rawLng);
 
   const bookingId = booking.BookingID;
   const destination = {
@@ -131,58 +140,87 @@ export default function CustomerInfo() {
   };
 
   useEffect(() => {
+    let subscription = null;
     const startTracking = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Denied", "Location access is required.");
-        return;
-      }
-
-      Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 1,
-        },
-        async (loc) => {
-          const coords = {
-            Latitude: loc.coords.latitude,
-            Longitude: loc.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          };
-          setLocation(coords);
-
-          if (mapRef.current) {
-            mapRef.current.animateToRegion(coords, 1000);
-          }
-
-          fetchRoute(coords);
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission Denied", "Location access is required.");
+          return;
         }
-      );
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000,
+            distanceInterval: 1,
+          },
+          async (loc) => {
+            const coords = {
+              Latitude: loc.coords.latitude,
+              Longitude: loc.coords.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            };
+            setLocation(coords);
+            try {
+              if (mapRef.current?.animateToRegion) {
+                mapRef.current.animateToRegion(coords, 1000);
+              }
+            } catch (_) {}
+            fetchRoute(coords);
+          }
+        );
+      } catch (e) {
+        console.error("watchPosition error", e?.message || e);
+      }
     };
 
     startTracking();
+    return () => {
+      try { subscription && subscription.remove && subscription.remove(); } catch (_) {}
+      subscription = null;
+    };
   }, []);
 
   const fetchRoute = async (origin) => {
     try {
+      if (!origin || !Number.isFinite(origin.Latitude) || !Number.isFinite(origin.Longitude)) {
+        return;
+      }
+      if (!Number.isFinite(destination?.Latitude) || !Number.isFinite(destination?.Longitude)) {
+        return;
+      }
+
       const response = await axios.get(
         `https://maps.googleapis.com/maps/api/directions/json`,
         {
           params: {
             origin: `${origin.Latitude},${origin.Longitude}`,
             destination: `${destination.Latitude},${destination.Longitude}`,
-            key: "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc",
+            key: GOOGLE_MAPS_APIKEY,
           },
         }
       );
 
-      const points = response.data.routes[0].overview_polyline.points;
+      const { status, routes, error_message } = response?.data || {};
+      if (status !== 'OK' || !Array.isArray(routes) || routes.length === 0) {
+        console.warn('Directions API status:', status, error_message || 'No routes');
+        setRouteCoords([]);
+        return;
+      }
+
+      const points = routes[0]?.overview_polyline?.points;
+      if (!points) {
+        console.warn('Directions API: overview_polyline missing');
+        setRouteCoords([]);
+        return;
+      }
+
       const decoded = decodePolyline(points);
       setRouteCoords(decoded);
     } catch (error) {
-      console.error("Google Directions API error:", error.message);
+      console.error("Google Directions API error:", error?.response?.data || error?.message || error);
+      setRouteCoords([]);
     }
   };
 
@@ -278,6 +316,17 @@ export default function CustomerInfo() {
     } catch (_) {}
     navigation.navigate("ServiceStart", { booking: booking });
   };
+
+  const isSameISTDate = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const istStr = d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    return istStr === today;
+  };
+
+  if (!Number.isFinite(Latitude) || !Number.isFinite(Longitude)) {
+    console.warn("Invalid booking coordinates", { Latitude: rawLat, Longitude: rawLng });
+  }
 
   return (
     <ScrollView

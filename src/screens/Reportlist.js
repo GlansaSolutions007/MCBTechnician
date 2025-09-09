@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
+  Animated,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -20,10 +21,30 @@ function Reportlist() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pulse] = useState(new Animated.Value(0));
 
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, pulse]);
 
   const fetchBookings = async () => {
     try {
@@ -78,7 +99,6 @@ const pastBookings = Array.isArray(bookings)
 
   const renderBookingCard = ({ item, index }) => (
     <TouchableOpacity
-      key={item.BookingID?.toString() || index.toString()}
       onPress={() => customerInfo(item)}
       style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}
       activeOpacity={0.8}
@@ -131,7 +151,7 @@ const pastBookings = Array.isArray(bookings)
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={idx} style={globalStyles.f10Regular}>
+            <CustomText key={`cat-${item.BookingID ?? 'x'}-${idx}`} style={globalStyles.f10Regular}>
               {pkg?.Category?.CategoryName || "N/A"}
             </CustomText>
           ))}
@@ -146,7 +166,7 @@ const pastBookings = Array.isArray(bookings)
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={idx} style={globalStyles.f10Regular}>
+            <CustomText key={`pkg-${item.BookingID ?? 'x'}-${idx}`} style={globalStyles.f10Regular}>
               {pkg?.PackageName || "N/A"}
             </CustomText>
           ))}
@@ -155,19 +175,101 @@ const pastBookings = Array.isArray(bookings)
     </TouchableOpacity>
   );
 
+  const SkeletonCard = ({ index }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}>
+        {/* Header skeleton */}
+        <View style={styles.header}>
+          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelCircleSm, { backgroundColor: bg }]} />
+        </View>
+
+        <View style={globalStyles.dividerWhite} />
+
+        {/* Date row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+        </View>
+
+        {/* Time Slot row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+        </View>
+
+        {/* Category row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <View style={{ flex: 1 }}>
+            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
+            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+          </View>
+        </View>
+
+        {/* Package row */}
+        <View style={styles.infoRow}>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <View style={{ flex: 1 }}>
+            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
+            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderList = () => {
     if (loading) {
-      return <ActivityIndicator size="large" color={color.primary} />;
+      return (
+        <FlatList
+          data={[...Array(6).keys()]}
+          keyExtractor={(i) => `report-skeleton-${String(i)}`}
+          renderItem={({ item, index }) => <SkeletonCard index={index} />}
+          contentContainerStyle={{ paddingVertical: 20, paddingHorizontal: 16 }}
+          showsVerticalScrollIndicator={false}
+        />
+      );
     }
 
     if (error) {
-      return <CustomText>{error}</CustomText>;
+      return (
+        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
+          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter,globalStyles.flexrow]}>
+          <Ionicons name="alert-circle-outline" size={20} color={color.alertError} />
+          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.ml1, globalStyles.textac]}>
+            {error}
+          </CustomText>
+          </View>
+          <TouchableOpacity
+            style={[globalStyles.bgprimary, globalStyles.p3,globalStyles.alineItemscenter, globalStyles.borderRadiuslarge, globalStyles.mt4]}
+            onPress={fetchBookings}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Try Again</CustomText>
+          </TouchableOpacity>
+        </View>
+      );
     }
 
     if (pastBookings.length === 0) {
       return (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter]}>
-          <CustomText style={globalStyles.neutral500}>No past bookings</CustomText>
+        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
+          <Ionicons name="document-text-outline" size={64} color={color.neutral[400]} />
+          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
+            No past bookings found
+          </CustomText>
+          <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+            Your completed services will appear here
+          </CustomText>
         </View>
       );
     }
@@ -175,9 +277,12 @@ const pastBookings = Array.isArray(bookings)
     return (
       <FlatList
         data={pastBookings}
-        keyExtractor={(item, index) =>
-          item.BookingID?.toString() || index.toString()
-        }
+        keyExtractor={(item, index) => {
+          const id = item?.BookingID ?? 'noid';
+          const track = item?.BookingTrackID ?? 'notrack';
+          const date = item?.BookingDate ? String(item.BookingDate) : 'nodate';
+          return `past-${id}-${track}-${date}-${index}`;
+        }}
         renderItem={renderBookingCard}
         contentContainerStyle={{
           paddingVertical: 20,
@@ -197,6 +302,42 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[200],
     borderRadius: 16,
     padding: 16,
+  },
+  // skeleton primitives
+  skelLineMedium: {
+    width: 160,
+    height: 14,
+    borderRadius: 7,
+  },
+  skelCircleSm: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  skelIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  skelLineSmall: {
+    width: 70,
+    height: 12,
+    borderRadius: 6,
+  },
+  skelFlexLine: {
+    flex: 1,
+    height: 12,
+    borderRadius: 6,
+  },
+  skelLineLong: {
+    width: '70%',
+    height: 12,
+    borderRadius: 6,
+  },
+  skelLineLonger: {
+    width: '85%',
+    height: 12,
+    borderRadius: 6,
   },
   icon: {
     marginRight: 4,

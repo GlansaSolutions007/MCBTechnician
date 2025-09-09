@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Pressable,
+  Animated,
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
@@ -29,6 +30,8 @@ export default function Dashboard() {
   const navigation = useNavigation();
   const [totalAmount, setTotalAmount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [pulse] = useState(new Animated.Value(0));
 
   useEffect(() => {
     const fetchTotalAmount = async () => {
@@ -65,6 +68,7 @@ export default function Dashboard() {
             fetchBookingCounts(),
             fetchBookings(),
           ]);
+          setInitialLoading(false);
         } catch (error) {
           console.error("Error refreshing data:", error);
         }
@@ -311,6 +315,123 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Start skeleton pulse for initial load
+  useEffect(() => {
+    if (initialLoading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [initialLoading, pulse]);
+
+  const bg = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [color.neutral[200], color.neutral[100]],
+  });
+
+  const SkeletonStatCard = ({ wide }) => (
+    <View
+      style={[
+        globalStyles.borderRadiuslarge,
+        wide ? { width: "48%" } : { width: "48%" },
+      ]}
+    >
+      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.ph4, globalStyles.pv2, globalStyles.mb3]}>
+        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]} />
+        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, globalStyles.mt3]}>
+          <Animated.View style={[styles.skelIconLg, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelNumber, { backgroundColor: bg }]} />
+        </View>
+      </View>
+      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.justifysb, globalStyles.ph4, globalStyles.pv3]}>
+        <Animated.View style={[styles.skelWideNumber, { backgroundColor: bg }]} />
+      </View>
+    </View>
+  );
+
+  const SkeletonRightCard = () => (
+    <View style={[globalStyles.borderRadiuslarge, { width: "48%", justifyContent: "space-between" }]}>
+      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.ph4, globalStyles.pv2]}>
+        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 80 }]} />
+        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, globalStyles.mt3]}>
+          <Animated.View style={[styles.skelIconLg, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelNumber, { backgroundColor: bg }]} />
+        </View>
+      </View>
+    </View>
+  );
+
+  const SkeletonTodayCard = () => (
+    <View style={[globalStyles.card, globalStyles.cardwidth, globalStyles.bgwhite, globalStyles.p4, globalStyles.mt5]}>
+      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+        <View style={[styles.Pcicon]}>
+          <Animated.View style={[styles.skelIconSquare, { backgroundColor: bg }]} />
+        </View>
+        <View style={[globalStyles.ml50, globalStyles.flex1]}>
+          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, alignSelf: 'flex-end', width: 160 }]} />
+          <Animated.View style={[styles.skelHero, { backgroundColor: bg, alignSelf: 'flex-end', marginTop: 8 }]} />
+        </View>
+      </View>
+      <View style={globalStyles.divider} />
+      <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+          <Animated.View style={[styles.skelIconSm, { backgroundColor: bg }]} />
+          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginLeft: 6, width: 120 }]} />
+        </View>
+      </View>
+    </View>
+  );
+
+  const SkeletonActiveItem = () => (
+    <View style={[styles.skelCard, globalStyles.p4, globalStyles.card, globalStyles.mt2]}>
+      <View style={[globalStyles.flexrow]}>
+        <Animated.View style={[styles.activeAvatar, { backgroundColor: bg }]} />
+        <View style={[globalStyles.ml3, { flex: 1 }]}>
+          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg, width: 180 }]} />
+          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginTop: 6, width: 140 }]} />
+          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginTop: 6, width: '90%' }]} />
+        </View>
+      </View>
+      <View style={globalStyles.divider} />
+      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, styles.card]}>
+        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]} />
+        <Animated.View style={[styles.skelCircle, { backgroundColor: bg }]} />
+      </View>
+    </View>
+  );
+
+  if (initialLoading) {
+    return (
+      <ScrollView style={[globalStyles.bgcontainer]} contentContainerStyle={{ paddingBottom: 30 }}>
+        <View style={[globalStyles.container]}>
+          <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt5]}>
+            <SkeletonStatCard wide />
+            <SkeletonRightCard />
+          </View>
+          <SkeletonTodayCard />
+          <View style={[globalStyles.mt4]}>
+            <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg, width: 140 }]} />
+            <View style={[globalStyles.mt3]}>
+              <SkeletonActiveItem />
+              <SkeletonActiveItem />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView
@@ -744,4 +865,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     alignItems: "center",
   },
+  // Skeleton primitives
+  skelLineSmall: { height: 12, borderRadius: 6 },
+  skelLineMedium: { height: 14, borderRadius: 7 },
+  skelLineTiny: { height: 10, borderRadius: 5 },
+  skelNumber: { width: 40, height: 28, borderRadius: 6 },
+  skelWideNumber: { width: 120, height: 24, borderRadius: 6 },
+  skelIconLg: { width: 28, height: 28, borderRadius: 6 },
+  skelIconSm: { width: 16, height: 16, borderRadius: 4 },
+  skelIconSquare: { width: 50, height: 50, borderRadius: 8 },
+  skelHero: { width: 90, height: 36, borderRadius: 8 },
+  activeAvatar: { width: 70, height: 100, borderRadius: 8 },
+  skelCircle: { width: 40, height: 40, borderRadius: 20 },
+  skelCard: { backgroundColor: color.neutral[200] },
 });
