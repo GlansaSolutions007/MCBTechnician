@@ -113,105 +113,158 @@ export default function LeaveRequestList() {
     <ScrollView
       style={[globalStyles.bgcontainer]}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> // ✅ Correct way
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={[globalStyles.p4]}>
-        <View
-          style={[
-            globalStyles.flexrow,
-            globalStyles.justifysb,
-            globalStyles.alineItemscenter,
-            globalStyles.mb4,
-          ]}
-        >
+      {/* Header Section */}
+      <View style={[
+        styles.headerContainer,
+        { paddingTop: insets.top + 30 },
+      ]}>
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color={color.white} />
+          </TouchableOpacity>
+          <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.ml3]}>
+            Leave Requests
+          </CustomText>
+        </View>
+        <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
+          View and manage your leave requests
+        </CustomText>
+      </View>
+
+      {/* Filter Section */}
+      <View style={styles.filterSection}>
+        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
           <TouchableOpacity
             onPress={() => navigation.navigate("leaveRequest")}
             style={styles.addButton}
           >
-            <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+            <Ionicons name="add" size={20} color={color.white} style={globalStyles.mr2} />
+            <CustomText style={[globalStyles.f16SemiBold, globalStyles.textWhite]}>
               Add Request
             </CustomText>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => setShowPicker(true)}
-          >
-            <Ionicons name="calendar-outline" size={25} color={color.white} />
-          </TouchableOpacity>
-
-          {selectedDate && (
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { gap: 8 }]}>
             <TouchableOpacity
-              onPress={clearFilter}
-              style={styles.iconButtonclear}
+              style={styles.filterButton}
+              onPress={() => setShowPicker(true)}
             >
-              <Ionicons name="close-circle" size={25} color={color.white} />
+              <Ionicons name="calendar-outline" size={20} color={color.primary} />
             </TouchableOpacity>
-          )}
+
+            {selectedDate && (
+              <TouchableOpacity
+                onPress={clearFilter}
+                style={styles.clearButton}
+              >
+                <Ionicons name="close-circle" size={20} color={color.white} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        {showPicker && (
-          <DateTimePicker
-            value={selectedDate || new Date()}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
-
-        {loading ? (
-          <ActivityIndicator color={color.black} size="large" />
-        ) : leaveData.length === 0 ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <CustomText style={globalStyles.neutral500}>
-              No leave requests found
+        {selectedDate && (
+          <View style={styles.selectedDateContainer}>
+            <Ionicons name="calendar" size={16} color={color.primary} style={globalStyles.mr2} />
+            <CustomText style={[globalStyles.f14SemiBold, globalStyles.primary]}>
+              Filtered by: {moment(selectedDate).format("MMM DD, YYYY")}
             </CustomText>
           </View>
-        ) : (
-          leaveData.map((item, index) => {
-            const statusStyle = getStatusStyle(item.Status);
-            return (
-              <View key={index} style={styles.card}>
-                <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-                  <View style={globalStyles.flex1}>
-                    <CustomText
-                      style={[
-                        globalStyles.f12Bold,
-                        styles.subjectText,
-                        globalStyles.mb1,
-                      ]}
-                    >
-                      {item.LeaveReason || "Leave subject here"}
-                    </CustomText>
-                    <CustomText style={[globalStyles.f12Regular]}>
-                      From {moment(item.FromDate).format("Do MMMM YYYY")} to{" "}
-                      {moment(item.ToDate).format("Do MMM YYYY")}
-                    </CustomText>
-                  </View>
-                  <View style={[styles.statusBadge, statusStyle.container]}>
-                    <CustomText style={[styles.statusText, statusStyle.text]}>
-                      {getStatusText(item.Status)}
-                    </CustomText>
-                  </View>
-                </View>
+        )}
+      </View>
 
-                <View style={[globalStyles.mt2, globalStyles.alineItemsEnd]}>
-                  <CustomText
-                    style={[globalStyles.f10Regular, globalStyles.neutral300]}
-                  >
-                    {moment(item.FromDate).format("hh:mm A")}
-                  </CustomText>
+      {/* Date Picker */}
+      {showPicker && (
+        <DateTimePicker
+          value={selectedDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
+
+      {/* Content Section */}
+      <View style={styles.contentSection}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={color.primary} size="large" />
+            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500, globalStyles.mt3]}>
+              Loading leave requests...
+            </CustomText>
+          </View>
+        ) : leaveData.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Ionicons name="calendar-outline" size={64} color={color.neutral[300]} />
+            <CustomText style={[globalStyles.f18SemiBold, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
+              No Leave Requests
+            </CustomText>
+            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+              {selectedDate 
+                ? `No leave requests found for ${moment(selectedDate).format("MMM DD, YYYY")}`
+                : "You haven't submitted any leave requests yet"
+              }
+            </CustomText>
+            {!selectedDate && (
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => navigation.navigate("leaveRequest")}
+              >
+                <Ionicons name="add" size={20} color={color.white} style={globalStyles.mr2} />
+                <CustomText style={[globalStyles.f16SemiBold, globalStyles.textWhite]}>
+                  Create First Request
+                </CustomText>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.requestsList}>
+            {leaveData.map((item, index) => {
+              const statusStyle = getStatusStyle(item.Status);
+              return (
+                <View key={index} style={styles.requestCard}>
+                  <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemsstart]}>
+                    <View style={globalStyles.flex1}>
+                      <CustomText
+                        style={[
+                          globalStyles.f16SemiBold,
+                          styles.subjectText,
+                          globalStyles.mb2,
+                        ]}
+                      >
+                        {item.LeaveReason || "Leave Request"}
+                      </CustomText>
+                      
+                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
+                        <Ionicons name="calendar" size={16} color={color.neutral[500]} style={globalStyles.mr2} />
+                        <CustomText style={[globalStyles.f14Regular, globalStyles.neutral600]}>
+                          {moment(item.FromDate).format("MMM DD")} - {moment(item.ToDate).format("MMM DD, YYYY")}
+                        </CustomText>
+                      </View>
+
+                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                        <Ionicons name="time" size={16} color={color.neutral[500]} style={globalStyles.mr2} />
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
+                          Requested at {moment(item.FromDate).format("hh:mm A")}
+                        </CustomText>
+                      </View>
+                    </View>
+                    
+                    <View style={[styles.statusBadge, statusStyle.container]}>
+                      <CustomText style={[styles.statusText, statusStyle.text]}>
+                        {getStatusText(item.Status)}
+                      </CustomText>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            );
-          })
+              );
+            })}
+          </View>
         )}
       </View>
     </ScrollView>
@@ -219,49 +272,154 @@ export default function LeaveRequestList() {
 }
 
 const styles = StyleSheet.create({
+  // Header Section
+  headerSection: {
+    backgroundColor: color.primary,
+    paddingTop: 50,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 20,
+  },
+  headerContainer: {
+    backgroundColor: color.primary,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Filter Section
+  filterSection: {
+    backgroundColor: color.white,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   addButton: {
     backgroundColor: color.primary,
-    paddingVertical: 14,
-    width: "60%",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 28,
-    borderRadius: 14,
+    flex: 1,
+    marginRight: 12,
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  iconButton: {
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: color.neutral[100],
+    justifyContent: "center",
     alignItems: "center",
-    width: "15%",
+    borderWidth: 1,
+    borderColor: color.neutral[200],
+  },
+  clearButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: color.error,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedDateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: color.neutral[50],
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: color.neutral[200],
+  },
+
+  // Content Section
+  contentSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyStateButton: {
     backgroundColor: color.primary,
-    padding: 10,
-    borderRadius: 10,
-  },
-  iconButtonclear: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
-    width: "15%",
-    backgroundColor: color.fullredLight,
-    padding: 10,
-    borderRadius: 10,
+    marginTop: 20,
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  card: {
+
+  // Request Cards
+  requestsList: {
+    gap: 12,
+  },
+  requestCard: {
     backgroundColor: color.white,
-    padding: 16,
+    padding: 20,
     borderRadius: 16,
-    marginBottom: 16,
-    elevation: 2,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   subjectText: {
     color: color.primary,
   },
   statusBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 6,
+    borderRadius: 8,
     alignSelf: "flex-start",
-    minWidth: 70,
+    minWidth: 80,
     alignItems: "center",
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   approved: {
     backgroundColor: color.primary,
@@ -270,13 +428,13 @@ const styles = StyleSheet.create({
     color: color.white,
   },
   pending: {
-    backgroundColor: color.pending,
+    backgroundColor: color.pending || "#FFA500",
   },
   pendingText: {
-    color: color.black,
+    color: color.white,
   },
   denied: {
-    backgroundColor: color.fullredLight,
+    backgroundColor: color.fullredLight || "#FF6B6B",
   },
   deniedText: {
     color: color.white,

@@ -62,12 +62,12 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="leaveRequest"
         component={LeaveRequest}
-        options={{ title: "Leave Request" }}
+        options={{ title: "Leave Request", headerShown: false }}
       />
       <Stack.Screen
         name="leaveRequestList"
         component={LeaveRequestList}
-        options={{ title: "Leave Request List" }}
+        options={{ title: "Leave Request List", headerShown: false }}
       />
       {/* <Stack.Screen
         name="LiveTrackingMap"

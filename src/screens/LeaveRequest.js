@@ -10,10 +10,9 @@ import {
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import profilepic from "../../assets/images/persontwo.jpg";
-import locationicon from "../../assets/icons/Navigation/LocationsPin.png";
 import { color } from "../styles/theme";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -129,63 +128,109 @@ export default function LeaveRequest() {
       contentContainerStyle={styles.scrollContent}
       style={[globalStyles.bgcontainer]}
     >
-      <View style={[globalStyles.w100, globalStyles.mb4]}>
-        <CustomText
-          style={[globalStyles.f14Bold, globalStyles.mb2, globalStyles.primary]}
-        >
-          Leave Subject
-        </CustomText>
-        <TextInput
-          placeholder="Enter here"
-          style={[globalStyles.inputBox]}
-          value={subject}
-          onChangeText={setSubject}
-        />
-        {errors.subject && (
-          <CustomText
-            style={[
-              globalStyles.f10Light,
-              globalStyles.error,
-              globalStyles.ml2,
-            ]}
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
           >
-            {errors.subject}
+            <Ionicons name="arrow-back" size={24} color={color.white} />
+          </TouchableOpacity>
+          <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.ml3]}>
+            Leave Request
           </CustomText>
-        )}
+        </View>
+        <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
+          Submit your leave request for approval
+        </CustomText>
       </View>
 
-      <View
-        style={[
-          globalStyles.flexrow,
-          globalStyles.justifysb,
-          globalStyles.mb4,
-          globalStyles.alineItemscenter,
-        ]}
-      >
-        <View style={styles.dateInputBox}>
-          <CustomText style={[globalStyles.f16SemiBold, globalStyles.mb2]}>
-            From date
-          </CustomText>
-          <TouchableOpacity
-            onPress={() => setShowFromPicker(true)}
-            style={[globalStyles.inputBox]}
+      {/* Form Card */}
+      <View style={styles.formCard}>
+        {/* Subject Field */}
+        <View style={[globalStyles.w100, globalStyles.mb4]}>
+          <CustomText
+            style={[globalStyles.f16SemiBold, globalStyles.mb2, globalStyles.primary]}
           >
-            <CustomText>
-              {fromDate ? formatDate(fromDate) : "DD/MM/YYYY"}
-            </CustomText>
-          </TouchableOpacity>
-
-          {errors.fromDate && (
+            Leave Subject
+          </CustomText>
+          <TextInput
+            placeholder="Enter leave subject"
+            placeholderTextColor={color.neutral[400]}
+            style={[globalStyles.inputBox, errors.subject && styles.inputError]}
+            value={subject}
+            onChangeText={setSubject}
+          />
+          {errors.subject && (
             <CustomText
               style={[
-                globalStyles.f10Light,
+                globalStyles.f12Regular,
                 globalStyles.error,
-                globalStyles.ml2,
+                globalStyles.mt1,
               ]}
             >
-              {errors.fromDate}
+              {errors.subject}
             </CustomText>
           )}
+        </View>
+
+        {/* Date Range Section */}
+        <View style={[globalStyles.mb4]}>
+          <CustomText style={[globalStyles.f16SemiBold, globalStyles.mb3, globalStyles.primary]}>
+            Leave Duration
+          </CustomText>
+          
+          <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
+            {/* From Date */}
+            <View style={styles.dateInputContainer}>
+              <CustomText style={[globalStyles.f14SemiBold, globalStyles.mb2, globalStyles.neutral500]}>
+                From Date
+              </CustomText>
+              <TouchableOpacity
+                onPress={() => setShowFromPicker(true)}
+                style={[styles.dateInput, errors.fromDate && styles.inputError]}
+              >
+                <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
+                <CustomText style={[globalStyles.f14Regular, fromDate ? globalStyles.black : globalStyles.neutral400]}>
+                  {fromDate ? formatDate(fromDate) : "Select date"}
+                </CustomText>
+              </TouchableOpacity>
+              {errors.fromDate && (
+                <CustomText style={[globalStyles.f12Regular, globalStyles.error, globalStyles.mt1]}>
+                  {errors.fromDate}
+                </CustomText>
+              )}
+            </View>
+
+            {/* Separator */}
+            <View style={styles.dateSeparator}>
+              <Ionicons name="arrow-forward" size={16} color={color.neutral[400]} />
+            </View>
+
+            {/* To Date */}
+            <View style={styles.dateInputContainer}>
+              <CustomText style={[globalStyles.f14SemiBold, globalStyles.mb2, globalStyles.neutral500]}>
+                To Date
+              </CustomText>
+              <TouchableOpacity
+                onPress={() => setShowToPicker(true)}
+                style={[styles.dateInput, errors.toDate && styles.inputError]}
+              >
+                <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
+                <CustomText style={[globalStyles.f14Regular, toDate ? globalStyles.black : globalStyles.neutral400]}>
+                  {toDate ? formatDate(toDate) : "Select date"}
+                </CustomText>
+              </TouchableOpacity>
+              {errors.toDate && (
+                <CustomText style={[globalStyles.f12Regular, globalStyles.error, globalStyles.mt1]}>
+                  {errors.toDate}
+                </CustomText>
+              )}
+            </View>
+          </View>
+
+          {/* Date Pickers */}
           {showFromPicker && (
             <DateTimePicker
               value={fromDate || new Date()}
@@ -219,35 +264,7 @@ export default function LeaveRequest() {
               }}
             />
           )}
-        </View>
 
-        <CustomText style={[globalStyles.f20Bold, globalStyles.mt4]}>
-          –
-        </CustomText>
-
-        <View style={styles.dateInputBox}>
-          <CustomText style={[globalStyles.f16SemiBold, globalStyles.mb2]}>
-            To date
-          </CustomText>
-          <TouchableOpacity
-            onPress={() => setShowToPicker(true)}
-            style={[globalStyles.inputBox]}
-          >
-            <CustomText>
-              {toDate ? formatDate(toDate) : "DD/MM/YYYY"}
-            </CustomText>
-          </TouchableOpacity>
-          {errors.toDate && (
-            <CustomText
-              style={[
-                globalStyles.f10Light,
-                globalStyles.error,
-                globalStyles.ml2,
-              ]}
-            >
-              {errors.toDate}
-            </CustomText>
-          )}
           {showToPicker && (
             <DateTimePicker
               value={toDate || new Date()}
@@ -275,124 +292,53 @@ export default function LeaveRequest() {
             />
           )}
         </View>
-      </View>
 
-      {/* <View style={styles.alertBox}>
-        <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
-          ❗ You have bookings on the above selected dates.
-          {"\n"}Please check with dealer
-        </CustomText>
-      </View> */}
-
-      {/* <View style={styles.alertBox}>
-        <CustomText style={[styles.alertText, globalStyles.f12SemiBold]}>
-          ❗ You have bookings on the above selected dates.
-        </CustomText>
-        <TouchableOpacity style={styles.cancelButton}>
-          <CustomText style={styles.cancelButtonText}>
-            Cancel Bookings
+        {/* Leave Reason Section */}
+        <View style={[globalStyles.w100, globalStyles.mb4]}>
+          <CustomText style={[globalStyles.f16SemiBold, globalStyles.mb2, globalStyles.primary]}>
+            Leave Reason
           </CustomText>
-        </TouchableOpacity>
-      </View> */}
-
-      <View style={[globalStyles.w100]}>
-        <CustomText
-          style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb2]}
-        >
-          Leave reason
-        </CustomText>
-        <TextInput
-          placeholder="eg. Sick leave...., Going to village"
-          multiline
-          maxLength={100}
-          style={globalStyles.textArea}
-          value={leaveReason}
-          onChangeText={setLeaveReason}
-        />
-        {errors.leaveReason && (
-          <CustomText
-            style={[
-              globalStyles.f10Light,
-              globalStyles.error,
-              globalStyles.ml2,
-            ]}
-          >
-            {errors.leaveReason}
-          </CustomText>
-        )}
-        {/* <CustomText style={[globalStyles.f12Regular, globalStyles.alineSelfend]}>
-          100 / 100
-        </CustomText> */}
-      </View>
-
-      <View style={[globalStyles.mv5]}>
-        {/* <CustomText
-          style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb2]}
-        >
-          Requesting to
-        </CustomText>
-        <View style={[globalStyles.flexrow]}>
-          <View
-            style={[
-              globalStyles.alineItemscenter,
-              globalStyles.mb3,
-              globalStyles.mr4,
-            ]}
-          >
-            <Image source={profilepic} style={styles.avatar} />
-          </View>
-          <View>
-            <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
-              Bhuvan Raj
-            </CustomText>
-            <CustomText style={[globalStyles.f12Medium]}>
-              Mobile: 9988776655
-            </CustomText>
-            <CustomText style={[globalStyles.f12Medium]}>
-              Email : bhuvan@carbuddy.com
-            </CustomText>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <View style={styles.iconbg}>
-                <Image source={locationicon} style={styles.icons} />
-              </View>
-              <CustomText style={globalStyles.f12Bold}>
-                Telangana, Hyderabad
+          <TextInput
+            placeholder="e.g., Sick leave, Personal emergency, Going to village..."
+            placeholderTextColor={color.neutral[400]}
+            multiline
+            maxLength={200}
+            style={[globalStyles.textArea, errors.leaveReason && styles.inputError]}
+            value={leaveReason}
+            onChangeText={setLeaveReason}
+          />
+          <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, globalStyles.mt1]}>
+            {errors.leaveReason ? (
+              <CustomText style={[globalStyles.f12Regular, globalStyles.error]}>
+                {errors.leaveReason}
               </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt1,
-                globalStyles.alineItemscenter,
-              ]}
-            ></View>
-          </View>
-        </View> */}
-
-        <View
-          style={[
-            globalStyles.flexrow,
-            globalStyles.justifycenter,
-            globalStyles.justifysb,
-          ]}
-        >
-          <TouchableOpacity style={styles.btnone} onPress={handleSendRequest}>
-            <CustomText style={styles.cancelButtonText}>
-              Send Request
+            ) : (
+              <View />
+            )}
+            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400]}>
+              {leaveReason.length}/200
             </CustomText>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.btntwo} onPress={handleCancel}>
-            <CustomText style={styles.cancelButtonText}>Cancel</CustomText>
-          </TouchableOpacity>
+          </View>
         </View>
       </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity style={styles.primaryButton} onPress={handleSendRequest}>
+          <Ionicons name="send" size={20} color={color.white} style={globalStyles.mr2} />
+          <CustomText style={[globalStyles.f16SemiBold, globalStyles.textWhite]}>
+            Send Request
+          </CustomText>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.secondaryButton} onPress={handleCancel}>
+          <Ionicons name="close" size={20} color={color.neutral[600]} style={globalStyles.mr2} />
+          <CustomText style={[globalStyles.f16SemiBold, globalStyles.neutral600]}>
+            Cancel
+          </CustomText>
+        </TouchableOpacity>
+      </View>
+      {/* Success/Error Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -407,23 +353,27 @@ export default function LeaveRequest() {
             style={styles.modalContainer}
             onPress={(e) => e.stopPropagation()}
           >
-            <CustomText style={[globalStyles.f14Bold]}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons 
+                name={modalMessage.includes("successfully") ? "checkmark-circle" : "alert-circle"} 
+                size={48} 
+                color={modalMessage.includes("successfully") ? color.primary : color.error} 
+              />
+            </View>
+            <CustomText style={[globalStyles.f18SemiBold, globalStyles.textac, globalStyles.mb2]}>
+              {modalMessage.includes("successfully") ? "Success!" : "Notice"}
+            </CustomText>
+            <CustomText style={[globalStyles.f14Regular, globalStyles.textac, globalStyles.neutral500, globalStyles.mb4]}>
               {modalMessage}
             </CustomText>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifycenter,
-                globalStyles.mt4,
-              ]}
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={leaveList}
             >
-              <TouchableOpacity
-                style={[styles.button, styles.logoutButton]}
-                onPress={leaveList}
-              >
-                <CustomText style={{ color: "white" }}>OK</CustomText>
-              </TouchableOpacity>
-            </View>
+              <CustomText style={[globalStyles.f16SemiBold, globalStyles.textWhite]}>
+                OK
+              </CustomText>
+            </TouchableOpacity>
           </Pressable>
         </Pressable>
       </Modal>
@@ -432,6 +382,101 @@ export default function LeaveRequest() {
 }
 
 const styles = StyleSheet.create({
+  // Header Section
+  headerSection: {
+    backgroundColor: color.primary,
+    paddingTop: 50,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Form Card
+  formCard: {
+    backgroundColor: color.white,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  // Date Input Styles
+  dateInputContainer: {
+    flex: 1,
+  },
+  dateInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: color.neutral[200],
+    borderRadius: 12,
+    backgroundColor: color.white,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 50,
+  },
+  dateSeparator: {
+    marginHorizontal: 12,
+    marginTop: 20,
+  },
+  inputError: {
+    borderColor: color.error,
+    borderWidth: 1,
+  },
+
+  // Action Buttons
+  actionButtonsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    gap: 12,
+  },
+  primaryButton: {
+    backgroundColor: color.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  secondaryButton: {
+    backgroundColor: color.white,
+    borderWidth: 1,
+    borderColor: color.neutral[300],
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Modal Styles
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -439,89 +484,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: "white",
-    padding: 24,
-    borderRadius: 12,
-    width: "80%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  button: {
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  logoutButton: {
-    backgroundColor: color.primary,
-  },
-  btnone: {
-    backgroundColor: color.primary,
-    borderRadius: 8,
-    paddingVertical: 15,
-    alignItems: "center",
-    width: "70%",
-  },
-  btntwo: {
-    backgroundColor: color.black,
-    borderRadius: 8,
-    paddingVertical: 15,
-    alignItems: "center",
-    width: "25%",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "flex-start",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-  },
-  icons: {
-    width: 11,
-    height: 16,
-  },
-  iconbg: {
-    padding: 6,
-    height: 30,
-    width: 30,
     backgroundColor: color.white,
-    borderRadius: 50,
-    justifyContent: "center",
+    padding: 28,
+    borderRadius: 20,
+    width: "85%",
     alignItems: "center",
-    marginRight: 5,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  avatar: {
-    width: 130,
-    height: 150,
-    borderWidth: 8,
-    borderColor: color.white,
-    borderRadius: 8,
-  },
-  dateInputBox: {
-    width: "45%",
-  },
-  alertBox: {
-    backgroundColor: "#ffe5e5",
-    borderColor: "#ff4d4d",
-    borderWidth: 1,
-    padding: 14,
-    borderRadius: 12,
+  modalIconContainer: {
     marginBottom: 16,
   },
-  alertText: {
-    color: "#ff1a1a",
-    lineHeight: 20,
-  },
-  cancelButton: {
-    marginTop: 12,
-    backgroundColor: "#ff1a1a",
-    borderRadius: 8,
-    paddingVertical: 10,
+  modalButton: {
+    backgroundColor: color.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
     alignItems: "center",
+    minWidth: 120,
   },
-  cancelButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
+
+  // Scroll Content
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
 });

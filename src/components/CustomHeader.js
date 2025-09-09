@@ -55,38 +55,79 @@ export default function CustomHeader() {
   }, []);
 
   return (
-    <View
-      style={[
-        styles.headerContainer,
-        globalStyles.bgcontainer,
-        { paddingTop: insets.top + 10 },
-      ]}
-    >
-      <View style={styles.topRow}>
-        <View>
-          <CustomText style={[globalStyles.f14Bold, globalStyles.mt1]}>
-            Hello, {name || "Buddy"}
-          </CustomText>
-        </View>
+    <View style={styles.headerWrapper}>
+      <View
+        style={[
+          styles.headerContainer,
+          { paddingTop: insets.top + 30 },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.greetingSection}>
+            <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.mb1]}>
+              Hello, {name || "Buddy"}
+            </CustomText>
+            <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, { opacity: 0.9 }]}>
+              Welcome back! Here's your dashboard
+            </CustomText>
+          </View>
 
-        <NotificationBadge onPress={Notifications} size={24} color={color.black} />
+          <View style={styles.notificationSection}>
+            <NotificationBadge 
+              onPress={Notifications} 
+              size={24} 
+              color={color.white}
+              style={styles.notificationButton}
+            />
+          </View>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    fontFamily: "Manrope-Medium",
-    paddingTop: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 0,
-    backgroundColor: "#fff",
+  headerWrapper: {
+    backgroundColor: color.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: 'hidden',
   },
-  topRow: {
+  headerContainer: {
+    backgroundColor: color.primary,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingBottom: 10,
+  },
+  greetingSection: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  notificationSection: {
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
