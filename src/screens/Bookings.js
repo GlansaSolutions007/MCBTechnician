@@ -246,7 +246,7 @@ export default function Bookings() {
                 ? "No bookings assigned" 
                 : `No ${filterType === 'all' ? '' : filterType} bookings found`
               }
-            </CustomText>
+          </CustomText>
           </View>
         ) : refreshing ? (
           [0,1,2,3,4,5].map((i) => <SkeletonBookingCard key={`s-${i}`} index={i} />)
@@ -290,8 +290,8 @@ export default function Bookings() {
                     ]}
                   >
                     <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                      {item.CustomerName}
-                    </CustomText>
+                    {item.CustomerName}
+                  </CustomText>
                     {/* <View style={[
                       styles.statusChip,
                       { backgroundColor: item.BookingStatus === 'Completed' ? color.alertSuccess : color.primary }

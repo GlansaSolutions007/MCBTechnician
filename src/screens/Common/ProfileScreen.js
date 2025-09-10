@@ -328,7 +328,7 @@ export default function ProfileScreen() {
                 style={styles.modernAvatar}
               />
               {/* <View style={styles.onlineIndicator} /> */}
-            </View>
+                </View>
           </View>
 
           {/* Profile Information */}
@@ -349,12 +349,12 @@ export default function ProfileScreen() {
               <Ionicons name="call-outline" size={18} color={color.primary} />
               <CustomText style={[globalStyles.f12Medium, globalStyles.ml2]}>
                 {profileData.PhoneNumber}
-              </CustomText>
+            </CustomText>
             </View>
             <View style={[styles.contactCard, globalStyles.mb2]}>
               <Ionicons name="mail-outline" size={18} color={color.primary} />
-              <CustomText 
-                numberOfLines={1} 
+              <CustomText
+                numberOfLines={1}
                 ellipsizeMode="tail"
                 style={[globalStyles.f12Medium, globalStyles.ml2, { flex: 1 }]}
               >
@@ -363,7 +363,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.contactCard}>
               <Ionicons name="location-outline" size={18} color={color.primary} />
-              <CustomText 
+              <CustomText
                 numberOfLines={2} 
                 ellipsizeMode="tail"
                 style={[globalStyles.f12Medium, globalStyles.ml2, { flex: 1 }]}
@@ -380,37 +380,37 @@ export default function ProfileScreen() {
         <View style={[styles.ratingCard, globalStyles.card]}>
           <View style={[globalStyles.alineItemscenter, globalStyles.mb3]}>
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              {[1, 2, 3, 4, 5].map((star, i) => (
-                <Ionicons
-                  key={i}
-                  name="star"
+          {[1, 2, 3, 4, 5].map((star, i) => (
+            <Ionicons
+              key={i}
+              name="star"
                   size={24}
-                  color={
-                    reviewData?.OverallServiceRating >= star
+              color={
+                reviewData?.OverallServiceRating >= star
                       ? color.yellow
-                      : color.neutral[300]
-                  }
-                  style={globalStyles.mr1}
-                />
-              ))}
+                  : color.neutral[300]
+              }
+              style={globalStyles.mr1}
+            />
+          ))}
             </View>
             <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mt2]}>
               {reviewData?.OverallServiceRating ?? "0.0"} Rating
             </CustomText>
-          </View>
+        </View>
 
           {/* Stats Grid */}
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <CustomText
+            <CustomText
                 style={[globalStyles.f32Bold, globalStyles.primary, globalStyles.textac]}
               >
                 {reviewData?.TotalFeedbacks ?? "0"}
               </CustomText>
               <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.textac]}>
                 Total Reviews
-              </CustomText>
-            </View>
+            </CustomText>
+          </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <CustomText
@@ -423,8 +423,8 @@ export default function ProfileScreen() {
               </CustomText>
             </View>
           </View>
+          </View>
         </View>
-      </View>
 
       {/* Menu Section */}
       <View style={[globalStyles.container, globalStyles.mt4]}>
@@ -479,7 +479,7 @@ export default function ProfileScreen() {
                   <Ionicons name={item.icon} size={20} color={item.color} />
                 </View>
                 <CustomText 
-                  style={[
+                style={[
                     globalStyles.f14Medium, 
                     globalStyles.ml3, 
                     globalStyles.flex1,
@@ -510,7 +510,7 @@ export default function ProfileScreen() {
           <CustomText style={[globalStyles.f14Bold, globalStyles.error, globalStyles.ml3]}>
             Log Out
           </CustomText>
-        </TouchableOpacity>
+          </TouchableOpacity>
       </View>
       <Modal
         animationType="fade"

@@ -5,8 +5,12 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   Keyboard,
+  ScrollView,
+  StatusBar,
+  Animated,
 } from "react-native";
 import globalStyles from "../../styles/globalStyles";
 import CustomAlert from "../../components/CustomAlert";
@@ -14,7 +18,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { color } from "../../styles/theme";
 import CustomText from "../../components/CustomText";
 import { useNavigation } from "@react-navigation/native";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
@@ -25,6 +29,12 @@ import { ref, set } from "firebase/database";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [headerAnim] = useState(new Animated.Value(1));
+  const [welcomeTextAnim] = useState(new Animated.Value(1));
+  const [logoAnim] = useState(new Animated.Value(1));
 
   const { login } = useAuth();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -35,7 +45,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
   const [inputsDisabled, setInputsDisabled] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
 
   const handleLoginWithPassword = async () => {
     setLoading(true);
@@ -80,14 +89,36 @@ export default function LoginScreen() {
           if (tokens) {
             const { expoPushToken, fcmToken } = tokens;
             if (expoPushToken) {
-              await set(ref(db, `technicianPushTokens/${techID}/expo/${encodeURIComponent(expoPushToken)}`), true);
+              await set(
+                ref(
+                  db,
+                  `technicianPushTokens/${techID}/expo/${encodeURIComponent(
+                    expoPushToken
+                  )}`
+                ),
+                true
+              );
             }
             if (fcmToken) {
-              await set(ref(db, `technicianPushTokens/${techID}/fcm/${encodeURIComponent(fcmToken)}`), true);
+              await set(
+                ref(
+                  db,
+                  `technicianPushTokens/${techID}/fcm/${encodeURIComponent(
+                    fcmToken
+                  )}`
+                ),
+                true
+              );
             }
             try {
-              await AsyncStorage.setItem("pushToken", fcmToken || expoPushToken || "");
-              await AsyncStorage.setItem("pushTokenType", fcmToken ? "fcm" : (expoPushToken ? "expo" : "unknown"));
+              await AsyncStorage.setItem(
+                "pushToken",
+                fcmToken || expoPushToken || ""
+              );
+              await AsyncStorage.setItem(
+                "pushTokenType",
+                fcmToken ? "fcm" : expoPushToken ? "expo" : "unknown"
+              );
             } catch (_) {}
             try {
               await axios.post(`${API_BASE_URL}Push/register`, {
@@ -119,75 +150,294 @@ export default function LoginScreen() {
   };
 
   useEffect(() => {
+    // Simple fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+
     const showSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => setKeyboardVisible(true)
+      () => {
+        setKeyboardVisible(true);
+        // Smooth animations when keyboard opens
+        Animated.parallel([
+          Animated.timing(headerAnim, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(welcomeTextAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(logoAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     );
     const hideSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboardVisible(false)
+      () => {
+        setKeyboardVisible(false);
+        // Smooth animations when keyboard closes
+        Animated.parallel([
+          Animated.timing(headerAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(welcomeTextAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(logoAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     );
 
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [fadeAnim, headerAnim, welcomeTextAnim, logoAnim]);
 
   return (
-    <View style={[globalStyles.bgprimary, globalStyles.container]}>
-      {/* {!keyboardVisible && (
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={() => navigation.replace("CustomerTabs")}
-        >
-          <View style={styles.skipContent}>
-            <CustomText style={styles.skipText}>Skip</CustomText>
-            <AntDesign name="doubleright" size={16} color="white" />
-          </View>
-        </TouchableOpacity>
-      )} */}
-      <View />
-      <View>
-        {!keyboardVisible && (
-          <View>
-            <Image
-              source={require("../../../assets/Logo/mycarbuddy.png")}
-              style={styles.logo}
-            />
-          </View>
-        )}
+    <View style={[globalStyles.bgcontainer, { flex: 1 }]}>
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+>
+  <ScrollView
+    style={{ flex: 1 }}
+    contentContainerStyle={[
+      { flexGrow: 1 },
+      keyboardVisible && { flex: 1, justifyContent: "center" } // ✅ Center card when keyboard opens
+    ]}
+    keyboardShouldPersistTaps="handled"
+    showsVerticalScrollIndicator={false}
+  >
+          {/* Header Section with smooth hide animation */}
+          <Animated.View
+            style={[
+              styles.headerSection,
 
-        <TextInput
-          placeholder="Enter Phone Number"
-          placeholderTextColor={color.textWhite}
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          style={styles.textInput}
-          keyboardType="phone-pad"
-          autoCapitalize="none"
-          editable={!inputsDisabled}
-        />
-        <TextInput
-          placeholder="Enter Password"
-          placeholderTextColor={color.textWhite}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-          style={styles.textInput}
-          editable={!inputsDisabled}
-        />
+              {
+                opacity: headerAnim,
+                transform: [
+                  {
+                    translateY: headerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-150, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../../assets/Logo/mycarbuddy.png")}
+                style={styles.logo}
+              />
+            </View>
 
-        <TouchableOpacity
-          style={[styles.button, keyboardVisible && globalStyles.mb40]}
-          onPress={handleLoginWithPassword}
-          disabled={loading}
+            {/* Welcome Text with smooth hide animation */}
+            <Animated.View
+              style={[
+                styles.welcomeContainer,
+                {
+                  opacity: welcomeTextAnim,
+                  transform: [
+                    {
+                      translateY: welcomeTextAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-20, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <CustomText
+                style={[
+                  globalStyles.f28Bold,
+                  globalStyles.textWhite,
+                  globalStyles.textac,
+                ]}
+              >
+                Welcome Back
+              </CustomText>
+              <CustomText
+                style={[
+                  globalStyles.f16Regular,
+                  globalStyles.textWhite,
+                  globalStyles.textac,
+                  globalStyles.mt1,
+                ]}
+              >
+                Sign in to continue
+              </CustomText>
+            </Animated.View>
+          </Animated.View>
+
+          {/* Login Form Section */}
+          <Animated.View
+            style={[
+              styles.formSection,
+              { opacity: fadeAnim },
+              keyboardVisible && styles.keyboardOpenFormSection,
+            ]}
+          >
+            <View
+              style={[
+                styles.formCard,
+                keyboardVisible && styles.keyboardOpenFormCard,
+              ]}
+            >
+              {/* Simple title */}
+              <CustomText
+                style={[
+                  globalStyles.f20Bold,
+                  globalStyles.black,
+                  globalStyles.mb4,
+                  globalStyles.textac,
+                ]}
+              >
+                {keyboardVisible ? "Sign In" : "Login"}
+              </CustomText>
+
+              {/* Phone Number Input */}
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="call-outline"
+                    size={20}
+                    color={color.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    placeholder="Phone Number"
+                    placeholderTextColor={color.neutral[400]}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    style={styles.modernInput}
+                    keyboardType="phone-pad"
+                    autoCapitalize="none"
+                    editable={!inputsDisabled}
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={color.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor={color.neutral[400]}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    style={styles.modernInput}
+                    editable={!inputsDisabled}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color={color.neutral[500]}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Login Button */}
+              <TouchableOpacity
+                style={[styles.modernButton, loading && styles.buttonDisabled]}
+                onPress={handleLoginWithPassword}
+                disabled={loading || !phoneNumber || !password}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <MaterialCommunityIcons
+                      name="loading"
+                      size={20}
+                      color={color.white}
+                      style={styles.loadingIcon}
+                    />
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                    >
+                      Signing In...
+                    </CustomText>
+                  </View>
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                    >
+                      Sign In
+                    </CustomText>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={color.white}
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Additional Info - Hidden when keyboard is open */}
+              {!keyboardVisible && (
+                <View style={styles.infoContainer}>
+                  <CustomText
+                    style={[
+                      globalStyles.f12Regular,
+                      globalStyles.neutral500,
+                      globalStyles.textac,
+                    ]}
+                  >
+                    Secure login for MCB Technicians
+                  </CustomText>
+                </View>
+              )}
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Powered by Glansa Solutions */}
+      <View style={styles.poweredBySection}>
+        <CustomText
+          style={[
+            globalStyles.f12Regular,
+            globalStyles.neutral400,
+            globalStyles.textac,
+          ]}
         >
-          <CustomText style={[globalStyles.f16Regular, globalStyles.textWhite]}>
-            Login
-          </CustomText>
-        </TouchableOpacity>
-        
+          Powered by Glansa Solutions PVT LTD
+        </CustomText>
       </View>
 
       <CustomAlert
@@ -202,177 +452,175 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  logo: {
-    width: 350,
-    height: 250,
-    resizeMode: "contain",
-    alignSelf: "center",
-    marginBottom: 50,
+  // Header Section
+  headerSection: {
+    backgroundColor: color.primary,
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginHorizontal: 0,
+    marginLeft: 0,
+    marginRight: 0,
+    width: "100%",
   },
-
-  skipButton: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    zIndex: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  skipContent: {
-    flexDirection: "row",
+  logoContainer: {
     alignItems: "center",
-    gap: 4,
+    marginBottom: 30,
   },
-  skipText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  logo: {
+    width: 260,
+    height: 140,
+    resizeMode: "contain",
+  },
+  welcomeContainer: {
+    alignItems: "center",
   },
 
-  title: {
-    // fontFamily: fonts.bold,
-    fontSize: 22,
-    color: color.white,
+  // Form Section
+  formSection: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
-  titleBlack: {
-    // fontFamily: fonts.bold,
-    fontSize: 22,
-    color: color.black,
+  formCard: {
+    backgroundColor: color.white,
+    borderRadius: 20,
+    padding: 30,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 20,
+    marginTop: 40,
   },
-  textInput: {
-    borderBottomWidth: 1,
-    borderColor: color.white,
-    paddingVertical: 10,
-    color: color.white,
-    // fontFamily: fonts.regular,
-    fontSize: 16,
+
+  // Input Styles
+  inputContainer: {
     marginBottom: 20,
   },
-  button: {
-    backgroundColor: color.primaryLight,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  // Home Screen Styles
-  header: {
-    backgroundColor: color.primary || "#017F77",
-    padding: 20,
-  },
-  greeting: {
-    color: color.white,
-    fontSize: 16,
-    // fontFamily: fonts.medium,
-  },
-  locationRow: {
+  inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
-  },
-  location: {
-    color: color.white,
-    fontSize: 14,
-    marginRight: 5,
-    // fontFamily: fonts.regular,
-  },
-  banner: {
-    backgroundColor: color.primary || "#017F77",
-    padding: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    alignItems: "center",
-  },
-  carImage: {
-    width: "100%",
-    height: 130,
-  },
-  bannerTitle: {
-    fontSize: 22,
-    color: color.white,
-    // fontFamily: fonts.semiBold,
-    marginTop: 10,
-  },
-
-  bannerSubtitle: {
-    fontSize: 14,
-    color: color.white,
-    // fontFamily: fonts.regular,
-    marginTop: 5,
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    // fontFamily: fonts.medium,
-    marginVertical: 20,
-    marginLeft: 20,
-    color: color.textDark,
-  },
-  services: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    backgroundColor: color.neutral[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: color.neutral[200],
     paddingHorizontal: 16,
+    paddingVertical: 4,
   },
-  card: {
-    backgroundColor: color.lightGreen || "#E0F7F4",
-    borderRadius: 10,
-    width: "42%",
-    overflow: "hidden",
-    alignItems: "center",
+  inputIcon: {
+    marginRight: 12,
   },
-  cardImage: {
-    width: "100%",
-    height: 100,
-  },
-  cardText: {
-    fontSize: 14,
-    // fontFamily: fonts.medium,
-    padding: 10,
-    color: color.textDark,
-    textAlign: "center",
-  },
-  ctaContainer: {
-    flexDirection: "row",
-    borderRadius: 10,
-    margin: 20,
-    padding: 15,
-    alignItems: "center",
-  },
-  ctaTextContainer: {
+  modernInput: {
     flex: 1,
+    fontSize: 16,
+    color: color.black,
+    paddingVertical: 16,
   },
-  ctaTitle: {
-    fontSize: 24,
-    width: "60%",
-    // fontFamily: fonts.medium,
-    color: color.textDark,
-    marginBottom: 5,
-    lineHeight: 25,
+  eyeIcon: {
+    padding: 4,
   },
-  ctaSubTitle: {
-    fontSize: 12,
-    // fontFamily: fonts.regular,
-    color: color.textLight || "#555",
+
+  // Button Styles
+  modernButton: {
+    backgroundColor: color.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginTop: 10,
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  ctaImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginLeft: 10,
+  buttonDisabled: {
+    backgroundColor: color.neutral[300],
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  ctaButton: {
-    backgroundColor: color.black,
-    padding: 14,
-    borderRadius: 10,
-    marginHorizontal: 20,
-    marginBottom: 30,
+  buttonContent: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  ctaButtonText: {
-    color: color.white,
-    fontSize: 14,
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  loadingIcon: {
+    transform: [{ rotate: "0deg" }],
+  },
+
+  // Info Section
+  infoContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: color.neutral[200],
+  },
+
+  // Powered By Section
+  poweredBySection: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    backgroundColor: color.neutral[50],
+  },
+
+  // Logo Only Section
+  logoOnlySection: {
+    paddingTop: 0,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  logoOnly: {
+    width: 200,
+    height: 100,
+    resizeMode: "contain",
+  },
+
+  // Keyboard Open States
+  keyboardOpenHeader: {
+    width: "100%",
+    marginHorizontal: 0,
+    paddingHorizontal: 20,
+  },
+  keyboardOpenContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 0,
+    paddingBottom: 0,
+    flex: 1,
+    marginTop: 0,
+    marginBottom: 0,
+  },
+  keyboardOpenFormSection: {
+    flexGrow: 1,              // ✅ Allow the container to grow
+    justifyContent: "center", // ✅ Center vertically
+    alignItems: "center",     // ✅ Center horizontally
+    paddingHorizontal: 20,
+  },
+  
+
+  keyboardOpenFormCard: {
+    padding: 25,
+    marginHorizontal: 0,
+    borderRadius: 16,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    backgroundColor: color.white,
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
   },
 });
