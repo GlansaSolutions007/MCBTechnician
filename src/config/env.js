@@ -10,7 +10,7 @@ export const API_BASE_URL = extra.API_BASE_URL || 'https://api.mycarsbuddy.com/a
 export const API_BASE_URL_IMAGE = extra.API_BASE_URL_IMAGE || 'https://api.mycarsbuddy.com/';
 export const RAZORPAY_KEY = extra.RAZORPAY_KEY || 'your_razorpay_key_here';
 export const RAZORPAY_SECRET = extra.RAZORPAY_SECRET || 'your_razorpay_secret_here';
-export const GOOGLE_MAPS_APIKEY = extra.GOOGLE_MAPS_APIKEY || 'AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo';
+export const GOOGLE_MAPS_APIKEY = extra.GOOGLE_MAPS_APIKEY || 'AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc';
 
 // Fallback for development
 if (__DEV__) {

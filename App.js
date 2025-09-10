@@ -11,6 +11,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Text, TextInput } from "react-native";
 import AppLayout from "./src/components/AppLayout";
 import NetworkProvider from "./src/contexts/NetworkProvider";
+// Ensure background tasks are defined at startup
+import "./src/utils/locationTracker";
 
 if (Text.defaultProps == null) Text.defaultProps = {};
 Text.defaultProps.allowFontScaling = false;

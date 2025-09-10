@@ -19,8 +19,8 @@ import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import { API_BASE_URL } from "@env";
-import { API_BASE_URL_IMAGE } from "@env";
-import { GOOGLE_MAPS_APIKEY } from "../config/env";
+import { API_BASE_URL_IMAGE, GOOGLE_MAPS_APIKEY } from "@env";
+// import { GOOGLE_MAPS_APIKEY } from "../config/env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
 import {

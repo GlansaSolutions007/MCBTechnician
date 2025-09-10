@@ -143,7 +143,7 @@ API_BASE_URL=https://api.mycarsbuddy.com/api/
 API_BASE_URL_IMAGE=https://api.mycarsbuddy.com/
 RAZORPAY_KEY=your_actual_key
 RAZORPAY_SECRET=your_actual_secret
-GOOGLE_MAPS_APIKEY=AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo
+GOOGLE_MAPS_APIKEY=AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc
 ```
 
 3. Add `.env` to your `.gitignore` file for security
