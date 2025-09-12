@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   FlatList,
   Animated,
 } from "react-native";
@@ -15,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { color } from "../styles/theme";
 import { useNavigation } from "@react-navigation/native";
-
+import reports from "../../assets/icons/Navigation/reports.png";
 function Reportlist() {
   const navigation = useNavigation();
   const [bookings, setBookings] = useState([]);
@@ -77,25 +76,22 @@ function Reportlist() {
     }
   };
 
-const todayIST = new Date().toLocaleDateString("en-CA", {
-  timeZone: "Asia/Kolkata",
-});
+  const todayIST = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
 
-const pastBookings = Array.isArray(bookings)
-  ? bookings.filter((booking) => {
-      if (!booking.BookingDate) return false;
+  const pastBookings = Array.isArray(bookings)
+    ? bookings.filter((booking) => {
+        if (!booking.BookingDate) return false;
 
-      const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
-        "en-CA",
-        { timeZone: "Asia/Kolkata" }
-      );
+        const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+          "en-CA",
+          { timeZone: "Asia/Kolkata" }
+        );
 
-
-      return assignDateStr < todayIST;
-    })
-  : [];
-
-
+        return assignDateStr < todayIST;
+      })
+    : [];
 
   const renderBookingCard = ({ item, index }) => (
     <TouchableOpacity
@@ -151,7 +147,10 @@ const pastBookings = Array.isArray(bookings)
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={`cat-${item.BookingID ?? 'x'}-${idx}`} style={globalStyles.f10Regular}>
+            <CustomText
+              key={`cat-${item.BookingID ?? "x"}-${idx}`}
+              style={globalStyles.f10Regular}
+            >
               {pkg?.Category?.CategoryName || "N/A"}
             </CustomText>
           ))}
@@ -166,7 +165,10 @@ const pastBookings = Array.isArray(bookings)
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText key={`pkg-${item.BookingID ?? 'x'}-${idx}`} style={globalStyles.f10Regular}>
+            <CustomText
+              key={`pkg-${item.BookingID ?? "x"}-${idx}`}
+              style={globalStyles.f10Regular}
+            >
               {pkg?.PackageName || "N/A"}
             </CustomText>
           ))}
@@ -185,8 +187,12 @@ const pastBookings = Array.isArray(bookings)
       <View style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}>
         {/* Header skeleton */}
         <View style={styles.header}>
-          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelCircleSm, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineMedium, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelCircleSm, { backgroundColor: bg }]}
+          />
         </View>
 
         <View style={globalStyles.dividerWhite} />
@@ -194,34 +200,60 @@ const pastBookings = Array.isArray(bookings)
         {/* Date row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelFlexLine, { backgroundColor: bg }]}
+          />
         </View>
 
         {/* Time Slot row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelFlexLine, { backgroundColor: bg }]}
+          />
         </View>
 
         {/* Category row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
           <View style={{ flex: 1 }}>
-            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
-            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+            <Animated.View
+              style={[styles.skelLineLong, { backgroundColor: bg }]}
+            />
+            <Animated.View
+              style={[
+                styles.skelLineLonger,
+                { backgroundColor: bg, marginTop: 6 },
+              ]}
+            />
           </View>
         </View>
 
         {/* Package row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
           <View style={{ flex: 1 }}>
-            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
-            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+            <Animated.View
+              style={[styles.skelLineLong, { backgroundColor: bg }]}
+            />
+            <Animated.View
+              style={[
+                styles.skelLineLonger,
+                { backgroundColor: bg, marginTop: 6 },
+              ]}
+            />
           </View>
         </View>
       </View>
@@ -243,18 +275,50 @@ const pastBookings = Array.isArray(bookings)
 
     if (error) {
       return (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
-          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter,globalStyles.flexrow]}>
-          <Ionicons name="alert-circle-outline" size={20} color={color.alertError} />
-          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.ml1, globalStyles.textac]}>
-            {error}
-          </CustomText>
+        <View
+          style={[
+            globalStyles.container,
+            globalStyles.alineSelfcenter,
+            globalStyles.justifycenter,
+            { flex: 1 },
+          ]}
+        >
+          <View
+            style={[
+              globalStyles.alineItemscenter,
+              globalStyles.justifycenter,
+              globalStyles.flexrow,
+            ]}
+          >
+            <Ionicons
+              name="alert-circle-outline"
+              size={20}
+              color={color.alertError}
+            />
+            <CustomText
+              style={[
+                globalStyles.f16Medium,
+                globalStyles.neutral500,
+                globalStyles.ml1,
+                globalStyles.textac,
+              ]}
+            >
+              {error}
+            </CustomText>
           </View>
           <TouchableOpacity
-            style={[globalStyles.bgprimary, globalStyles.p3,globalStyles.alineItemscenter, globalStyles.borderRadiuslarge, globalStyles.mt4]}
+            style={[
+              globalStyles.bgprimary,
+              globalStyles.p3,
+              globalStyles.alineItemscenter,
+              globalStyles.borderRadiuslarge,
+              globalStyles.mt4,
+            ]}
             onPress={fetchBookings}
           >
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Try Again</CustomText>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+              Try Again
+            </CustomText>
           </TouchableOpacity>
         </View>
       );
@@ -262,12 +326,38 @@ const pastBookings = Array.isArray(bookings)
 
     if (pastBookings.length === 0) {
       return (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
-          <Ionicons name="document-text-outline" size={64} color={color.neutral[400]} />
-          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
+        <View
+          style={[
+            globalStyles.container,
+            globalStyles.alineSelfcenter,
+            globalStyles.justifycenter,
+            globalStyles.alineItemscenter,
+            { flex: 1 },
+          ]}
+        >
+          <Ionicons
+            name="document-text-outline"
+            size={64}
+            color={color.neutral[300]}
+          />
+          <CustomText
+            style={[
+              globalStyles.f16Medium,
+              globalStyles.neutral500,
+              globalStyles.mt3,
+              globalStyles.textac,
+            ]}
+          >
             No past bookings found
           </CustomText>
-          <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+          <CustomText
+            style={[
+              globalStyles.f12Regular,
+              globalStyles.neutral500,
+              globalStyles.mt2,
+              globalStyles.textac,
+            ]}
+          >
             Your completed services will appear here
           </CustomText>
         </View>
@@ -278,9 +368,9 @@ const pastBookings = Array.isArray(bookings)
       <FlatList
         data={pastBookings}
         keyExtractor={(item, index) => {
-          const id = item?.BookingID ?? 'noid';
-          const track = item?.BookingTrackID ?? 'notrack';
-          const date = item?.BookingDate ? String(item.BookingDate) : 'nodate';
+          const id = item?.BookingID ?? "noid";
+          const track = item?.BookingTrackID ?? "notrack";
+          const date = item?.BookingDate ? String(item.BookingDate) : "nodate";
           return `past-${id}-${track}-${date}-${index}`;
         }}
         renderItem={renderBookingCard}
@@ -293,11 +383,14 @@ const pastBookings = Array.isArray(bookings)
     );
   };
 
-  return <View style={{ flex: 1, backgroundColor: color.white }}>{renderList()}</View>;
+  return (
+    <View style={{ flex: 1, backgroundColor: color.white }}>
+      {renderList()}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  
   cardContainer: {
     backgroundColor: color.neutral[200],
     borderRadius: 16,
@@ -330,12 +423,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   skelLineLong: {
-    width: '70%',
+    width: "70%",
     height: 12,
     borderRadius: 6,
   },
   skelLineLonger: {
-    width: '85%',
+    width: "85%",
     height: 12,
     borderRadius: 6,
   },

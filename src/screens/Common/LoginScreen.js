@@ -46,7 +46,61 @@ export default function LoginScreen() {
   const navigation = useNavigation();
   const [inputsDisabled, setInputsDisabled] = useState(false);
 
+  // Validation states
+  const [phoneError, setPhoneError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  // Validation functions
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phone) {
+      return "Phone number is required";
+    }
+    if (!phoneRegex.test(phone)) {
+      return "Please enter a valid 10-digit phone number";
+    }
+    return "";
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return "Password is required";
+    }
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    return "";
+  };
+
+  const handlePhoneNumberChange = (text) => {
+    setPhoneNumber(text);
+    if (phoneError) {
+      setPhoneError("");
+    }
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (passwordError) {
+      setPasswordError("");
+    }
+  };
+
+  const validateForm = () => {
+    const phoneValidation = validatePhoneNumber(phoneNumber);
+    const passwordValidation = validatePassword(password);
+    
+    setPhoneError(phoneValidation);
+    setPasswordError(passwordValidation);
+    
+    return !phoneValidation && !passwordValidation;
+  };
+
   const handleLoginWithPassword = async () => {
+    // Validate form before proceeding
+    if (!validateForm()) {
+      return;
+    }
     setLoading(true);
     try {
       const response = await axios.post(
@@ -216,88 +270,100 @@ export default function LoginScreen() {
     <View style={[globalStyles.bgcontainer, { flex: 1 }]}>
       <StatusBar backgroundColor={color.primary} barStyle="light-content" />
       <KeyboardAvoidingView
-  style={{ flex: 1 }}
-  behavior={Platform.OS === "ios" ? "padding" : "height"}
->
-  <ScrollView
-    style={{ flex: 1 }}
-    contentContainerStyle={[
-      { flexGrow: 1 },
-      keyboardVisible && { flex: 1, justifyContent: "center" } // ✅ Center card when keyboard opens
-    ]}
-    keyboardShouldPersistTaps="handled"
-    showsVerticalScrollIndicator={false}
-  >
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            { flexGrow: 1 },
+            keyboardVisible && { flex: 1, justifyContent: "flex-start" },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header Section with smooth hide animation */}
-          <Animated.View
-            style={[
-              styles.headerSection,
-
-              {
-                opacity: headerAnim,
-                transform: [
-                  {
-                    translateY: headerAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-150, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../../assets/Logo/mycarbuddy.png")}
-                style={styles.logo}
-              />
-            </View>
-
-            {/* Welcome Text with smooth hide animation */}
+          {!keyboardVisible && (
             <Animated.View
               style={[
-                styles.welcomeContainer,
+                styles.headerSection,
                 {
-                  opacity: welcomeTextAnim,
+                  opacity: headerAnim,
                   transform: [
                     {
-                      translateY: welcomeTextAnim.interpolate({
+                      translateY: headerAnim.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [-20, 0],
+                        outputRange: [-150, 0],
                       }),
                     },
                   ],
                 },
               ]}
             >
-              <CustomText
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require("../../../assets/Logo/mycarbuddy.png")}
+                  style={styles.logo}
+                />
+              </View>
+
+              <Animated.View
                 style={[
-                  globalStyles.f28Bold,
-                  globalStyles.textWhite,
-                  globalStyles.textac,
+                  styles.welcomeContainer,
+                  {
+                    opacity: welcomeTextAnim,
+                    transform: [
+                      {
+                        translateY: welcomeTextAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
               >
-                Welcome Back
-              </CustomText>
-              <CustomText
-                style={[
-                  globalStyles.f16Regular,
-                  globalStyles.textWhite,
-                  globalStyles.textac,
-                  globalStyles.mt1,
-                ]}
-              >
-                Sign in to continue
-              </CustomText>
+                <CustomText
+                  style={[
+                    globalStyles.f28Bold,
+                    globalStyles.textWhite,
+                    globalStyles.textac,
+                  ]}
+                >
+                  Welcome Back
+                </CustomText>
+                <CustomText
+                  style={[
+                    globalStyles.f16Regular,
+                    globalStyles.textWhite,
+                    globalStyles.textac,
+                    globalStyles.mt1,
+                  ]}
+                >
+                  Sign in to continue
+                </CustomText>
+              </Animated.View>
             </Animated.View>
-          </Animated.View>
+          )}
 
           {/* Login Form Section */}
-          <Animated.View
+          {/* <Animated.View
             style={[
               styles.formSection,
               { opacity: fadeAnim },
               keyboardVisible && styles.keyboardOpenFormSection,
+            ]}
+          > */}
+          <Animated.View
+            style={[
+              styles.formSection,
+              { opacity: fadeAnim },
+              keyboardVisible && {
+                flex: 1,
+                justifyContent: "flex-start",
+                alignItems: "center",
+                marginTop: 0,
+              },
             ]}
           >
             <View
@@ -306,6 +372,16 @@ export default function LoginScreen() {
                 keyboardVisible && styles.keyboardOpenFormCard,
               ]}
             >
+              {keyboardVisible && (
+                <View>
+                  <View style={globalStyles.alineItemscenter}>
+                    <Image
+                      source={require("../../../assets/Logo/mycarbuddy.png")}
+                      style={styles.logo2}
+                    />
+                  </View>
+                </View>
+              )}
               {/* Simple title */}
               <CustomText
                 style={[
@@ -315,12 +391,15 @@ export default function LoginScreen() {
                   globalStyles.textac,
                 ]}
               >
-                {keyboardVisible ? "Sign In" : "Login"}
+                Login
               </CustomText>
 
               {/* Phone Number Input */}
               <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
+                <View style={[
+                  styles.inputWrapper,
+                  phoneError && styles.inputWrapperError
+                ]}>
                   <Ionicons
                     name="call-outline"
                     size={20}
@@ -331,18 +410,29 @@ export default function LoginScreen() {
                     placeholder="Phone Number"
                     placeholderTextColor={color.neutral[400]}
                     value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    style={styles.modernInput}
+                    onChangeText={handlePhoneNumberChange}
+                    style={[
+                      styles.modernInput,
+                      phoneError && styles.inputError
+                    ]}
                     keyboardType="phone-pad"
                     autoCapitalize="none"
                     editable={!inputsDisabled}
                   />
                 </View>
+                {phoneError ? (
+                  <CustomText style={styles.errorText}>
+                    {phoneError}
+                  </CustomText>
+                ) : null}
               </View>
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
+                <View style={[
+                  styles.inputWrapper,
+                  passwordError && styles.inputWrapperError
+                ]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -353,9 +443,12 @@ export default function LoginScreen() {
                     placeholder="Password"
                     placeholderTextColor={color.neutral[400]}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry={!showPassword}
-                    style={styles.modernInput}
+                    style={[
+                      styles.modernInput,
+                      passwordError && styles.inputError
+                    ]}
                     editable={!inputsDisabled}
                   />
                   <TouchableOpacity
@@ -369,13 +462,18 @@ export default function LoginScreen() {
                     />
                   </TouchableOpacity>
                 </View>
+                {passwordError ? (
+                  <CustomText style={styles.errorText}>
+                    {passwordError}
+                  </CustomText>
+                ) : null}
               </View>
 
               {/* Login Button */}
               <TouchableOpacity
                 style={[styles.modernButton, loading && styles.buttonDisabled]}
                 onPress={handleLoginWithPassword}
-                disabled={loading || !phoneNumber || !password}
+                disabled={loading}
                 activeOpacity={0.8}
               >
                 {loading ? (
@@ -432,7 +530,7 @@ export default function LoginScreen() {
         <CustomText
           style={[
             globalStyles.f12Regular,
-            globalStyles.neutral400,
+            globalStyles.neutral500,
             globalStyles.textac,
           ]}
         >
@@ -474,6 +572,11 @@ const styles = StyleSheet.create({
     height: 140,
     resizeMode: "contain",
   },
+  logo2: {
+    width: 200,
+    height: 100,
+    resizeMode: "contain",
+  },
   welcomeContainer: {
     alignItems: "center",
   },
@@ -487,11 +590,9 @@ const styles = StyleSheet.create({
     backgroundColor: color.white,
     borderRadius: 20,
     padding: 30,
-    shadowColor: color.black,
+    borderWidth: 2,
+    borderColor: color.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
     marginBottom: 20,
     marginTop: 40,
   },
@@ -510,6 +611,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
+  inputWrapperError: {
+    borderColor: color.error || "#FF4444",
+    backgroundColor: "#FFF5F5",
+  },
   inputIcon: {
     marginRight: 12,
   },
@@ -518,6 +623,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: color.black,
     paddingVertical: 16,
+  },
+  inputError: {
+    color: color.error || "#FF4444",
+  },
+  errorText: {
+    color: color.error || "#FF4444",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   eyeIcon: {
     padding: 4,
@@ -602,22 +716,19 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   keyboardOpenFormSection: {
-    flexGrow: 1,              // ✅ Allow the container to grow
-    justifyContent: "center", // ✅ Center vertically
-    alignItems: "center",     // ✅ Center horizontally
+    flexGrow: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
     paddingHorizontal: 20,
   },
-  
 
   keyboardOpenFormCard: {
     padding: 25,
     marginHorizontal: 0,
+    marginTop: 80,
     borderRadius: 16,
-    shadowColor: color.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: color.primary,
     backgroundColor: color.white,
     width: "100%",
     maxWidth: 400,

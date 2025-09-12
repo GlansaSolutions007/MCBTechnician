@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Animated,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -24,6 +25,27 @@ export default function LeaveRequestList() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [refreshing, setRefreshing] = useState(false); // ✅ Added state
+  const [pulse] = useState(new Animated.Value(0));
+
+  // Start skeleton pulse when loading
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, pulse]);
 
   useEffect(() => {
     fetchLeaveData();
@@ -109,6 +131,114 @@ export default function LeaveRequestList() {
     setSelectedDate(null);
   };
 
+  // Skeleton Components
+  const SkeletonText = ({ width, height = 16, style = {} }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            borderRadius: height / 2,
+            backgroundColor: bg,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const SkeletonButton = ({ width, height = 44, style = {} }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            borderRadius: 12,
+            backgroundColor: bg,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const SkeletonRequestCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={styles.requestCard}>
+        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemsstart]}>
+          <View style={globalStyles.flex1}>
+            {/* Subject line */}
+            <Animated.View
+              style={[
+                styles.skeletonSubjectLine,
+                { backgroundColor: bg, marginBottom: 8 }
+              ]}
+            />
+            
+            {/* Date row */}
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
+              <Animated.View style={[styles.skeletonIcon, { backgroundColor: bg, marginRight: 8 }]} />
+              <Animated.View
+                style={[
+                  styles.skeletonDateLine,
+                  { backgroundColor: bg }
+                ]}
+              />
+            </View>
+
+            {/* Time row */}
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <Animated.View style={[styles.skeletonIcon, { backgroundColor: bg, marginRight: 8 }]} />
+              <Animated.View
+                style={[
+                  styles.skeletonTimeLine,
+                  { backgroundColor: bg }
+                ]}
+              />
+            </View>
+          </View>
+          
+          {/* Status badge */}
+          <Animated.View
+            style={[
+              styles.skeletonStatusBadge,
+              { backgroundColor: bg }
+            ]}
+          />
+        </View>
+      </View>
+    );
+  };
+
+  const LeaveRequestSkeleton = () => (
+    <ScrollView style={[globalStyles.bgcontainer]}>
+           <View style={styles.contentSection2}>
+        <View style={styles.requestsList}>
+          {[1, 2, 3, 4, 5].map((item, index) => (
+            <SkeletonRequestCard key={index} />
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
@@ -119,7 +249,7 @@ export default function LeaveRequestList() {
       {/* Header Section */}
       <View style={[
         styles.headerContainer,
-        { paddingTop: insets.top + 30 },
+        { paddingTop:20 },
       ]}>
         <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
           <TouchableOpacity 
@@ -129,7 +259,7 @@ export default function LeaveRequestList() {
             <Ionicons name="arrow-back" size={24} color={color.white} />
           </TouchableOpacity>
           <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.ml3]}>
-            Leave Requests
+            Leave Request
           </CustomText>
         </View>
         <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
@@ -192,19 +322,14 @@ export default function LeaveRequestList() {
       {/* Content Section */}
       <View style={styles.contentSection}>
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator color={color.primary} size="large" />
-            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500, globalStyles.mt3]}>
-              Loading leave requests...
-            </CustomText>
-          </View>
+          <LeaveRequestSkeleton />
         ) : leaveData.length === 0 ? (
           <View style={styles.emptyStateContainer}>
             <Ionicons name="calendar-outline" size={64} color={color.neutral[300]} />
             <CustomText style={[globalStyles.f18SemiBold, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
               No Leave Requests
             </CustomText>
-            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500, globalStyles.mt2, globalStyles.textac]}>
               {selectedDate 
                 ? `No leave requests found for ${moment(selectedDate).format("MMM DD, YYYY")}`
                 : "You haven't submitted any leave requests yet"
@@ -285,7 +410,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: color.primary,
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     shadowColor: color.black,
@@ -308,6 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.white,
     marginHorizontal: 20,
     marginBottom: 20,
+    marginTop: 20,
     borderRadius: 16,
     padding: 20,
     shadowColor: color.black,
@@ -361,16 +487,17 @@ const styles = StyleSheet.create({
   },
 
   // Content Section
+
   contentSection: {
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
+  contentSection2: {
+    paddingHorizontal: 0,
+    marginHorizontal: 2,
+    paddingBottom: 30,
   },
+
   emptyStateContainer: {
     flex: 1,
     justifyContent: "center",
@@ -438,5 +565,37 @@ const styles = StyleSheet.create({
   },
   deniedText: {
     color: color.white,
+  },
+
+  // Skeleton Styles
+  skeletonBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  skeletonIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  skeletonSubjectLine: {
+    width: "70%",
+    height: 16,
+    borderRadius: 8,
+  },
+  skeletonDateLine: {
+    width: 120,
+    height: 14,
+    borderRadius: 7,
+  },
+  skeletonTimeLine: {
+    width: 100,
+    height: 12,
+    borderRadius: 6,
+  },
+  skeletonStatusBadge: {
+    width: 80,
+    height: 28,
+    borderRadius: 8,
   },
 });

@@ -138,7 +138,7 @@ export default function LeaveRequest() {
             <Ionicons name="arrow-back" size={24} color={color.white} />
           </TouchableOpacity>
           <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.ml3]}>
-            Leave Request
+            Add Leave Request
           </CustomText>
         </View>
         <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
@@ -192,7 +192,7 @@ export default function LeaveRequest() {
                 style={[styles.dateInput, errors.fromDate && styles.inputError]}
               >
                 <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
-                <CustomText style={[globalStyles.f14Regular, fromDate ? globalStyles.black : globalStyles.neutral400]}>
+                <CustomText style={[globalStyles.f14Regular, fromDate ? globalStyles.black : globalStyles.neutral500]}>
                   {fromDate ? formatDate(fromDate) : "Select date"}
                 </CustomText>
               </TouchableOpacity>
@@ -218,7 +218,7 @@ export default function LeaveRequest() {
                 style={[styles.dateInput, errors.toDate && styles.inputError]}
               >
                 <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
-                <CustomText style={[globalStyles.f14Regular, toDate ? globalStyles.black : globalStyles.neutral400]}>
+                <CustomText style={[globalStyles.f14Regular, toDate ? globalStyles.black : globalStyles.neutral500]}>
                   {toDate ? formatDate(toDate) : "Select date"}
                 </CustomText>
               </TouchableOpacity>
@@ -315,7 +315,7 @@ export default function LeaveRequest() {
             ) : (
               <View />
             )}
-            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400]}>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
               {leaveReason.length}/200
             </CustomText>
           </View>
@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     backgroundColor: color.primary,
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 20,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,

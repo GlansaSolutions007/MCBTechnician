@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
   FlatList,
   Animated,
 } from "react-native";
@@ -16,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { color } from "../styles/theme";
 import { useNavigation } from "@react-navigation/native";
+import schedule from "../../assets/icons/Navigation/schedule.png";
 
 const { width } = Dimensions.get("window");
 
@@ -81,23 +81,22 @@ function TaskReportsScreen() {
     }
   };
 
-const todayIST = new Date().toLocaleDateString("en-CA", {
-  timeZone: "Asia/Kolkata",
-});
+  const todayIST = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
 
   const upcomingBookings = Array.isArray(bookings)
-     ? bookings.filter((booking) => {
-      if (!booking.BookingDate) return false;
+    ? bookings.filter((booking) => {
+        if (!booking.BookingDate) return false;
 
-      const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
-        "en-CA",
-        { timeZone: "Asia/Kolkata" }
-      );
+        const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+          "en-CA",
+          { timeZone: "Asia/Kolkata" }
+        );
 
-
-      return assignDateStr > todayIST;
-    })
-  : [];
+        return assignDateStr > todayIST;
+      })
+    : [];
 
   const renderBookingCard = ({ item, index }) => (
     <TouchableOpacity
@@ -154,7 +153,10 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText  key={`category-${item.BookingID}-${idx}`} style={globalStyles.f10Regular}>
+            <CustomText
+              key={`category-${item.BookingID}-${idx}`}
+              style={globalStyles.f10Regular}
+            >
               {pkg?.Category?.CategoryName || "N/A"}
             </CustomText>
           ))}
@@ -169,7 +171,10 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
         </CustomText>
         <View>
           {item.Packages?.map((pkg, idx) => (
-            <CustomText  key={`package-${item.BookingID}-${idx}`} style={globalStyles.f10Regular}>
+            <CustomText
+              key={`package-${item.BookingID}-${idx}`}
+              style={globalStyles.f10Regular}
+            >
               {pkg?.PackageName || "N/A"}
             </CustomText>
           ))}
@@ -188,8 +193,12 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
       <View style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}>
         {/* Header skeleton */}
         <View style={styles.header}>
-          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelCircleSm, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineMedium, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelCircleSm, { backgroundColor: bg }]}
+          />
         </View>
 
         <View style={globalStyles.dividerWhite} />
@@ -197,34 +206,60 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
         {/* Date row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelFlexLine, { backgroundColor: bg }]}
+          />
         </View>
 
         {/* Time Slot row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
+          <Animated.View
+            style={[styles.skelFlexLine, { backgroundColor: bg }]}
+          />
         </View>
 
         {/* Category row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
           <View style={{ flex: 1 }}>
-            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
-            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+            <Animated.View
+              style={[styles.skelLineLong, { backgroundColor: bg }]}
+            />
+            <Animated.View
+              style={[
+                styles.skelLineLonger,
+                { backgroundColor: bg, marginTop: 6 },
+              ]}
+            />
           </View>
         </View>
 
         {/* Package row */}
         <View style={styles.infoRow}>
           <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelLineSmall, { backgroundColor: bg }]}
+          />
           <View style={{ flex: 1 }}>
-            <Animated.View style={[styles.skelLineLong, { backgroundColor: bg }]} />
-            <Animated.View style={[styles.skelLineLonger, { backgroundColor: bg, marginTop: 6 }]} />
+            <Animated.View
+              style={[styles.skelLineLong, { backgroundColor: bg }]}
+            />
+            <Animated.View
+              style={[
+                styles.skelLineLonger,
+                { backgroundColor: bg, marginTop: 6 },
+              ]}
+            />
           </View>
         </View>
       </View>
@@ -244,27 +279,81 @@ const todayIST = new Date().toLocaleDateString("en-CA", {
           showsVerticalScrollIndicator={false}
         />
       ) : error ? (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
-          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, globalStyles.flexrow]}>
-            <Ionicons name="alert-circle-outline" size={20} color={color.alertError} />
-            <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.ml1, globalStyles.textac]}>
+        <View
+          style={[
+            globalStyles.container,
+            globalStyles.alineSelfcenter,
+            globalStyles.justifycenter,
+            { flex: 1 },
+          ]}
+        >
+          <View
+            style={[
+              globalStyles.alineItemscenter,
+              globalStyles.justifycenter,
+              globalStyles.flexrow,
+            ]}
+          >
+            <Ionicons
+              name="alert-circle-outline"
+              size={20}
+              color={color.alertError}
+            />
+            <CustomText
+              style={[
+                globalStyles.f16Medium,
+                globalStyles.neutral500,
+                globalStyles.ml1,
+                globalStyles.textac,
+              ]}
+            >
               {error}
             </CustomText>
           </View>
           <TouchableOpacity
-            style={[globalStyles.bgprimary, globalStyles.p3, globalStyles.alineItemscenter, globalStyles.borderRadiuslarge, globalStyles.mt4]}
+            style={[
+              globalStyles.bgprimary,
+              globalStyles.p3,
+              globalStyles.alineItemscenter,
+              globalStyles.borderRadiuslarge,
+              globalStyles.mt4,
+            ]}
             onPress={fetchBookings}
           >
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Try Again</CustomText>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+              Try Again
+            </CustomText>
           </TouchableOpacity>
         </View>
       ) : upcomingBookings.length === 0 ? (
-        <View style={[globalStyles.container, globalStyles.alineSelfcenter, globalStyles.justifycenter, { flex: 1 }]}>
-          <Ionicons name="calendar-outline" size={64} color={color.neutral[400]} />
-          <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt3, globalStyles.textac]}>
+        <View
+          style={[
+            globalStyles.container,
+            globalStyles.alineSelfcenter,
+            globalStyles.justifycenter,
+            globalStyles.alineItemscenter,
+            { flex: 1 },
+          ]}
+        >
+        <Ionicons name="calendar-outline" size={64} color={color.neutral[300]} />
+          <CustomText
+            style={[
+              globalStyles.f16Medium,
+              globalStyles.neutral500,
+              globalStyles.mt3,
+              globalStyles.textac,
+            ]}
+          >
             No upcoming bookings found
           </CustomText>
-          <CustomText style={[globalStyles.f12Regular, globalStyles.neutral400, globalStyles.mt2, globalStyles.textac]}>
+          <CustomText
+            style={[
+              globalStyles.f12Regular,
+              globalStyles.neutral500,
+              globalStyles.mt2,
+              globalStyles.textac,
+            ]}
+          >
             Your assigned services will appear here
           </CustomText>
         </View>
@@ -316,12 +405,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   skelLineLong: {
-    width: '70%',
+    width: "70%",
     height: 12,
     borderRadius: 6,
   },
   skelLineLonger: {
-    width: '85%',
+    width: "85%",
     height: 12,
     borderRadius: 6,
   },

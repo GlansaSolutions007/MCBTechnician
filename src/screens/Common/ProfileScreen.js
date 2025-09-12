@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
   StatusBar,
+  Animated,
 } from "react-native";
 import CustomText from "../../components/CustomText";
 import globalStyles from "../../styles/globalStyles";
@@ -34,8 +35,29 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [reviewData, setReviewData] = useState(null);
+  const [pulse] = useState(new Animated.Value(0));
 
   const { logout } = useAuth();
+
+  // Start skeleton pulse when loading
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, pulse]);
   const sendTest = async () => {
     try {
       const techId = await AsyncStorage.getItem("techID");
@@ -282,19 +304,219 @@ export default function ProfileScreen() {
 
   const review = () => navigation.navigate("reviews");
 
-  if (loading) {
+  // Skeleton Components
+  const SkeletonAvatar = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
     return (
-      <View
+      <Animated.View style={[styles.skeletonAvatar, { backgroundColor: bg }]} />
+    );
+  };
+
+  const SkeletonText = ({ width, height = 16, style = {} }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <Animated.View
         style={[
-          globalStyles.container,
-          globalStyles.justifycenter,
-          globalStyles.alineItemscenter,
+          {
+            width,
+            height,
+            borderRadius: height / 2,
+            backgroundColor: bg,
+          },
+          style,
         ]}
-      >
-        <ActivityIndicator size="large" color={color.primary} />
-        <CustomText style={globalStyles.mt3}>Loading...</CustomText>
+      />
+    );
+  };
+
+  const SkeletonContactCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={styles.contactCards}>
+        {[1, 2, 3].map((item) => (
+          <View key={item} style={styles.contactCard}>
+            <Animated.View style={[styles.skeletonIcon, { backgroundColor: bg }]} />
+            <Animated.View
+              style={[
+                styles.skeletonFlexLine,
+                { backgroundColor: bg, marginLeft: 8, height: 14 }
+              ]}
+            />
+          </View>
+        ))}
       </View>
     );
+  };
+
+  const SkeletonRatingCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.ratingCard, globalStyles.card]}>
+        <View style={[globalStyles.alineItemscenter, globalStyles.mb3]}>
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            {[1, 2, 3, 4, 5].map((star, i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.skeletonStar,
+                  { backgroundColor: bg, marginRight: 4 }
+                ]}
+              />
+            ))}
+          </View>
+          <Animated.View
+            style={[
+              styles.skeletonTextMedium,
+              { backgroundColor: bg, marginTop: 8 }
+            ]}
+          />
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <Animated.View
+              style={[
+                styles.skeletonTextLarge,
+                { backgroundColor: bg }
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.skeletonTextSmall,
+                { backgroundColor: bg, marginTop: 4 }
+              ]}
+            />
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Animated.View
+              style={[
+                styles.skeletonTextLarge,
+                { backgroundColor: bg }
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.skeletonTextSmall,
+                { backgroundColor: bg, marginTop: 4 }
+              ]}
+            />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const SkeletonMenuCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.menuCard, globalStyles.card]}>
+        <Animated.View
+          style={[
+            styles.skeletonTextMedium,
+            { backgroundColor: bg, marginBottom: 16 }
+          ]}
+        />
+        
+        {[1, 2, 3, 4, 5, 6].map((item, idx) => (
+          <View key={idx}>
+            <View style={[styles.menuItem, globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <Animated.View style={[styles.skeletonMenuIcon, { backgroundColor: bg }]} />
+              <Animated.View
+                style={[
+                  styles.skeletonFlexLine,
+                  { backgroundColor: bg, marginLeft: 12, height: 14 }
+                ]}
+              />
+            </View>
+            {idx < 5 && <View style={styles.menuDivider} />}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const SkeletonLogoutButton = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.logoutButton, globalStyles.flexrow, globalStyles.alineItemscenter]}>
+        <Animated.View style={[styles.skeletonMenuIcon, { backgroundColor: bg }]} />
+        <Animated.View
+          style={[
+            styles.skeletonTextMedium,
+            { backgroundColor: bg, marginLeft: 12 }
+          ]}
+        />
+      </View>
+    );
+  };
+
+  const ProfileSkeleton = () => (
+    <ScrollView style={[globalStyles.bgcontainer]} showsVerticalScrollIndicator={false}>
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      
+      {/* Header Section Skeleton */}
+      <View style={styles.headerSection}>
+        <View style={[globalStyles.container, globalStyles.pt5]}>
+          {/* Profile Avatar Skeleton */}
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb2]}>
+            <SkeletonAvatar />
+          </View>
+
+          {/* Profile Information Skeleton */}
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb4]}>
+            <SkeletonText width={200} height={24} style={{ marginBottom: 8 }} />
+            <SkeletonText width={150} height={14} />
+          </View>
+
+          {/* Contact Information Cards Skeleton */}
+          <SkeletonContactCard />
+        </View>
+      </View>
+
+      {/* Rating Section Skeleton */}
+      <View style={[globalStyles.container, globalStyles.mt4]}>
+        <SkeletonRatingCard />
+      </View>
+
+      {/* Menu Section Skeleton */}
+      <View style={[globalStyles.container, globalStyles.mt4]}>
+        <SkeletonMenuCard />
+      </View>
+
+      {/* Logout Section Skeleton */}
+      <View style={[globalStyles.container, globalStyles.mt4, globalStyles.mb5]}>
+        <SkeletonLogoutButton />
+      </View>
+    </ScrollView>
+  );
+
+  if (loading) {
+    return <ProfileSkeleton />;
   }
 
   if (!profileData) {
@@ -313,7 +535,7 @@ export default function ProfileScreen() {
       <View style={styles.headerSection}>
         <View style={[globalStyles.container, globalStyles.pt5]}>
           {/* Profile Avatar with Modern Design */}
-          <View style={[globalStyles.alineItemscenter, globalStyles.mb4]}>
+          <View style={[globalStyles.alineItemscenter, globalStyles.mb2]}>
             <View style={styles.avatarContainer}>
               <Image
                 source={
@@ -338,7 +560,7 @@ export default function ProfileScreen() {
             >
               {profileData.TechnicianName}
             </CustomText>
-            <CustomText style={[globalStyles.f14Medium, globalStyles.textWhite, globalStyles.mt1]}>
+            <CustomText style={[globalStyles.f12Medium, globalStyles.textWhite, globalStyles.mt1]}>
               {profileData.DealerName}
             </CustomText>
           </View>
@@ -429,7 +651,7 @@ export default function ProfileScreen() {
       {/* Menu Section */}
       <View style={[globalStyles.container, globalStyles.mt4]}>
         <View style={[styles.menuCard, globalStyles.card]}>
-          <CustomText style={[globalStyles.f18Bold, globalStyles.primary, globalStyles.mb3]}>
+          <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb3]}>
             Account & Settings
           </CustomText>
           
@@ -480,7 +702,7 @@ export default function ProfileScreen() {
                 </View>
                 <CustomText 
                 style={[
-                    globalStyles.f14Medium, 
+                    globalStyles.f12Medium, 
                     globalStyles.ml3, 
                     globalStyles.flex1,
                     !item.route && globalStyles.neutral500
@@ -587,7 +809,6 @@ const styles = StyleSheet.create({
   // Avatar Styles
   avatarContainer: {
     position: "relative",
-    marginBottom: 10,
   },
   modernAvatar: {
     width: 100,
@@ -596,6 +817,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: color.white,
     shadowColor: color.black,
+    backgroundColor: color.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -799,5 +1021,49 @@ const styles = StyleSheet.create({
     width: "45%",
     alignItems: "center",
     marginBottom: 16,
+  },
+
+  // Skeleton Styles
+  skeletonAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: color.white,
+  },
+  skeletonIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+  skeletonMenuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  skeletonStar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  skeletonTextSmall: {
+    width: 80,
+    height: 12,
+    borderRadius: 6,
+  },
+  skeletonTextMedium: {
+    width: 120,
+    height: 16,
+    borderRadius: 8,
+  },
+  skeletonTextLarge: {
+    width: 60,
+    height: 32,
+    borderRadius: 16,
+  },
+  skeletonFlexLine: {
+    flex: 1,
+    height: 16,
+    borderRadius: 8,
   },
 });

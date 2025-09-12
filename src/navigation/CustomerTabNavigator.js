@@ -1,15 +1,12 @@
-import { Image, Pressable } from "react-native";
+import { Pressable } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import ProfileScreen from "../screens/Common/ProfileScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CustomHeader from "../components/CustomHeader";
 import { color } from "../styles/theme";
-import dashboard from "../../assets/icons/Navigation/techhom.png";
-import TaskReportsicon from "../../assets/icons/Navigation/reports.png";
-import Reportlisticon from "../../assets/icons/Navigation/schedule.png";
+import { Ionicons } from "@expo/vector-icons";
 // import SchedulesTrackicon from '../../assets/icons/Navigation/schedule.png'
 // import servicelocationsicon from '../../assets/icons/Navigation/LocationsPin.png'
-import Profile from "../../assets/icons/Navigation/techProfile.png";
 import Dashboard from "../screens/Dashboard";
 // import SchedulesTrack from "../screens/SchedulesTrack";
 import TaskReportsScreen from "../screens/TaskReportsScreen";
@@ -58,45 +55,25 @@ export default function CustomerTabNavigator({ navigation }) {
             {...props}
           />
         ),
-        tabBarIcon: ({ color, focused }) => {
-          let iconSource;
-          let iconStyle = {
-            width: 26,
-            height: 26,
-            tintColor: focused ? color.primary : "#8e8e93",
-          };
-
+        tabBarIcon: ({ color: tintColor, focused, size = 26 }) => {
+          let iconName = "ellipse-outline";
           switch (route.name) {
             case "Dashboard":
-              iconSource = dashboard;
+              iconName = focused ? "home" : "home-outline";
               break;
             case "Tasks":
-              iconSource = TaskReportsicon;
+              iconName = focused ? "calendar" : "calendar-outline";
               break;
             case "Reports":
-              iconSource = Reportlisticon;
+              iconName = focused ? "document-text" : "document-text-outline";
               break;
-            // case "service locations":
-            //   iconSource = servicelocationsicon;
-            //   break;
             case "Profile":
-              iconSource = Profile;
+              iconName = focused ? "person" : "person-outline";
               break;
             default:
-              iconSource = null;
+              iconName = "ellipse-outline";
           }
-
-          if (iconSource) {
-            return (
-              <Image
-                source={iconSource}
-                style={iconStyle}
-                resizeMode="contain"
-              />
-            );
-          }
-
-          return null;
+          return <Ionicons name={iconName} size={size} color={tintColor} />;
         },
       })}
     >

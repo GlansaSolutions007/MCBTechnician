@@ -64,22 +64,22 @@ export default function CustomHeader() {
       >
         <View style={styles.headerContent}>
           <View style={styles.greetingSection}>
-            <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite, globalStyles.mb1]}>
+            <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite]}>
               Hello, {name || "Buddy"}
             </CustomText>
-            <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, { opacity: 0.9 }]}>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite, { opacity: 0.9 }]}>
               Welcome back! Here's your dashboard
             </CustomText>
           </View>
 
-          <View style={styles.notificationSection}>
+          {/* <View style={styles.notificationSection}>
             <NotificationBadge 
               onPress={Notifications} 
               size={24} 
               color={color.white}
               style={styles.notificationButton}
             />
-          </View>
+          </View> */}
         </View>
       </View>
     </View>
@@ -101,13 +101,12 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: color.primary,
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 20,
   },
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingBottom: 10,
   },
   greetingSection: {
     flex: 1,

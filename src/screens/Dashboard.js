@@ -105,7 +105,6 @@ export default function Dashboard() {
     navigation.navigate("Reports");
   };
 
-
   useEffect(() => {
     const fetchBookingCounts = async () => {
       try {
@@ -348,24 +347,74 @@ export default function Dashboard() {
         wide ? { width: "48%" } : { width: "48%" },
       ]}
     >
-      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.ph4, globalStyles.pv2, globalStyles.mb3]}>
-        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]} />
-        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, globalStyles.mt3]}>
+      <View
+        style={[
+          styles.skelCard,
+          globalStyles.borderRadiuslarge,
+          globalStyles.ph4,
+          globalStyles.pv2,
+          globalStyles.mb3,
+        ]}
+      >
+        <Animated.View
+          style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]}
+        />
+        <View
+          style={[
+            globalStyles.flexrow,
+            globalStyles.justifysb,
+            globalStyles.alineItemscenter,
+            globalStyles.mt3,
+          ]}
+        >
           <Animated.View style={[styles.skelIconLg, { backgroundColor: bg }]} />
           <Animated.View style={[styles.skelNumber, { backgroundColor: bg }]} />
         </View>
       </View>
-      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.justifysb, globalStyles.ph4, globalStyles.pv3]}>
-        <Animated.View style={[styles.skelWideNumber, { backgroundColor: bg }]} />
+      <View
+        style={[
+          styles.skelCard,
+          globalStyles.borderRadiuslarge,
+          globalStyles.flexrow,
+          globalStyles.alineItemscenter,
+          globalStyles.justifysb,
+          globalStyles.ph4,
+          globalStyles.pv3,
+        ]}
+      >
+        <Animated.View
+          style={[styles.skelWideNumber, { backgroundColor: bg }]}
+        />
       </View>
     </View>
   );
 
   const SkeletonRightCard = () => (
-    <View style={[globalStyles.borderRadiuslarge, { width: "48%", justifyContent: "space-between" }]}>
-      <View style={[styles.skelCard, globalStyles.borderRadiuslarge, globalStyles.ph4, globalStyles.pv2]}>
-        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 80 }]} />
-        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, globalStyles.mt3]}>
+    <View
+      style={[
+        globalStyles.borderRadiuslarge,
+        { width: "48%", justifyContent: "space-between" },
+      ]}
+    >
+      <View
+        style={[
+          styles.skelCard,
+          globalStyles.borderRadiuslarge,
+          globalStyles.ph4,
+          globalStyles.pv2,
+        ]}
+      >
+        <Animated.View
+          style={[styles.skelLineSmall, { backgroundColor: bg, width: 80 }]}
+        />
+        <View
+          style={[
+            globalStyles.flexrow,
+            globalStyles.justifysb,
+            globalStyles.alineItemscenter,
+            globalStyles.mt3,
+          ]}
+        >
           <Animated.View style={[styles.skelIconLg, { backgroundColor: bg }]} />
           <Animated.View style={[styles.skelNumber, { backgroundColor: bg }]} />
         </View>
@@ -374,39 +423,92 @@ export default function Dashboard() {
   );
 
   const SkeletonTodayCard = () => (
-    <View style={[globalStyles.card, globalStyles.cardwidth, globalStyles.bgwhite, globalStyles.p4, globalStyles.mt5]}>
+    <View
+      style={[
+        globalStyles.card,
+        globalStyles.cardwidth,
+        globalStyles.bgwhite,
+        globalStyles.p4,
+        globalStyles.mt5,
+      ]}
+    >
       <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
         <View style={[styles.Pcicon]}>
-          <Animated.View style={[styles.skelIconSquare, { backgroundColor: bg }]} />
+          <Animated.View
+            style={[styles.skelIconSquare, { backgroundColor: bg }]}
+          />
         </View>
         <View style={[globalStyles.ml50, globalStyles.flex1]}>
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, alignSelf: 'flex-end', width: 160 }]} />
-          <Animated.View style={[styles.skelHero, { backgroundColor: bg, alignSelf: 'flex-end', marginTop: 8 }]} />
+          <Animated.View
+            style={[
+              styles.skelLineSmall,
+              { backgroundColor: bg, alignSelf: "flex-end", width: 160 },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.skelHero,
+              { backgroundColor: bg, alignSelf: "flex-end", marginTop: 8 },
+            ]}
+          />
         </View>
       </View>
       <View style={globalStyles.divider} />
       <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
         <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
           <Animated.View style={[styles.skelIconSm, { backgroundColor: bg }]} />
-          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginLeft: 6, width: 120 }]} />
+          <Animated.View
+            style={[
+              styles.skelLineTiny,
+              { backgroundColor: bg, marginLeft: 6, width: 120 },
+            ]}
+          />
         </View>
       </View>
     </View>
   );
 
   const SkeletonActiveItem = () => (
-    <View style={[styles.skelCard, globalStyles.p4, globalStyles.card, globalStyles.mt2]}>
+    <View
+      style={[
+        styles.skelCard,
+        globalStyles.p4,
+        globalStyles.card,
+        globalStyles.mt2,
+      ]}
+    >
       <View style={[globalStyles.flexrow]}>
         <Animated.View style={[styles.activeAvatar, { backgroundColor: bg }]} />
         <View style={[globalStyles.ml3, { flex: 1 }]}>
-          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg, width: 180 }]} />
-          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginTop: 6, width: 140 }]} />
-          <Animated.View style={[styles.skelLineTiny, { backgroundColor: bg, marginTop: 6, width: '90%' }]} />
+          <Animated.View
+            style={[styles.skelLineMedium, { backgroundColor: bg, width: 180 }]}
+          />
+          <Animated.View
+            style={[
+              styles.skelLineTiny,
+              { backgroundColor: bg, marginTop: 6, width: 140 },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.skelLineTiny,
+              { backgroundColor: bg, marginTop: 6, width: "90%" },
+            ]}
+          />
         </View>
       </View>
       <View style={globalStyles.divider} />
-      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, styles.card]}>
-        <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]} />
+      <View
+        style={[
+          globalStyles.flexrow,
+          globalStyles.justifysb,
+          globalStyles.alineItemscenter,
+          styles.card,
+        ]}
+      >
+        <Animated.View
+          style={[styles.skelLineSmall, { backgroundColor: bg, width: 100 }]}
+        />
         <Animated.View style={[styles.skelCircle, { backgroundColor: bg }]} />
       </View>
     </View>
@@ -414,15 +516,29 @@ export default function Dashboard() {
 
   if (initialLoading) {
     return (
-      <ScrollView style={[globalStyles.bgcontainer]} contentContainerStyle={{ paddingBottom: 30 }}>
+      <ScrollView
+        style={[globalStyles.bgcontainer]}
+        contentContainerStyle={{ paddingBottom: 30 }}
+      >
         <View style={[globalStyles.container]}>
-          <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt5]}>
+          <View
+            style={[
+              globalStyles.flexrow,
+              globalStyles.justifysb,
+              globalStyles.mt5,
+            ]}
+          >
             <SkeletonStatCard wide />
             <SkeletonRightCard />
           </View>
           <SkeletonTodayCard />
           <View style={[globalStyles.mt4]}>
-            <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg, width: 140 }]} />
+            <Animated.View
+              style={[
+                styles.skelLineMedium,
+                { backgroundColor: bg, width: 140 },
+              ]}
+            />
             <View style={[globalStyles.mt3]}>
               <SkeletonActiveItem />
               <SkeletonActiveItem />
@@ -443,10 +559,10 @@ export default function Dashboard() {
     >
       <View style={[globalStyles.container]}>
         {/* <AvailabilityHeader /> */}
-        
+
         {/* Location Tracking Status */}
-        <TrackingStatusIndicator  technicianId={techID} />
-        
+        <TrackingStatusIndicator technicianId={techID} />
+
         <View
           style={[
             globalStyles.flexrow,
@@ -479,9 +595,10 @@ export default function Dashboard() {
                   globalStyles.mt3,
                 ]}
               >
-                <Image
-                  source={reports}
-                  style={{ width: 20, height: 28, tintColor: "#fff" }}
+                <Ionicons
+                  name="calendar-outline"
+                  size={35}
+                  color={color.white}
                 />
 
                 <CustomText
@@ -491,65 +608,47 @@ export default function Dashboard() {
                 </CustomText>
               </View>
             </Pressable>
+          </View>
 
-            <View
+          <View style={{ width: "48%" }}>
+            <Pressable
+              onPress={Reports}
               style={[
-                globalStyles.bgBlack,
+                globalStyles.bgprimary,
                 globalStyles.borderRadiuslarge,
-                globalStyles.flexrow,
-                globalStyles.alineItemscenter,
-                globalStyles.justifysb,
                 globalStyles.ph4,
-                globalStyles.pv3,
+                globalStyles.pv2,
+                globalStyles.mb3,
               ]}
             >
               <CustomText
-                style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                style={[globalStyles.f16Bold, globalStyles.textWhite]}
               >
-                ₹ {totalAmount.toFixed(2)}
+                Reports
               </CustomText>
-            </View>
-          </View>
 
-          <Pressable
-            onPress={Reports}
-            style={[
-              globalStyles.bgprimary,
-              globalStyles.borderRadiuslarge,
-              globalStyles.ph4,
-              globalStyles.pv2,
-              { width: "48%", justifyContent: "space-between" },
-            ]}
-          >
-            <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
-              Reports
-            </CustomText>
-
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Image
-                source={schedule}
-                style={{ width: 25, height: 25, tintColor: "#fff" }}
-              />
-              {/* <CustomText
-                style={[globalStyles.f40Bold, globalStyles.textWhite]}
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.alineItemscenter,
+                  globalStyles.mt3,
+                ]}
               >
-                {assignedTasks}
-              </CustomText> */}
-              <View>
+                <Ionicons
+                  name="document-text-outline"
+                  size={35}
+                  color={color.white}
+                />
+
                 <CustomText
-                  style={[globalStyles.f40Bold, globalStyles.textWhite]}
+                  style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  {bookingCounts.TotalBookingsCount}
+                  {bookingCounts.CompletedBookingsCount}
                 </CustomText>
               </View>
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         </View>
 
         <Pressable
@@ -640,7 +739,7 @@ export default function Dashboard() {
                     ]}
                   >
                     {/* Status Indicator */}
-                    
+
                     <View style={[globalStyles.flexrow]}>
                       <View style={styles.avatarContainer}>
                         <Image
@@ -656,17 +755,32 @@ export default function Dashboard() {
                       </View>
 
                       <View style={[globalStyles.ml3, { flex: 1 }]}>
-                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
+                        <View
+                          style={[
+                            globalStyles.flexrow,
+                            globalStyles.justifysb,
+                            globalStyles.alineItemscenter,
+                          ]}
+                        >
                           <CustomText
                             style={[globalStyles.f16Bold, globalStyles.black]}
                           >
                             {item.CustomerName}
                           </CustomText>
-                         
                         </View>
-                        
-                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
-                          <Ionicons name="call-outline" size={14} color={color.neutral[500]} />
+
+                        <View
+                          style={[
+                            globalStyles.flexrow,
+                            globalStyles.alineItemscenter,
+                            globalStyles.mt1,
+                          ]}
+                        >
+                          <Ionicons
+                            name="call-outline"
+                            size={14}
+                            color={color.neutral[500]}
+                          />
                           <CustomText
                             style={[
                               globalStyles.f12Medium,
@@ -677,9 +791,19 @@ export default function Dashboard() {
                             {item.PhoneNumber}
                           </CustomText>
                         </View>
-                        
-                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
-                          <Ionicons name="location-outline" size={14} color={color.neutral[500]} />
+
+                        <View
+                          style={[
+                            globalStyles.flexrow,
+                            globalStyles.alineItemscenter,
+                            globalStyles.mt1,
+                          ]}
+                        >
+                          <Ionicons
+                            name="location-outline"
+                            size={14}
+                            color={color.neutral[500]}
+                          />
                           <CustomText
                             style={[
                               globalStyles.f10Regular,
@@ -696,7 +820,7 @@ export default function Dashboard() {
                     </View>
 
                     <View style={[globalStyles.divider, globalStyles.mt3]} />
-                    
+
                     <View
                       style={[
                         globalStyles.flexrow,
@@ -705,10 +829,23 @@ export default function Dashboard() {
                         globalStyles.mt3,
                       ]}
                     >
-                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-                        <Ionicons name="time-outline" size={16} color={color.primary} />
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.alineItemscenter,
+                        ]}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={16}
+                          color={color.primary}
+                        />
                         <CustomText
-                          style={[globalStyles.f14Bold, globalStyles.primary, globalStyles.ml1]}
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.primary,
+                            globalStyles.ml1,
+                          ]}
                         >
                           {item.TimeSlot}
                         </CustomText>
@@ -718,9 +855,12 @@ export default function Dashboard() {
                           item.BookingStatus === "StartJourney" ||
                           item.BookingStatus === "ServiceStarted" ||
                           item.BookingStatus === "Reached") && (
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             onPress={() => CustomerInfo(item)}
-                            style={[styles.actionButton, { backgroundColor: color.primary }]}
+                            style={[
+                              styles.actionButton,
+                              { backgroundColor: color.primary },
+                            ]}
                           >
                             <Ionicons
                               name="navigate-outline"
@@ -735,7 +875,10 @@ export default function Dashboard() {
                           item.BookingStatus === "Completed" && (
                             <TouchableOpacity
                               onPress={() => CollectPayment(item)}
-                              style={[styles.actionButton, { backgroundColor: color.primary }]}
+                              style={[
+                                styles.actionButton,
+                                { backgroundColor: color.primary },
+                              ]}
                             >
                               <MaterialCommunityIcons
                                 name="currency-inr"

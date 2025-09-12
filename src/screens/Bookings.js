@@ -20,7 +20,7 @@ import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 
 export default function Bookings() {
@@ -30,22 +30,24 @@ export default function Bookings() {
   
   const [todaysBookings, setTodaysBookings] = useState(bookings);
   const [refreshing, setRefreshing] = useState(false);
-  const [pulse] = useState(new Animated.Value(0));
+  const pulse = useRef(new Animated.Value(0)).current;
   const [filterType, setFilterType] = useState('all'); // 'all', 'completed', 'pending'
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    if (refreshing) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: false }),
-          Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: false }),
-        ])
-      ).start();
-    }
-  }, [refreshing, pulse]);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+    return () => {
+      try { loop.stop(); } catch (_) {}
+    };
+  }, [pulse]);
 
   const bg = pulse.interpolate({
     inputRange: [0, 1],
@@ -240,7 +242,7 @@ export default function Bookings() {
 
         {filteredBookings.length === 0 ? (
           <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, { paddingVertical: 40 }]}>
-            <Ionicons name="document-outline" size={48} color={color.neutral[300]} />
+            <Ionicons name="document-text-outline" size={48} color={color.neutral[300]} />
             <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt2, globalStyles.textac]}>
               {todaysBookings.length === 0 
                 ? "No bookings assigned" 
