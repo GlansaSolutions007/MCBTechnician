@@ -34,9 +34,13 @@ export default function ServiceEnd() {
   const { booking } = route.params;
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
-    booking?.Packages.flatMap((pkg) =>
-      pkg.Category.SubCategories?.flatMap((sub) =>
-        sub.Includes?.map((inc) => ({ ...inc, completed: true }))
+    booking?.Packages.flatMap((pkg, pkgIndex) =>
+      pkg.Category.SubCategories?.flatMap((sub, subIndex) =>
+        sub.Includes?.map((inc, incIndex) => ({ 
+          ...inc, 
+          completed: true,
+          uniqueKey: `${pkgIndex}-${subIndex}-${incIndex}-${inc.IncludeID}`
+        }))
       )
     ) || []
   );
@@ -134,7 +138,7 @@ export default function ServiceEnd() {
 
           {services.map((service) => (
             <View
-              key={service.IncludeID}
+              key={service.uniqueKey}
               style={{
                 flexDirection: "row",
                 alignItems: "center",

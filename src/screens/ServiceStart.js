@@ -573,11 +573,16 @@ export default function ServiceStart() {
                     "true"
                   );
 
-                  navigation.navigate("ServiceEnd", { 
-                    booking,
-                    estimatedTime: totalSeconds,
-                    actualTime: elapsedFromAPI
-                  });
+                  // Store timer state for this specific booking
+                  await AsyncStorage.setItem(
+                    `timerState_${booking.BookingID}`,
+                    JSON.stringify({
+                      timerStarted: true,
+                      elapsedTime: elapsedFromAPI,
+                      maxTime: totalSeconds,
+                      timerCompleted: false,
+                    })
+                  );
                 }}
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>

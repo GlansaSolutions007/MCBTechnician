@@ -8,6 +8,9 @@ import {
   StyleSheet,
   Pressable,
   Modal,
+  Vibration,
+  Linking,
+  Alert,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -166,6 +169,30 @@ export default function CollectPayment() {
         </View>
 
         <TouchableOpacity
+          style={styles.callButton}
+          onPress={() => {
+            Vibration.vibrate([0, 200, 100, 300]);
+
+            const phoneNumber = booking.PhoneNumber;
+            if (phoneNumber) {
+              Linking.openURL(`tel:${phoneNumber}`);
+            } else {
+              Alert.alert("Error", "Phone number not available");
+            }
+          }}
+        >
+          <Ionicons
+            name="call"
+            size={25}
+            color="#fff"
+            style={styles.callIcon}
+          />
+          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+            Call to customer
+          </CustomText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={handleCompletePayment}
           style={[
             globalStyles.blackButton,
@@ -254,7 +281,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 8,
   },
-
+  callIcon: {
+    marginRight: 8,
+  },
+  callButton: {
+    backgroundColor: color.primary,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   closeIcon: {
     position: "absolute",
     top: 0,
