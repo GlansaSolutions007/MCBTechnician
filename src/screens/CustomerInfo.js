@@ -365,7 +365,7 @@ export default function CustomerInfo() {
                 // }}
                 source={
                   booking.ProfileImage
-                    ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                    ? { uri: `https://api.mycarsbuddy.com/images/${booking.ProfileImage}` }
                     : defaultAvatar
                 }
                 style={globalStyles.avatarside}
@@ -444,7 +444,7 @@ export default function CustomerInfo() {
                       source={
                         booking.VehicleImage
                           ? {
-                              uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
+                              uri: `https://api.mycarsbuddy.com/images/${booking.VehicleImage}`,
                             }
                           : defaultAvatar
                       }
