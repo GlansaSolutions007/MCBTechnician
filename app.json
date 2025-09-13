@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mcbt",
+    "name": "My Car Buddy Technician",
     "slug": "mcbt",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,7 +25,7 @@
         ]
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
+        "googleMapsApiKey": "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc"
       }
     },
     "android": {
@@ -34,7 +34,6 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -48,7 +47,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
+          "apiKey": "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc"
         }
       }
     },
@@ -63,7 +62,7 @@
       "API_BASE_URL_IMAGE": "https://api.mycarsbuddy.com/",
       "RAZORPAY_KEY": "your_razorpay_key_here",
       "RAZORPAY_SECRET": "your_razorpay_secret_here",
-      "GOOGLE_MAPS_APIKEY": "AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo"
+      "GOOGLE_MAPS_APIKEY": "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc"
     },
     "plugins": [
       [
@@ -77,10 +76,11 @@
         {
           "icon": "./assets/icons/notification-icon.png",
           "color": "#017F77",
-          "sounds": ["./assets/notificationtone.wav"]
+          "sounds": [
+            "./assets/notificationtone.wav"
+          ]
         }
-      ],
-
+      ]
     ]
   }
 }
