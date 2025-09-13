@@ -14,10 +14,8 @@ import { color } from "../styles/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
-import Pcicon from "../../assets/icons/Navigation/bookings 2.png";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import schedule from "../../assets/icons/Navigation/schedule.png";
-import reports from "../../assets/icons/Navigation/reports.png";
 import axios from "axios";
 import defaultAvatar from "../../assets/images/buddy.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,46 +26,15 @@ import TrackingStatusIndicator from "../components/TrackingStatusIndicator";
 export default function Dashboard() {
   // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
-  const [totalAmount, setTotalAmount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [pulse] = useState(new Animated.Value(0));
 
-  useEffect(() => {
-    const fetchTotalAmount = async () => {
-      try {
-        const techID = await AsyncStorage.getItem("techID");
-        const token = await AsyncStorage.getItem("token");
-        if (!techID) return;
-
-        const res = await axios.get(
-          `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setTotalAmount(res.data[0].TotalAmountCollected || 0);
-        }
-      } catch (err) {
-        // console.error("Error fetching total amount:", err);
-      }
-    };
-
-    fetchTotalAmount();
-  }, []);
   useFocusEffect(
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          await Promise.all([
-            fetchTotalAmount(),
-            fetchBookingCounts(),
-            fetchBookings(),
-          ]);
+          await Promise.all([fetchBookingCounts(), fetchBookings()]);
           setInitialLoading(false);
         } catch (error) {
           console.error("Error refreshing data:", error);
@@ -208,44 +175,6 @@ export default function Dashboard() {
       setAssignedTasks(tasks);
     }
   }, [techID, bookings]);
-  // const count =
-  //   bookings.reduce((total, booking) => {
-  //     const pkgCount =
-  //       booking.Packages?.reduce((pkgTotal, pkg) => {
-  //         const matchCount =
-  //           pkg.Category?.SubCategories?.filter((sub) => sub.id === techID)
-  //             .length || 0;
-  //         return pkgTotal + matchCount;
-  //       }, 0) || 0;
-  //     return total + pkgCount;
-  //   }, 0) || 0;
-
-  // const assignedTasks = bookings.flatMap(
-  //   (booking) =>
-  //     booking.Packages?.flatMap(
-  //       (pkg) =>
-  //         pkg.Category?.SubCategories?.filter((sub) => sub.id === techID) || []
-  //     ) || []
-  // );
-
-  const fetchTotalAmount = async () => {
-    try {
-      const techID = await AsyncStorage.getItem("techID");
-      const token = await AsyncStorage.getItem("token");
-      if (!techID) return;
-
-      const res = await axios.get(
-        `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setTotalAmount(res.data[0].TotalAmountCollected || 0);
-      }
-    } catch (err) {
-      // console.error("Error fetching total amount:", err);
-    }
-  };
 
   // Fetch booking counts
   const fetchBookingCounts = async () => {
@@ -285,11 +214,7 @@ export default function Dashboard() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchTotalAmount(),
-      fetchBookingCounts(),
-      fetchBookings(),
-    ]);
+    await Promise.all([fetchBookingCounts(), fetchBookings()]);
     setRefreshing(false);
   };
 
@@ -298,11 +223,7 @@ export default function Dashboard() {
   }, []);
 
   const refreshData = async () => {
-    await Promise.all([
-      fetchTotalAmount(),
-      fetchBookingCounts(),
-      fetchBookings(),
-    ]);
+    await Promise.all([fetchBookingCounts(), fetchBookings()]);
   };
 
   useEffect(() => {
@@ -663,7 +584,7 @@ export default function Dashboard() {
         >
           <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
             <View style={[styles.Pcicon]}>
-              <Image source={Pcicon} style={[styles.Pcicons]} />
+              <MaterialIcons name="touch-app" size={40} color={color.primary} />
             </View>
             <View style={[globalStyles.ml50, globalStyles.flex1]}>
               <CustomText
