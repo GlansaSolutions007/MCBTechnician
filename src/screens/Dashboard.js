@@ -482,7 +482,7 @@ export default function Dashboard() {
         {/* <AvailabilityHeader /> */}
 
         {/* Location Tracking Status */}
-        <TrackingStatusIndicator technicianId={techID} />
+        {/* <TrackingStatusIndicator technicianId={techID} /> */}
 
         <View
           style={[
@@ -649,7 +649,8 @@ export default function Dashboard() {
                     item.Payments?.[0]?.PaymentStatus === "Pending"
                 )
                 .map((item, index) => (
-                  <View
+                  <Pressable
+                    onPress={() => CustomerInfo(item)}
                     key={index}
                     style={[
                       globalStyles.bgwhite,
@@ -810,7 +811,7 @@ export default function Dashboard() {
                           )}
                       </View>
                     </View>
-                  </View>
+                  </Pressable>
                 ))}
             </View>
           ) : (

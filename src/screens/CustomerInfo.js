@@ -14,11 +14,15 @@ import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
-import { API_BASE_URL, API_BASE_URL_IMAGE, GOOGLE_MAPS_APIKEY } from "../config/env";
+import {
+  API_BASE_URL,
+  API_BASE_URL_IMAGE,
+  GOOGLE_MAPS_APIKEY,
+} from "../config/env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
 import {
@@ -34,7 +38,9 @@ export default function CustomerInfo() {
     return (
       <ScrollView style={[globalStyles.bgcontainer]}>
         <View style={[globalStyles.container, globalStyles.justifycenter]}>
-          <CustomText style={[globalStyles.f16Bold]}>No booking data.</CustomText>
+          <CustomText style={[globalStyles.f16Bold]}>
+            No booking data.
+          </CustomText>
         </View>
       </ScrollView>
     );
@@ -47,7 +53,9 @@ export default function CustomerInfo() {
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
   // const today = new Date().toISOString().split("T")[0];
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
@@ -175,17 +183,26 @@ export default function CustomerInfo() {
 
     startTracking();
     return () => {
-      try { subscription && subscription.remove && subscription.remove(); } catch (_) {}
+      try {
+        subscription && subscription.remove && subscription.remove();
+      } catch (_) {}
       subscription = null;
     };
   }, []);
 
   const fetchRoute = async (origin) => {
     try {
-      if (!origin || !Number.isFinite(origin.Latitude) || !Number.isFinite(origin.Longitude)) {
+      if (
+        !origin ||
+        !Number.isFinite(origin.Latitude) ||
+        !Number.isFinite(origin.Longitude)
+      ) {
         return;
       }
-      if (!Number.isFinite(destination?.Latitude) || !Number.isFinite(destination?.Longitude)) {
+      if (
+        !Number.isFinite(destination?.Latitude) ||
+        !Number.isFinite(destination?.Longitude)
+      ) {
         return;
       }
 
@@ -201,15 +218,19 @@ export default function CustomerInfo() {
       );
 
       const { status, routes, error_message } = response?.data || {};
-      if (status !== 'OK' || !Array.isArray(routes) || routes.length === 0) {
-        console.warn('Directions API status:', status, error_message || 'No routes');
+      if (status !== "OK" || !Array.isArray(routes) || routes.length === 0) {
+        console.warn(
+          "Directions API status:",
+          status,
+          error_message || "No routes"
+        );
         setRouteCoords([]);
         return;
       }
 
       const points = routes[0]?.overview_polyline?.points;
       if (!points) {
-        console.warn('Directions API: overview_polyline missing');
+        console.warn("Directions API: overview_polyline missing");
         setRouteCoords([]);
         return;
       }
@@ -217,7 +238,10 @@ export default function CustomerInfo() {
       const decoded = decodePolyline(points);
       setRouteCoords(decoded);
     } catch (error) {
-      console.error("Google Directions API error:", error?.response?.data || error?.message || error);
+      console.error(
+        "Google Directions API error:",
+        error?.response?.data || error?.message || error
+      );
       setRouteCoords([]);
     }
   };
@@ -293,6 +317,17 @@ export default function CustomerInfo() {
     }
   };
 
+  const handleStartRidedirect = async () => {
+    onRefresh();
+    try {
+      await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
+    } catch (error) {
+      console.error("Error saving start ride flag", error);
+    }
+    // Background tracking should already be controlled by user via toggle
+    // No need to start it here automatically
+    await openGoogleMaps();
+  };
   const handleStartRide = async () => {
     await updateTechnicianTracking("StartJourney");
     onRefresh();
@@ -323,7 +358,10 @@ export default function CustomerInfo() {
   };
 
   if (!Number.isFinite(Latitude) || !Number.isFinite(Longitude)) {
-    console.warn("Invalid booking coordinates", { Latitude: rawLat, Longitude: rawLng });
+    console.warn("Invalid booking coordinates", {
+      Latitude: rawLat,
+      Longitude: rawLng,
+    });
   }
 
   return (
@@ -337,75 +375,149 @@ export default function CustomerInfo() {
         <View style={[globalStyles.container, globalStyles.pb4]}>
           {/* <AvailabilityHeader /> */}
 
-          <CustomText
+          <View
             style={[
-              globalStyles.f20Bold,
-              globalStyles.primary,
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.card,
+              globalStyles.p3,
               globalStyles.mt3,
             ]}
           >
-            Booking ID:{" "}
-            <CustomText style={globalStyles.black}>
-              {booking.BookingTrackID}
-            </CustomText>
-          </CustomText>
-
-          <View
-            style={[
-              globalStyles.cardwidth,
-              globalStyles.bgwhite,
-              globalStyles.p4,
-              globalStyles.mt4,
-            ]}
-          >
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              {/* <Image
+              source={{
+                uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  booking.CustomerName
+                )}&background=E8E8E8`,
+              }}
+              style={{ width: 46, height: 46, borderRadius: 10 }}
+            /> */}
               <Image
-                // source={{
-                //   uri: `${API_BASE_URL_IMAGE}${booking.VehicleImage}`,
-                // }}
                 source={
                   booking.ProfileImage
                     ? { uri: `https://api.mycarsbuddy.com/images/${booking.ProfileImage}` }
                     : defaultAvatar
                 }
-                style={globalStyles.avatarside}
+                style={{ width: 46, height: 46, borderRadius: 10 }}
               />
-              <View style={[globalStyles.ml50, globalStyles.flex1]}>
-                <CustomText style={[globalStyles.f20Bold, globalStyles.black]}>
+              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                   {booking.CustomerName}
                 </CustomText>
                 <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.primary]}
+                  style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
                   Mobile: {booking.PhoneNumber}
                 </CustomText>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  const phoneNumber = booking.PhoneNumber;
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <Ionicons
+                  style={[
+                    globalStyles.p2,
+                    globalStyles.bgprimary,
+                    globalStyles.borderRadiuslarge,
+                  ]}
+                  name="call"
+                  size={20}
+                  color={color.white}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={[globalStyles.divider, globalStyles.mt2]} />
+            <View style={[globalStyles.flexrow]}>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="card-account-details-outline"
+                  size={16}
+                  color={color.primary}
+                  style={{ marginRight: 6 }}
+                />
                 <CustomText
                   style={[
                     globalStyles.f10Regular,
-                    globalStyles.neutral500,
-                    globalStyles.primary,
+                    globalStyles.black,
+                    globalStyles.ml1,
                   ]}
                 >
-                  {booking.FullAddress}
+                  {booking.BookingTrackID}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="calendar" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {booking.BookingDate}
                 </CustomText>
               </View>
             </View>
-
-            <View style={[globalStyles.mt3, globalStyles.divider]} />
-
-            <View style={[globalStyles.ml50, globalStyles.justifysb]}>
-              <CustomText style={globalStyles.f12Bold}>
-                Slot Time:{" "}
-                <CustomText style={globalStyles.black}>
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
+                ]}
+              >
+                <Ionicons name="car" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {booking.VehicleNumber}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="time-outline" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
                   {booking.TimeSlot}
                 </CustomText>
-              </CustomText>
-              <CustomText style={globalStyles.f12Bold}>
-                Booking Date:{" "}
-                <CustomText style={globalStyles.black}>
-                  {booking.BookingDate}
-                </CustomText>
-              </CustomText>
+              </View>
             </View>
           </View>
 
@@ -749,47 +861,7 @@ export default function CustomerInfo() {
           ></View>
 
           <View style={[globalStyles.mt2]}>
-            <View
-              style={[
-                globalStyles.mt4,
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-              ]}
-            >
-              {/* <TouchableOpacity style={styles.cancelButton}>
-                <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f12Medium]}
-                >
-                  Cancel Booking
-                </CustomText>
-              </TouchableOpacity> */}
-
-              <TouchableOpacity
-                style={styles.callButton}
-                onPress={() => {
-                  Vibration.vibrate([0, 200, 100, 300]);
-
-                  const phoneNumber = booking.PhoneNumber;
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
-                  } else {
-                    Alert.alert("Error", "Phone number not available");
-                  }
-                }}
-              >
-                <Ionicons
-                  name="call"
-                  size={25}
-                  color="#fff"
-                  style={styles.callIcon}
-                />
-                <CustomText
-                  style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                >
-                  Call to customer
-                </CustomText>
-              </TouchableOpacity>
-            </View>
+            
 
             <View>
               {/* {booking.BookingStatus === "Confirmed" && (
@@ -815,29 +887,45 @@ export default function CustomerInfo() {
               {booking.BookingStatus !== "Completed" &&
                 booking.BookingDate === today && (
                   <>
-                    {(booking.BookingStatus === "Confirmed" ||
-                      booking.BookingStatus === "StartJourney") &&
-                      booking.BookingStatus !== "Reached" && (
-                        <TouchableOpacity
-                          style={styles.startButton}
-                          onPress={handleStartRide}
+                    {booking.BookingStatus === "Confirmed" && (
+                      <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={handleStartRide}
+                      >
+                        <Ionicons
+                          name="rocket"
+                          size={20}
+                          color="white"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText
+                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
                         >
-                          <Ionicons
-                            name="rocket"
-                            size={20}
-                            color="white"
-                            style={{ marginRight: 8 }}
-                          />
-                          <CustomText
-                            style={[
-                              globalStyles.f14Bold,
-                              globalStyles.textWhite,
-                            ]}
-                          >
-                            Start Ride
-                          </CustomText>
-                        </TouchableOpacity>
-                      )}
+                          Start Ride
+                        </CustomText>
+                      </TouchableOpacity>
+                    )}
+
+                    {(booking.BookingStatus === "StartJourney" ||
+                      booking.BookingStatus === "ServiceStarted") && (
+                      <TouchableOpacity
+                      style={styles.startButton}
+                      onPress={handleStartRidedirect}
+                      >
+                        <Ionicons
+                          name="navigate"
+                          size={20}
+                          color="#fff"
+                          style={{ marginRight: 8 }}
+                        />
+                        <CustomText
+                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                        >
+                          Navigate
+                        </CustomText>
+                      </TouchableOpacity>
+                    )}
+
                     {booking.BookingStatus === "StartJourney" && (
                       <TouchableOpacity
                         style={styles.ReachedButton}

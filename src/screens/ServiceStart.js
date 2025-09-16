@@ -30,6 +30,7 @@ export default function ServiceStart() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
+  console.log("booking", booking);
 
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
@@ -120,8 +121,10 @@ export default function ServiceStart() {
   const calculateElapsedFromAPI = (serviceStartedAt) => {
     const start = new Date(serviceStartedAt);
     const now = new Date();
-    return Math.floor((now - start) / 1000);
+    return Math.floor((now - start) / 1000); 
   };
+  
+  
 
   // const calculateElapsedFromAPI = (serviceStartedAt) => {
   //   const startDate = new Date(serviceStartedAt);
@@ -134,29 +137,30 @@ export default function ServiceStart() {
 
   useEffect(() => {
     let interval = null;
-
-    if (timerStarted && !timerCompleted) {
+  
+    if (booking.ServiceStartedAt) {
+      // set initial values
+      const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+      setElapsedTime(elapsedFromAPI);
+      setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
+      setTimerStarted(true);
+      setTimerCompleted(false);
+  
+      // keep calculating every second
       interval = setInterval(() => {
-        setElapsedTime((prev) => {
-          const updatedTime = prev + 1;
-          AsyncStorage.setItem(
-            "serviceTimerState",
-            JSON.stringify({
-              timerStarted: true,
-              elapsedTime: updatedTime,
-              maxTime: MAX_TIME,
-              timerCompleted: false,
-              bookingId,
-            })
-          );
-
-          return updatedTime;
-        });
+        const updated = calculateElapsedFromAPI(booking.ServiceStartedAt);
+        setElapsedTime(updated);
+  
+        if (updated >= booking.TotalEstimatedDurationMinutes * 60) {
+          setTimerCompleted(true);
+          clearInterval(interval);
+        }
       }, 1000);
     }
-
+  
     return () => clearInterval(interval);
-  }, [timerStarted, timerCompleted, MAX_TIME]);
+  }, [booking.ServiceStartedAt, booking.TotalEstimatedDurationMinutes]);
+  
 
   useEffect(() => {
     const loadTimerState = async () => {
@@ -296,6 +300,29 @@ export default function ServiceStart() {
                 Mobile: {booking.PhoneNumber}
               </CustomText>
             </View>
+            <TouchableOpacity
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  const phoneNumber = booking.PhoneNumber;
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <Ionicons
+                  style={[
+                    globalStyles.p2,
+                    globalStyles.bgprimary,
+                    globalStyles.borderRadiuslarge,
+                  ]}
+                  name="call"
+                  size={20}
+                  color={color.white}
+                />
+              </TouchableOpacity>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt2]} />
           <View style={[globalStyles.flexrow]}>

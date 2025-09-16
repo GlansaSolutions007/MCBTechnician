@@ -7,15 +7,24 @@ import {
   View,
   Alert,
   Pressable,
+  Modal,
+  StyleSheet,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
+  Vibration,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons ,MaterialCommunityIcons} from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_URL } from "@env";
 import axios from "axios";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
+import defaultAvatar from "../../assets/images/buddy.png";
+import { color } from "../styles/theme";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -36,10 +45,10 @@ export default function ServiceEnd() {
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg, pkgIndex) =>
       pkg.Category.SubCategories?.flatMap((sub, subIndex) =>
-        sub.Includes?.map((inc, incIndex) => ({ 
-          ...inc, 
+        sub.Includes?.map((inc, incIndex) => ({
+          ...inc,
           completed: true,
-          uniqueKey: `${pkgIndex}-${subIndex}-${incIndex}-${inc.IncludeID}`
+          uniqueKey: `${pkgIndex}-${subIndex}-${incIndex}-${inc.IncludeID}`,
         }))
       )
     ) || []
@@ -49,21 +58,62 @@ export default function ServiceEnd() {
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
   const [selectedReason, setSelectedReason] = useState(null);
   const anyServicePending = services.some((service) => !service.completed);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [otpValid, setOtpValid] = useState(false);
   const bookingId = booking.BookingID;
-  const CollectPayment = async () => {
-    await updateTechnicianTracking("Completed");
+
+
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showListener = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardVisible(true)
+    );
+    const hideListener = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardVisible(false)
+    );
+  
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+  
+
+
+  const Completedservice = async () => {
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+    const isValid = await updateTechnicianTracking("Completed");
+    if (!isValid) {
+      return;
+    }
+    setError("");
     navigation.navigate("CollectPayment", { booking });
   };
-  const Dashboard = async () => {
-    await updateTechnicianTracking("Completed");
+  // const Dashboard = async () => {
+  //   if (!otp || otp.length !== 6) {
+  //     setError("Please enter a valid 6-digit OTP");
+  //     return;
+  //   }
+  //   const isValid = await updateTechnicianTracking("Completed");
+  //   if (!isValid) {
+  //     return;
+  //   }
+  //   await updateTechnicianTracking("Completed");
 
-    navigation.reset({
-      index: 0,
-      routes: [
-        { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
-      ],
-    });
-  };
+  //   navigation.reset({
+  //     index: 0,
+  //     routes: [
+  //       { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+  //     ],
+  //   });
+  // };
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -106,62 +156,221 @@ export default function ServiceEnd() {
       const payload = {
         bookingID: Number(bookingId),
         actionType: actionType,
+        bookingOTP: otp,
       };
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         payload
       );
 
-      console.log(`${actionType} action sent successfully`);
+      const data = response?.data ?? {};
+      if (data?.status === false || data?.isValid === false) {
+        setOtpValid(false);
+        setError("Invalid OTP. Please try again.");
+        setModalMessage("Invalid OTP. Please try again.");
+        setModalVisible(true);
+        return false;
+      }
+
+      setOtpValid(true);
+      return true;
     } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
-      Alert.alert("Error", `Failed to send ${actionType} action.`);
+      setOtpValid(false);
+      setError("Invalid OTP. Please try again.");
+      setModalMessage("Invalid OTP. Please try again.");
+      setModalVisible(true);
+      return false;
     }
   };
 
   return (
-    <ScrollView style={globalStyles.bgcontainer}>
-      <View style={[globalStyles.container]}>
-        <CustomText
-          style={[globalStyles.f24Bold, globalStyles.primary, globalStyles.mt3]}
+    <KeyboardAvoidingView
+      style={[globalStyles.flex1, globalStyles.bgwhite]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <ScrollView style={globalStyles.bgcontainer} keyboardShouldPersistTaps="handled">
+        <View style={[globalStyles.container]}>
+        <View
+          style={[
+            globalStyles.bgwhite,
+            globalStyles.radius,
+            globalStyles.card,
+            globalStyles.p3,
+            globalStyles.mt3,
+          ]}
         >
-          Booking ID:{" "}
-          <CustomText style={[globalStyles.black]}>
-            {booking.BookingTrackID}
-          </CustomText>
-        </CustomText>
-
-        <View style={{ marginTop: 12 }}>
-          <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
-            Please check completed services
-          </CustomText>
-
-          {services.map((service) => (
-            <View
-              key={service.uniqueKey}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 8,
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            {/* <Image
+              source={{
+                uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  booking.CustomerName
+                )}&background=E8E8E8`,
               }}
-            >
-              <Pressable
-                // onPress={() => toggleService(service.IncludeID)}
+              style={{ width: 46, height: 46, borderRadius: 10 }}
+            /> */}
+             <Image
+                  source={
+                    booking.ProfileImage
+                      ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                      : defaultAvatar
+                  }
+                  style={{ width: 46, height: 46, borderRadius: 10 }}
+                  />
+            <View style={[globalStyles.ml3, { flex: 1 }]}>
+              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                {booking.CustomerName}
+              </CustomText>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500]}
               >
-                <Ionicons
-                  name={service.completed ? "checkbox" : "square-outline"}
-                  size={30}
-                  color={service.completed ? "#0D9276" : "#999"}
-                />
-              </Pressable>
-              <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
-                {service.IncludeName}
+                Mobile: {booking.PhoneNumber}
               </CustomText>
             </View>
-          ))}
+            <TouchableOpacity
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
 
-          {/* Show this if any checkbox is not checked */}
-          {/* {anyServicePending && (
+                  const phoneNumber = booking.PhoneNumber;
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <Ionicons
+                  style={[
+                    globalStyles.p2,
+                    globalStyles.bgprimary,
+                    globalStyles.borderRadiuslarge,
+                  ]}
+                  name="call"
+                  size={20}
+                  color={color.white}
+                />
+              </TouchableOpacity>
+          </View>
+          <View style={[globalStyles.divider, globalStyles.mt2]} />
+          <View style={[globalStyles.flexrow]}>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+                globalStyles.w40,
+              ]}
+            >
+             
+              <MaterialCommunityIcons
+                name="card-account-details-outline"
+                size={16}
+                color={color.primary}
+                style={{ marginRight: 6 }}
+              />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.BookingTrackID}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+             
+              <Ionicons name="calendar" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.BookingDate}
+              </CustomText>
+            </View>
+          </View>
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+                globalStyles.w40,
+              ]}
+            >
+              
+              <Ionicons name="car" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.VehicleNumber}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Ionicons name="time-outline" size={16} color={color.primary} />
+              <CustomText
+                style={[
+                  globalStyles.f10Regular,
+                  globalStyles.black,
+                  globalStyles.ml1,
+                ]}
+              >
+                {booking.TimeSlot}
+              </CustomText>
+            </View>
+          </View>
+        </View>
+
+          <View style={{ marginTop: 12 }}>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
+              Please check completed services
+            </CustomText>
+
+            {services.map((service) => (
+              <View
+                key={service.uniqueKey}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Pressable
+                // onPress={() => toggleService(service.IncludeID)}
+                >
+                  <Ionicons
+                    name={service.completed ? "checkbox" : "square-outline"}
+                    size={30}
+                    color={service.completed ? "#0D9276" : "#999"}
+                  />
+                </Pressable>
+                <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
+                  {service.IncludeName}
+                </CustomText>
+              </View>
+            ))}
+
+            {/* Show this if any checkbox is not checked */}
+            {/* {anyServicePending && (
             <View>
               <CustomText style={[globalStyles.f14Bold, globalStyles.mt2]}>
                 Any obstacle for pending services?
@@ -221,89 +430,88 @@ export default function ServiceEnd() {
               </View>
             </View>
           )} */}
-        </View>
-
-        {/* Estimated and Extended Time */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#1A9C8D",
-              borderRadius: 10,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              flex: 1,
-              marginRight: 8,
-              alignItems: "center",
-            }}
-          >
-            <CustomText style={{ color: "white", fontWeight: "600" }}>
-              Estimated Time
-            </CustomText>
-            <CustomText
-              style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
-            >
-              {formatReadableTime(estimatedTime)}
-            </CustomText>
           </View>
 
+          {/* Estimated and Extended Time */}
           <View
             style={{
-              backgroundColor: "#F4A100",
-              borderRadius: 10,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              flex: 1,
-              marginLeft: 8,
-              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 24,
             }}
           >
-            <CustomText style={{ color: "white", fontWeight: "600" }}>
+            <View
+              style={{
+                backgroundColor: "#1A9C8D",
+                borderRadius: 10,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                flex: 1,
+                marginRight: 8,
+                alignItems: "center",
+              }}
+            >
+              <CustomText style={[globalStyles.textWhite,globalStyles.f12Bold]}>
+                Estimated Time
+              </CustomText>
+              <CustomText style={[globalStyles.textWhite,globalStyles.f14Bold]}>
+
+                {formatReadableTime(estimatedTime)}
+              </CustomText>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: "#F4A100",
+                borderRadius: 10,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                flex: 1,
+                marginLeft: 8,
+                alignItems: "center",
+              }}
+            >
+              <CustomText style={[globalStyles.textWhite,globalStyles.f12Bold]}>
               Extended Time
+              </CustomText>
+              <CustomText style={[globalStyles.textWhite,globalStyles.f14Bold]}>
+
+                {extendedTime > 0 ? formatReadableTime(extendedTime) : "0 min"}
+              </CustomText>
+            </View>
+          </View>
+
+          {/* Buddy image */}
+          {/* <View style={{ alignItems: "center", marginVertical: 20 }}>
+            <Image
+              source={buddy}
+              resizeMode="contain"
+              style={{ width: 200, height: 200 }}
+            />
+          </View> */}
+
+          {/* Total Time */}
+          <View
+            style={[
+               globalStyles.bgBlack,
+              globalStyles.pv4,
+              globalStyles.radius,
+              globalStyles.mt4,
+              globalStyles.alineItemscenter,
+              globalStyles.p4,
+            ]}
+          >
+              <CustomText style={[globalStyles.textWhite,globalStyles.f16Bold]}>
+              Total Hours
             </CustomText>
-            <CustomText
-              style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
-            >
-              {extendedTime > 0 ? formatReadableTime(extendedTime) : "0 min"}
+            <CustomText style={[globalStyles.textWhite,globalStyles.f16Bold]}>
+
+              {formatReadableTime(actualTime)}
             </CustomText>
           </View>
-        </View>
 
-        {/* Buddy image */}
-        <View style={{ alignItems: "center", marginVertical: 20 }}>
-          <Image
-            source={buddy}
-            resizeMode="contain"
-            style={{ width: 200, height: 200 }}
-          />
-        </View>
-
-        {/* Total Time */}
-        <View
-          style={{
-            backgroundColor: "#000",
-            paddingVertical: 14,
-            borderRadius: 12,
-            alignItems: "center",
-          }}
-        >
-          <CustomText style={{ color: "white", fontSize: 16 }}>
-            Total Hours
-          </CustomText>
-          <CustomText
-            style={{ color: "white", fontSize: 20, fontWeight: "bold" }}
-          >
-            {formatReadableTime(actualTime)}
-          </CustomText>
-        </View>
-
-        {/* Reason for extended time */}
-        {/* {extendedTime > 0 && (
+          {/* Reason for extended time */}
+          {/* {extendedTime > 0 && (
           <View>
             <CustomText
               style={[
@@ -336,7 +544,7 @@ export default function ServiceEnd() {
                 globalStyles.mt3,
               ]}
             > */}
-        {/* {reasonsList.map((item, index) => (
+          {/* {reasonsList.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item)}
@@ -365,7 +573,7 @@ export default function ServiceEnd() {
                 </TouchableOpacity>
               ))} */}
 
-        {/* {leads.map((item, index) => (
+          {/* {leads.map((item, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => setSelectedReason(item.ID)}
@@ -413,28 +621,68 @@ export default function ServiceEnd() {
           </View>
         )} */}
 
-        {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
-          <TouchableOpacity
-            onPress={CollectPayment}
-            style={[globalStyles.blackButton]}
+          <CustomText
+            style={[
+              globalStyles.f16Light,
+              globalStyles.mt3,
+              globalStyles.neutral500,
+            ]}
           >
-            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-              Collect cash
+            Enter OTP
+          </CustomText>
+          <TextInput
+            style={[
+              globalStyles.inputBox,
+              globalStyles.mt1,
+              { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
+            ]}
+            placeholder="Enter OTP"
+            value={otp}
+            onChangeText={(text) => {
+              if (/^\d{0,6}$/.test(text)) {
+                setOtp(text);
+                setError("");
+              }
+            }}
+            keyboardType="numeric"
+            maxLength={6}
+          />
+
+          {error ? (
+            <CustomText style={{ color: "red", marginTop: 5 }}>
+              {error}
             </CustomText>
-          </TouchableOpacity>
-        )}
-        {(booking.PaymentMode === "razorpay" ||
-          booking.PaymentMode === "Razorpay") && (
-          <TouchableOpacity
-            onPress={Dashboard}
-            style={globalStyles.blackButton}
-          >
-            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-              Completed
-            </CustomText>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ScrollView>
+          ) : null}
+
+          {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
+            <TouchableOpacity
+              onPress={CollectPayment}
+              style={[
+                globalStyles.blackButton,
+                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 20 },
+              ]}
+            >
+              <CustomText
+                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+              >
+                Collect cash
+              </CustomText>
+            </TouchableOpacity>
+          )} */}
+     {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
+            <TouchableOpacity
+              onPress={Completedservice}
+              style={globalStyles.blackButton}
+            >
+              <CustomText
+                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+              >
+                Completed
+              </CustomText>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
