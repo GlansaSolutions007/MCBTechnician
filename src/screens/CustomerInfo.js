@@ -396,7 +396,9 @@ export default function CustomerInfo() {
               <Image
                 source={
                   booking.ProfileImage
-                    ? { uri: `https://api.mycarsbuddy.com/images/${booking.ProfileImage}` }
+                    ? {
+                        uri: `https://api.mycarsbuddy.com/images/${booking.ProfileImage}`,
+                      }
                     : defaultAvatar
                 }
                 style={{ width: 46, height: 46, borderRadius: 10 }}
@@ -508,15 +510,20 @@ export default function CustomerInfo() {
                 ]}
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.TimeSlot}
-                </CustomText>
+                <View style={{ flexDirection: "column" }}>
+                  {booking.TimeSlot?.split(",").map((slot, index) => (
+                    <CustomText
+                      key={index}
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                      {slot.trim()}
+                    </CustomText>
+                  ))}
+                </View>
               </View>
             </View>
           </View>
@@ -861,8 +868,6 @@ export default function CustomerInfo() {
           ></View>
 
           <View style={[globalStyles.mt2]}>
-            
-
             <View>
               {/* {booking.BookingStatus === "Confirmed" && (
                 <TouchableOpacity
@@ -909,8 +914,8 @@ export default function CustomerInfo() {
                     {(booking.BookingStatus === "StartJourney" ||
                       booking.BookingStatus === "ServiceStarted") && (
                       <TouchableOpacity
-                      style={styles.startButton}
-                      onPress={handleStartRidedirect}
+                        style={styles.startButton}
+                        onPress={handleStartRidedirect}
                       >
                         <Ionicons
                           name="navigate"

@@ -121,10 +121,8 @@ export default function ServiceStart() {
   const calculateElapsedFromAPI = (serviceStartedAt) => {
     const start = new Date(serviceStartedAt);
     const now = new Date();
-    return Math.floor((now - start) / 1000); 
+    return Math.floor((now - start) / 1000);
   };
-  
-  
 
   // const calculateElapsedFromAPI = (serviceStartedAt) => {
   //   const startDate = new Date(serviceStartedAt);
@@ -137,7 +135,7 @@ export default function ServiceStart() {
 
   useEffect(() => {
     let interval = null;
-  
+
     if (booking.ServiceStartedAt) {
       // set initial values
       const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
@@ -145,22 +143,21 @@ export default function ServiceStart() {
       setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
       setTimerStarted(true);
       setTimerCompleted(false);
-  
+
       // keep calculating every second
       interval = setInterval(() => {
         const updated = calculateElapsedFromAPI(booking.ServiceStartedAt);
         setElapsedTime(updated);
-  
+
         if (updated >= booking.TotalEstimatedDurationMinutes * 60) {
           setTimerCompleted(true);
           clearInterval(interval);
         }
       }, 1000);
     }
-  
+
     return () => clearInterval(interval);
   }, [booking.ServiceStartedAt, booking.TotalEstimatedDurationMinutes]);
-  
 
   useEffect(() => {
     const loadTimerState = async () => {
@@ -282,14 +279,14 @@ export default function ServiceStart() {
               }}
               style={{ width: 46, height: 46, borderRadius: 10 }}
             /> */}
-             <Image
-                  source={
-                    booking.ProfileImage
-                      ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
-                      : defaultAvatar
-                  }
-                  style={{ width: 46, height: 46, borderRadius: 10 }}
-                  />
+            <Image
+              source={
+                booking.ProfileImage
+                  ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                  : defaultAvatar
+              }
+              style={{ width: 46, height: 46, borderRadius: 10 }}
+            />
             <View style={[globalStyles.ml3, { flex: 1 }]}>
               <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                 {booking.CustomerName}
@@ -301,28 +298,28 @@ export default function ServiceStart() {
               </CustomText>
             </View>
             <TouchableOpacity
-                onPress={() => {
-                  Vibration.vibrate([0, 200, 100, 300]);
+              onPress={() => {
+                Vibration.vibrate([0, 200, 100, 300]);
 
-                  const phoneNumber = booking.PhoneNumber;
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
-                  } else {
-                    Alert.alert("Error", "Phone number not available");
-                  }
-                }}
-              >
-                <Ionicons
-                  style={[
-                    globalStyles.p2,
-                    globalStyles.bgprimary,
-                    globalStyles.borderRadiuslarge,
-                  ]}
-                  name="call"
-                  size={20}
-                  color={color.white}
-                />
-              </TouchableOpacity>
+                const phoneNumber = booking.PhoneNumber;
+                if (phoneNumber) {
+                  Linking.openURL(`tel:${phoneNumber}`);
+                } else {
+                  Alert.alert("Error", "Phone number not available");
+                }
+              }}
+            >
+              <Ionicons
+                style={[
+                  globalStyles.p2,
+                  globalStyles.bgprimary,
+                  globalStyles.borderRadiuslarge,
+                ]}
+                name="call"
+                size={20}
+                color={color.white}
+              />
+            </TouchableOpacity>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt2]} />
           <View style={[globalStyles.flexrow]}>
@@ -334,7 +331,6 @@ export default function ServiceStart() {
                 globalStyles.w40,
               ]}
             >
-             
               <MaterialCommunityIcons
                 name="card-account-details-outline"
                 size={16}
@@ -358,7 +354,6 @@ export default function ServiceStart() {
                 globalStyles.alineItemscenter,
               ]}
             >
-             
               <Ionicons name="calendar" size={16} color={color.primary} />
               <CustomText
                 style={[
@@ -380,7 +375,6 @@ export default function ServiceStart() {
                 globalStyles.w40,
               ]}
             >
-              
               <Ionicons name="car" size={16} color={color.primary} />
               <CustomText
                 style={[
@@ -400,15 +394,20 @@ export default function ServiceStart() {
               ]}
             >
               <Ionicons name="time-outline" size={16} color={color.primary} />
-              <CustomText
-                style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
-                ]}
-              >
-                {booking.TimeSlot}
-              </CustomText>
+              <View style={{ flexDirection: "column" }}>
+                {booking.TimeSlot?.split(",").map((slot, index) => (
+                  <CustomText
+                    key={index}
+                    style={[
+                      globalStyles.f10Regular,
+                      globalStyles.black,
+                      globalStyles.ml1,
+                    ]}
+                  >
+                    {slot.trim()}
+                  </CustomText>
+                ))}
+              </View>
             </View>
           </View>
         </View>

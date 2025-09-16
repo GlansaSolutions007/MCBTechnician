@@ -759,19 +759,26 @@ export default function Dashboard() {
                       >
                         <Ionicons
                           name="time-outline"
-                          size={16}
+                          size={30}
                           color={color.primary}
+                          style={{ marginRight: 6 }}
                         />
-                        <CustomText
-                          style={[
-                            globalStyles.f14Bold,
-                            globalStyles.primary,
-                            globalStyles.ml1,
-                          ]}
-                        >
-                          {item.TimeSlot}
-                        </CustomText>
+                        <View style={{ flexDirection: "column" }}>
+                          {item.TimeSlot?.split(",").map((slot, index) => (
+                            <CustomText
+                              key={index}
+                              style={[
+                                globalStyles.f14Bold,
+                                globalStyles.primary,
+                                globalStyles.ml1,
+                              ]}
+                            >
+                              {slot.trim()}
+                            </CustomText>
+                          ))}
+                        </View>
                       </View>
+
                       <View style={styles.actionButtons}>
                         {(item.BookingStatus === "Confirmed" ||
                           item.BookingStatus === "StartJourney" ||

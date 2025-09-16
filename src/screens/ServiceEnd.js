@@ -19,7 +19,7 @@ import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
-import { Ionicons ,MaterialCommunityIcons} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
@@ -65,7 +65,6 @@ export default function ServiceEnd() {
   const [otpValid, setOtpValid] = useState(false);
   const bookingId = booking.BookingID;
 
-
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
@@ -75,14 +74,12 @@ export default function ServiceEnd() {
     const hideListener = Keyboard.addListener("keyboardDidHide", () =>
       setKeyboardVisible(false)
     );
-  
+
     return () => {
       showListener.remove();
       hideListener.remove();
     };
   }, []);
-  
-
 
   const Completedservice = async () => {
     if (!otp || otp.length !== 6) {
@@ -189,19 +186,22 @@ export default function ServiceEnd() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
     >
-      <ScrollView style={globalStyles.bgcontainer} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={globalStyles.bgcontainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[globalStyles.container]}>
-        <View
-          style={[
-            globalStyles.bgwhite,
-            globalStyles.radius,
-            globalStyles.card,
-            globalStyles.p3,
-            globalStyles.mt3,
-          ]}
-        >
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            {/* <Image
+          <View
+            style={[
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.card,
+              globalStyles.p3,
+              globalStyles.mt3,
+            ]}
+          >
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              {/* <Image
               source={{
                 uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   booking.CustomerName
@@ -209,25 +209,25 @@ export default function ServiceEnd() {
               }}
               style={{ width: 46, height: 46, borderRadius: 10 }}
             /> */}
-             <Image
-                  source={
-                    booking.ProfileImage
-                      ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
-                      : defaultAvatar
-                  }
-                  style={{ width: 46, height: 46, borderRadius: 10 }}
-                  />
-            <View style={[globalStyles.ml3, { flex: 1 }]}>
-              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                {booking.CustomerName}
-              </CustomText>
-              <CustomText
-                style={[globalStyles.f12Medium, globalStyles.neutral500]}
-              >
-                Mobile: {booking.PhoneNumber}
-              </CustomText>
-            </View>
-            <TouchableOpacity
+              <Image
+                source={
+                  booking.ProfileImage
+                    ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                    : defaultAvatar
+                }
+                style={{ width: 46, height: 46, borderRadius: 10 }}
+              />
+              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {booking.CustomerName}
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                >
+                  Mobile: {booking.PhoneNumber}
+                </CustomText>
+              </View>
+              <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
@@ -250,95 +250,97 @@ export default function ServiceEnd() {
                   color={color.white}
                 />
               </TouchableOpacity>
+            </View>
+            <View style={[globalStyles.divider, globalStyles.mt2]} />
+            <View style={[globalStyles.flexrow]}>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="card-account-details-outline"
+                  size={16}
+                  color={color.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {booking.BookingTrackID}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="calendar" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {booking.BookingDate}
+                </CustomText>
+              </View>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
+                ]}
+              >
+                <Ionicons name="car" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {booking.VehicleNumber}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="time-outline" size={16} color={color.primary} />
+                <View style={{ flexDirection: "column" }}>
+                  {booking.TimeSlot?.split(",").map((slot, index) => (
+                    <CustomText
+                      key={index}
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                      {slot.trim()}
+                    </CustomText>
+                  ))}
+                </View>
+              </View>
+            </View>
           </View>
-          <View style={[globalStyles.divider, globalStyles.mt2]} />
-          <View style={[globalStyles.flexrow]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-             
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={16}
-                color={color.primary}
-                style={{ marginRight: 6 }}
-              />
-              <CustomText
-                style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
-                ]}
-              >
-                {booking.BookingTrackID}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-             
-              <Ionicons name="calendar" size={16} color={color.primary} />
-              <CustomText
-                style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
-                ]}
-              >
-                {booking.BookingDate}
-              </CustomText>
-            </View>
-          </View>
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-              
-              <Ionicons name="car" size={16} color={color.primary} />
-              <CustomText
-                style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
-                ]}
-              >
-                {booking.VehicleNumber}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Ionicons name="time-outline" size={16} color={color.primary} />
-              <CustomText
-                style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
-                ]}
-              >
-                {booking.TimeSlot}
-              </CustomText>
-            </View>
-          </View>
-        </View>
 
           <View style={{ marginTop: 12 }}>
             <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
@@ -451,11 +453,14 @@ export default function ServiceEnd() {
                 alignItems: "center",
               }}
             >
-              <CustomText style={[globalStyles.textWhite,globalStyles.f12Bold]}>
+              <CustomText
+                style={[globalStyles.textWhite, globalStyles.f12Bold]}
+              >
                 Estimated Time
               </CustomText>
-              <CustomText style={[globalStyles.textWhite,globalStyles.f14Bold]}>
-
+              <CustomText
+                style={[globalStyles.textWhite, globalStyles.f14Bold]}
+              >
                 {formatReadableTime(estimatedTime)}
               </CustomText>
             </View>
@@ -471,11 +476,14 @@ export default function ServiceEnd() {
                 alignItems: "center",
               }}
             >
-              <CustomText style={[globalStyles.textWhite,globalStyles.f12Bold]}>
-              Extended Time
+              <CustomText
+                style={[globalStyles.textWhite, globalStyles.f12Bold]}
+              >
+                Extended Time
               </CustomText>
-              <CustomText style={[globalStyles.textWhite,globalStyles.f14Bold]}>
-
+              <CustomText
+                style={[globalStyles.textWhite, globalStyles.f14Bold]}
+              >
                 {extendedTime > 0 ? formatReadableTime(extendedTime) : "0 min"}
               </CustomText>
             </View>
@@ -493,7 +501,7 @@ export default function ServiceEnd() {
           {/* Total Time */}
           <View
             style={[
-               globalStyles.bgBlack,
+              globalStyles.bgBlack,
               globalStyles.pv4,
               globalStyles.radius,
               globalStyles.mt4,
@@ -501,11 +509,10 @@ export default function ServiceEnd() {
               globalStyles.p4,
             ]}
           >
-              <CustomText style={[globalStyles.textWhite,globalStyles.f16Bold]}>
+            <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
               Total Hours
             </CustomText>
-            <CustomText style={[globalStyles.textWhite,globalStyles.f16Bold]}>
-
+            <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
               {formatReadableTime(actualTime)}
             </CustomText>
           </View>
@@ -669,10 +676,13 @@ export default function ServiceEnd() {
               </CustomText>
             </TouchableOpacity>
           )} */}
-     {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
+          {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
             <TouchableOpacity
               onPress={Completedservice}
-              style={globalStyles.blackButton}
+              style={[
+                globalStyles.blackButton,
+                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 12 },
+              ]}
             >
               <CustomText
                 style={[globalStyles.f12Bold, globalStyles.textWhite]}
