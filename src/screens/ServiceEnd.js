@@ -7,7 +7,6 @@ import {
   View,
   Alert,
   Pressable,
-  Modal,
   StyleSheet,
   Keyboard,
   KeyboardAvoidingView,
@@ -58,11 +57,6 @@ export default function ServiceEnd() {
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
   const [selectedReason, setSelectedReason] = useState(null);
   const anyServicePending = services.some((service) => !service.completed);
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
-  const [otpValid, setOtpValid] = useState(false);
   const bookingId = booking.BookingID;
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -82,15 +76,6 @@ export default function ServiceEnd() {
   }, []);
 
   const Completedservice = async () => {
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP");
-      return;
-    }
-    const isValid = await updateTechnicianTracking("Completed");
-    if (!isValid) {
-      return;
-    }
-    setError("");
     navigation.navigate("CollectPayment", { booking });
   };
   // const Dashboard = async () => {
@@ -148,37 +133,7 @@ export default function ServiceEnd() {
     "Customer said not to do",
     "Unable to do that service part",
   ];
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const payload = {
-        bookingID: Number(bookingId),
-        actionType: actionType,
-        bookingOTP: otp,
-      };
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        payload
-      );
-
-      const data = response?.data ?? {};
-      if (data?.status === false || data?.isValid === false) {
-        setOtpValid(false);
-        setError("Invalid OTP. Please try again.");
-        setModalMessage("Invalid OTP. Please try again.");
-        setModalVisible(true);
-        return false;
-      }
-
-      setOtpValid(true);
-      return true;
-    } catch (error) {
-      setOtpValid(false);
-      setError("Invalid OTP. Please try again.");
-      setModalMessage("Invalid OTP. Please try again.");
-      setModalVisible(true);
-      return false;
-    }
-  };
+  
 
   return (
     <KeyboardAvoidingView
@@ -628,38 +583,7 @@ export default function ServiceEnd() {
           </View>
         )} */}
 
-          <CustomText
-            style={[
-              globalStyles.f16Light,
-              globalStyles.mt3,
-              globalStyles.neutral500,
-            ]}
-          >
-            Enter OTP
-          </CustomText>
-          <TextInput
-            style={[
-              globalStyles.inputBox,
-              globalStyles.mt1,
-              { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
-            ]}
-            placeholder="Enter OTP"
-            value={otp}
-            onChangeText={(text) => {
-              if (/^\d{0,6}$/.test(text)) {
-                setOtp(text);
-                setError("");
-              }
-            }}
-            keyboardType="numeric"
-            maxLength={6}
-          />
-
-          {error ? (
-            <CustomText style={{ color: "red", marginTop: 5 }}>
-              {error}
-            </CustomText>
-          ) : null}
+          
 
           {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
             <TouchableOpacity
