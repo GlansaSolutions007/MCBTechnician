@@ -14,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import NotificationBadge from "./NotificationBadge";
 
-export default function CustomHeader() {
+export default function CustomHeader({ screenName }) {
   const [name, setName] = useState("");
   const navigation = useNavigation();
   const Notifications = () => {
@@ -68,7 +68,7 @@ export default function CustomHeader() {
               Hello, {name || "Buddy"}
             </CustomText>
             <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite, { opacity: 0.9 }]}>
-              Welcome back! Here's your dashboard
+            Welcome back! Here's your {screenName || "Dashboard"}
             </CustomText>
           </View>
 

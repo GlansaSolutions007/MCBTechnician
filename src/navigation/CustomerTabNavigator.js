@@ -20,7 +20,7 @@ export default function CustomerTabNavigator({ navigation }) {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        header: () => <CustomHeader />,
+        header: () => <CustomHeader screenName={route.name} />,
         tabBarShowLabel: true,
         tabBarActiveTintColor: color.primary,
         tabBarInactiveTintColor: "#8e8e93",
