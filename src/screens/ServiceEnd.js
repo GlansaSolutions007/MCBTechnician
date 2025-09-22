@@ -13,6 +13,7 @@ import {
   Platform,
   Linking,
   Vibration,
+  Modal,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -60,6 +61,13 @@ export default function ServiceEnd() {
   const bookingId = booking.BookingID;
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [otpValid, setOtpValid] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -75,28 +83,118 @@ export default function ServiceEnd() {
     };
   }, []);
 
+  const sendOTP = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.post(
+        `${API_BASE_URL}Auth/send-otp`,
+        {
+          loginId: booking.PhoneNumber,
+        }
+      );
+
+      if (response?.data?.status === true || response?.data?.success === true) {
+        setOtpSent(true);
+        setModalMessage("OTP sent successfully to customer!");
+        setModalVisible(true);
+      } else {
+        setModalMessage("Failed to send OTP. Please try again.");
+        setModalVisible(true);
+      }
+    } catch (error) {
+      setModalMessage("Failed to send OTP. Please try again.");
+      setModalVisible(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.post(
+        `${API_BASE_URL}Auth/verify-otp`,
+        {
+          loginId: booking.PhoneNumber,
+          otp: otp,
+          deviceToken: "dummy",
+          deviceId: "dummy",
+        }
+      );
+
+      if (
+        response?.data?.status === true ||
+        response?.data?.success === true ||
+        response?.data?.isValid === true
+      ) {
+        setOtpValid(true);
+        return true;
+      } else {
+        setOtpValid(false);
+        setModalMessage("Invalid OTP. Please try again.");
+        setModalVisible(true);
+        return false;
+      }
+    } catch (error) {
+      setOtpValid(false);
+      setModalMessage("Invalid OTP. Please try again.");
+      setModalVisible(true);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateTechnicianTracking = async (actionType) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
+        {
+          bookingID: Number(bookingId),
+          actionType: actionType,
+          bookingOTP: otp,
+        }
+      );
+
+      if (
+        response?.data?.status === false ||
+        response?.data?.isValid === false
+      ) {
+        setOtpValid(false);
+        setModalMessage("Invalid OTP. Please try again.");
+        setModalVisible(true);
+        return false;
+      }
+      setOtpValid(true);
+      return true;
+    } catch (error) {
+      setOtpValid(false);
+      setModalMessage("Invalid OTP. Please try again.");
+      setModalVisible(true);
+      return false;
+    }
+  };
+
   const Completedservice = async () => {
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+    
+    // First verify OTP with Auth API
+    const otpValid = await verifyOTP();
+    if (!otpValid) {
+      return;
+    }
+    
+    // After OTP verification, update technician tracking status
+    const statusUpdated = await updateTechnicianTracking("Completed");
+    if (!statusUpdated) {
+      return;
+    }
+    
     navigation.navigate("CollectPayment", { booking });
   };
-  // const Dashboard = async () => {
-  //   if (!otp || otp.length !== 6) {
-  //     setError("Please enter a valid 6-digit OTP");
-  //     return;
-  //   }
-  //   const isValid = await updateTechnicianTracking("Completed");
-  //   if (!isValid) {
-  //     return;
-  //   }
-  //   await updateTechnicianTracking("Completed");
-
-  //   navigation.reset({
-  //     index: 0,
-  //     routes: [
-  //       { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
-  //     ],
-  //   });
-  // };
-
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -114,15 +212,6 @@ export default function ServiceEnd() {
 
     fetchLeads();
   }, []);
-
-  // const toggleService = (id) => {
-  //   setServices((prev) =>
-  //     prev.map((s) =>
-  //       s.IncludeID === id ? { ...s, completed: !s.completed } : s
-  //     )
-  //   );
-  // };
-
   const extendedTime =
     actualTime > estimatedTime ? actualTime - estimatedTime : 0;
 
@@ -156,14 +245,6 @@ export default function ServiceEnd() {
             ]}
           >
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              {/* <Image
-              source={{
-                uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  booking.CustomerName
-                )}&background=E8E8E8`,
-              }}
-              style={{ width: 46, height: 46, borderRadius: 10 }}
-            /> */}
               <Image
                 source={
                   booking.ProfileImage
@@ -326,67 +407,6 @@ export default function ServiceEnd() {
               </View>
             ))}
 
-            {/* Show this if any checkbox is not checked */}
-            {/* {anyServicePending && (
-            <View>
-              <CustomText style={[globalStyles.f14Bold, globalStyles.mt2]}>
-                Any obstacle for pending services?
-              </CustomText>
-              <View
-                style={[
-                  globalStyles.bgwhite,
-                  globalStyles.p4,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.mt3,
-                ]}
-              >
-                {pendingservices.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedReason2(item)}
-                    style={[
-                      globalStyles.mb2,
-                      globalStyles.ph2,
-                      globalStyles.pv4,
-                      globalStyles.radius,
-                      {
-                        backgroundColor:
-                          selectedReason2 === item ? "#0D6C62" : "#E9E9E9",
-                        alignItems: "center",
-                      },
-                    ]}
-                  >
-                    <CustomText
-                      style={[
-                        globalStyles.font16,
-                        globalStyles.fontWeight600,
-                        {
-                          color: selectedReason2 === item ? "#fff" : "#000",
-                        },
-                      ]}
-                    >
-                      {item}
-                    </CustomText>
-                  </TouchableOpacity>
-                ))}
-                <View style={globalStyles.mt3}>
-                  <CustomText
-                    style={[globalStyles.font16, globalStyles.fontWeight600]}
-                  >
-                    Others
-                  </CustomText>
-                  <TextInput
-                    style={[globalStyles.textArea, globalStyles.mt3]}
-                    placeholder="eg. Sick leave..., Going to village"
-                    value={reason}
-                    onChangeText={setReason}
-                    maxLength={100}
-                    multiline
-                  />
-                </View>
-              </View>
-            </View>
-          )} */}
           </View>
 
           {/* Estimated and Extended Time */}
@@ -444,15 +464,6 @@ export default function ServiceEnd() {
             </View>
           </View>
 
-          {/* Buddy image */}
-          {/* <View style={{ alignItems: "center", marginVertical: 20 }}>
-            <Image
-              source={buddy}
-              resizeMode="contain"
-              style={{ width: 200, height: 200 }}
-            />
-          </View> */}
-
           {/* Total Time */}
           <View
             style={[
@@ -472,151 +483,133 @@ export default function ServiceEnd() {
             </CustomText>
           </View>
 
-          {/* Reason for extended time */}
-          {/* {extendedTime > 0 && (
-          <View>
-            <CustomText
-              style={[
-                globalStyles.f28Medium,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              Hey{" "}
-              <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
-                Buddy
-              </CustomText>
-            </CustomText>
-            <CustomText
-              style={[
-                globalStyles.f12Regular,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              If the estimation time exceeded. Please feel free to mention the
-              reason
-            </CustomText>
-
-            <View
-              style={[
-                globalStyles.bgwhite,
-                globalStyles.p4,
-                globalStyles.borderRadiuslarge,
-                globalStyles.mt3,
-              ]}
-            > */}
-          {/* {reasonsList.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setSelectedReason(item)}
-                  style={[
-                    globalStyles.mb2,
-                    globalStyles.ph2,
-                    globalStyles.pv4,
-                    globalStyles.radius,
-                    {
-                      backgroundColor: selectedReason === item ? "#0D6C62" : "#E9E9E9",
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  <CustomText
-                    style={[
-                      globalStyles.font16,
-                      globalStyles.fontWeight600,
-                      {
-                        color: selectedReason === item ? "#fff" : "#000",
-                      },
-                    ]}
-                  >
-                    {leads.Reason}
-                  </CustomText>
-                </TouchableOpacity>
-              ))} */}
-
-          {/* {leads.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setSelectedReason(item.ID)}
-                  style={[
-                    globalStyles.mb2,
-                    globalStyles.ph2,
-                    globalStyles.pv4,
-                    globalStyles.radius,
-                    {
-                      backgroundColor:
-                        selectedReason === item.ID ? "#0D6C62" : "#E9E9E9",
-                      alignItems: "center",
-                    },
-                  ]}
-                >
-                  <CustomText
-                    style={[
-                      globalStyles.font16,
-                      {
-                        color: selectedReason === item.ID ? "#fff" : "#000",
-                      },
-                    ]}
-                  >
-                    {item.Reason}
-                  </CustomText>
-                </TouchableOpacity>
-              ))}
-
-              <View style={globalStyles.mt3}>
-                <CustomText
-                  style={[globalStyles.font16, globalStyles.fontWeight600]}
-                >
-                  Others
-                </CustomText>
-                <TextInput
-                  style={[globalStyles.textArea, globalStyles.mt3]}
-                  placeholder="eg. Sick leave..., Going to village"
-                  value={reason}
-                  onChangeText={setReason}
-                  maxLength={100}
-                  multiline
-                />
-              </View>
-            </View>
-          </View>
-        )} */}
-
-          
-
-          {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
+          {/* Get OTP Button */}
+          {!otpSent && (
             <TouchableOpacity
-              onPress={CollectPayment}
+              onPress={sendOTP}
+              disabled={isLoading}
               style={[
                 globalStyles.blackButton,
-                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 20 },
+                { marginTop: 16, opacity: isLoading ? 0.6 : 1 },
               ]}
             >
               <CustomText
                 style={[globalStyles.f12Bold, globalStyles.textWhite]}
               >
-                Collect cash
-              </CustomText>
-            </TouchableOpacity>
-          )} */}
-          {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && (
-            <TouchableOpacity
-              onPress={Completedservice}
-              style={[
-                globalStyles.blackButton,
-                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 12 },
-              ]}
-            >
-              <CustomText
-                style={[globalStyles.f12Bold, globalStyles.textWhite]}
-              >
-                Completed
+                {isLoading ? "Sending OTP..." : "Get OTP"}
               </CustomText>
             </TouchableOpacity>
           )}
+
+          {/* OTP Section - Only show after OTP is sent */}
+          {otpSent && (
+            <>
+              <CustomText
+                style={[
+                  globalStyles.f16Light,
+                  globalStyles.mt3,
+                  globalStyles.neutral500,
+                ]}
+              >
+                Enter OTP
+              </CustomText>
+              <TextInput
+                style={[
+                  globalStyles.inputBox,
+                  globalStyles.mt1,
+                  { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
+                ]}
+                placeholder="Enter OTP"
+                value={otp}
+                onChangeText={(text) => {
+                  if (/^\d{0,6}$/.test(text)) {
+                    setOtp(text);
+                    setError("");
+                  }
+                }}
+                keyboardType="numeric"
+                maxLength={6}
+              />
+
+              {error ? (
+                <CustomText style={{ color: "red", marginTop: 5 }}>
+                  {error}
+                </CustomText>
+              ) : null}
+            </>
+          )}
+
+       
+          {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && (
+            <TouchableOpacity
+              onPress={Completedservice}
+              disabled={isLoading}
+              style={[
+                globalStyles.blackButton,
+                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 12, opacity: isLoading ? 0.6 : 1 },
+              ]}
+            >
+              <CustomText
+                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+              >
+                {isLoading ? "Verifying..." : "Completed"}
+              </CustomText>
+            </TouchableOpacity>
+          )}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <CustomText
+                  style={[globalStyles.f16Bold, globalStyles.textac, { marginTop: 10 }]}
+                >
+                  {modalMessage}
+                </CustomText>
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
+                    OK
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  okButton: {
+    marginTop: 20,
+    backgroundColor: color.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+});
