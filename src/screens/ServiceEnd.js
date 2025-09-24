@@ -87,9 +87,11 @@ export default function ServiceEnd() {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        `${API_BASE_URL}Auth/send-otp`,
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
-          loginId: booking.PhoneNumber,
+          // loginId: booking.PhoneNumber,
+          bookingID: Number(bookingId),
+          actionType: "SendOTP",
         }
       );
 
@@ -113,12 +115,15 @@ export default function ServiceEnd() {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        `${API_BASE_URL}Auth/verify-otp`,
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
-          loginId: booking.PhoneNumber,
-          otp: otp,
-          deviceToken: "dummy",
-          deviceId: "dummy",
+          bookingID: Number(bookingId),
+          actionType: "VerifyOTP",
+          bookingOTP: otp,
+          // loginId: booking.PhoneNumber,
+          // otp: otp,
+          // deviceToken: "dummy",
+          // deviceId: "dummy",
         }
       );
 
