@@ -609,6 +609,13 @@ export default function ServiceStart() {
                       timerCompleted: false,
                     })
                   );
+
+                  // Reload this screen with updated booking so timer starts immediately
+                  const updatedBooking = {
+                    ...booking,
+                    ServiceStartedAt: new Date().toISOString(),
+                  };
+                  navigation.replace(route.name, { booking: updatedBooking });
                 }}
               >
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
