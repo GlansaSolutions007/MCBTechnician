@@ -70,12 +70,18 @@ export default function CollectPayment() {
         setLoading(true);
 
         const bookingID = booking?.BookingID;
+        console.log(bookingID)
         const amount = Math.round(Number(booking?.TotalPrice));
 
         const qrResponse = await axios.get(
-          `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
+          // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
+          `${API_BASE_URL}api/payments/qr`,
           {
             responseType: "arraybuffer",
+            params: {
+              bookingID: bookingID,
+              amount: 1,
+            },
           }
         );
 
