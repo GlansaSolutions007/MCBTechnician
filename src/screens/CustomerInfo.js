@@ -577,7 +577,7 @@ export default function CustomerInfo() {
             <View style={[styles.width30]}>
               <View>
                 <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textWhite]}
+                  style={[globalStyles.f10Light, globalStyles.textyellow]}
                 >
                   Reg No
                 </CustomText>
@@ -589,7 +589,7 @@ export default function CustomerInfo() {
               </View>
               <View>
                 <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textWhite]}
+                  style={[globalStyles.f10Light, globalStyles.textyellow]}
                 >
                   Fuel Type
                 </CustomText>
@@ -601,7 +601,7 @@ export default function CustomerInfo() {
               </View>
               <View>
                 <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textWhite]}
+                  style={[globalStyles.f10Light, globalStyles.textyellow]}
                 >
                   Manufacturer
                 </CustomText>
