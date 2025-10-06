@@ -52,6 +52,8 @@ export default function CustomerInfo() {
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
+  const [expandedPackages, setExpandedPackages] = useState({});
+  const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   // const today = new Date().toISOString().split("T")[0];
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -143,6 +145,19 @@ export default function CustomerInfo() {
   const destination = {
     Latitude: parseFloat(Latitude),
     Longitude: parseFloat(Longitude),
+  };
+
+  const togglePackageExpanded = (packageId) => {
+    setExpandedPackages((prev) => ({
+      ...prev,
+      [packageId]: !prev[packageId],
+    }));
+  };
+
+  const getNotePreview = (text, limit = 140) => {
+    if (!text) return "No notes from customer";
+    if (text.length <= limit || isNoteExpanded) return text;
+    return text.slice(0, limit).trim() + "...";
   };
 
   useEffect(() => {
@@ -488,25 +503,6 @@ export default function CustomerInfo() {
                   globalStyles.flexrow,
                   globalStyles.mt2,
                   globalStyles.alineItemscenter,
-                  globalStyles.w40,
-                ]}
-              >
-                <Ionicons name="car" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.VehicleNumber}
-                </CustomText>
-              </View>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
                 ]}
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
@@ -706,92 +702,93 @@ export default function CustomerInfo() {
                   globalStyles.mt3,
                   globalStyles.bgwhite,
                   globalStyles.radius,
-                  globalStyles.p3,
+                  globalStyles.p2,
                   globalStyles.card,
                 ]}
               >
-                {/* Package Name */}
-                <CustomText
-                  style={[
-                    globalStyles.f16Bold,
-                    globalStyles.black,
-                    globalStyles.mb1,
-                  ]}
-                >
-                  {pkg.PackageName}
-                </CustomText>
-
-                {/* Estimated Time */}
-                <View
+                <TouchableOpacity
+                  onPress={() => togglePackageExpanded(pkg.PackageID)}
                   style={[
                     globalStyles.flexrow,
                     globalStyles.alineItemscenter,
-                    globalStyles.mb2,
+                    globalStyles.justifysb,
+                    globalStyles.p1,
                   ]}
                 >
-                  <CustomText
-                    style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                  >
-                    Estimated Time:{" "}
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Bold, globalStyles.black]}
-                  >
-                    {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
-                      pkg.EstimatedDurationMinutes % 60
-                    }m`}
-                  </CustomText>
-                </View>
-
-                {/* Category */}
-                {pkg.Category && (
-                  <View style={globalStyles.mt1}>
+                  <View style={{ flex: 1 }}>
                     <CustomText
                       style={[
-                        globalStyles.f14Bold,
-                        globalStyles.primary,
-                        globalStyles.mb1,
+                        globalStyles.f16Bold,
+                        globalStyles.black,
                       ]}
                     >
-                      {pkg.Category.CategoryName}
+                      {pkg.PackageName}
                     </CustomText>
+                    <CustomText
+                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                    >
+                      {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
+                        pkg.EstimatedDurationMinutes % 60
+                      }m`}
+                    </CustomText>
+                  </View>
+                  <Ionicons
+                    name={expandedPackages[pkg.PackageID] ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={color.primary}
+                  />
+                </TouchableOpacity>
 
-                    {/* Subcategories */}
-                    {pkg.Category.SubCategories?.map((sub) => (
-                      <View
-                        key={sub.SubCategoryID}
-                        style={[
-                          globalStyles.mt2,
-                          globalStyles.bgneutral100,
-                          globalStyles.radius,
-                          globalStyles.p2,
-                        ]}
-                      >
+                {expandedPackages[pkg.PackageID] && (
+                  <View style={[globalStyles.mt1, globalStyles.p2]}>
+                    {pkg.Category && (
+                      <View style={globalStyles.mt1}>
                         <CustomText
                           style={[
-                            globalStyles.f12Medium,
-                            globalStyles.black,
+                            globalStyles.f14Bold,
+                            globalStyles.primary,
                             globalStyles.mb1,
                           ]}
                         >
-                          {sub.SubCategoryName}
+                          {pkg.Category.CategoryName}
                         </CustomText>
 
-                        {/* Includes */}
-                        {sub.Includes?.map((inc) => (
-                          <CustomText
-                            key={inc.IncludeID}
+                        {pkg.Category.SubCategories?.map((sub) => (
+                          <View
+                            key={sub.SubCategoryID}
                             style={[
-                              globalStyles.f12Regular,
-                              globalStyles.primary,
-                              globalStyles.ml2,
+                              globalStyles.mt2,
+                              globalStyles.bgneutral100,
+                              globalStyles.radius,
+                              globalStyles.p2,
                             ]}
                           >
-                            • {inc.IncludeName}
-                          </CustomText>
+                            <CustomText
+                              style={[
+                                globalStyles.f12Medium,
+                                globalStyles.black,
+                                globalStyles.mb1,
+                              ]}
+                            >
+                              {sub.SubCategoryName}
+                            </CustomText>
+
+                            {sub.Includes?.map((inc) => (
+                              <CustomText
+                                key={inc.IncludeID}
+                                style={[
+                                  globalStyles.f12Regular,
+                                  globalStyles.primary,
+                                  globalStyles.ml2,
+                                ]}
+                              >
+                                • {inc.IncludeName}
+                              </CustomText>
+                            ))}
+                          </View>
                         ))}
                       </View>
-                    ))}
+                    )}
                   </View>
                 )}
               </View>
@@ -854,9 +851,16 @@ export default function CustomerInfo() {
             <CustomText
               style={[globalStyles.f12Regular, globalStyles.textyellow]}
             >
-              {booking.Notes ? booking.Notes : "No notes from customer"}
+              {getNotePreview(booking.Notes)}
             </CustomText>
           </CustomText>
+          {booking.Notes && booking.Notes.length > 140 && (
+            <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
+              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                {isNoteExpanded ? "Show less" : "Show more"}
+              </CustomText>
+            </TouchableOpacity>
+          )}
 
           <View
             style={[
@@ -913,41 +917,43 @@ export default function CustomerInfo() {
 
                     {(booking.BookingStatus === "StartJourney" ||
                       booking.BookingStatus === "ServiceStarted") && (
-                      <TouchableOpacity
-                        style={styles.startButton}
-                        onPress={handleStartRidedirect}
-                      >
-                        <Ionicons
-                          name="navigate"
-                          size={20}
-                          color="#fff"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText
-                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                      <View style={styles.startreach}>
+                        <TouchableOpacity
+                          style={[styles.startButton, { flex: 1 }]}
+                          onPress={handleStartRidedirect}
                         >
-                          Navigate
-                        </CustomText>
-                      </TouchableOpacity>
-                    )}
+                          <Ionicons
+                            name="navigate"
+                            size={20}
+                            color="#fff"
+                            style={{ marginRight: 8 }}
+                          />
+                          <CustomText
+                            style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                          >
+                            Navigate
+                          </CustomText>
+                        </TouchableOpacity>
 
-                    {booking.BookingStatus === "StartJourney" && (
-                      <TouchableOpacity
-                        style={styles.ReachedButton}
-                        onPress={Reached}
-                      >
-                        <Ionicons
-                          name="flag"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText
-                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                        >
-                          Reached
-                        </CustomText>
-                      </TouchableOpacity>
+                        {booking.BookingStatus === "StartJourney" && (
+                          <TouchableOpacity
+                            style={[styles.ReachedButton, { flex: 1 }]}
+                            onPress={Reached}
+                          >
+                            <Ionicons
+                              name="flag"
+                              size={20}
+                              color="white"
+                              style={{ marginRight: 8 }}
+                            />
+                            <CustomText
+                              style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                            >
+                              Reached
+                            </CustomText>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     )}
                   </>
                 )}
@@ -1096,7 +1102,7 @@ const styles = StyleSheet.create({
 
   avatar: {
     width: "100%",
-    height: "70%",
+    height: "55%",
     marginTop: 10,
   },
 
@@ -1151,3 +1157,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
