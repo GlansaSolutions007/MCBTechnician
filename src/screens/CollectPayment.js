@@ -70,25 +70,37 @@ export default function CollectPayment() {
         setLoading(true);
 
         const bookingID = booking?.BookingID;
-        console.log(bookingID)
+        // console.log(bookingID)
         const amount = Math.round(Number(booking?.TotalPrice));
 
-        const qrResponse = await axios.get(
-          // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
-          `${API_BASE_URL}api/payments/qr`,
+        const qrResponse = await axios.post(
+          `${API_BASE_URL}payments/qr`,
           {
-            responseType: "arraybuffer",
-            params: {
-              bookingID: bookingID,
-              amount: 1,
-            },
+            bookingID: bookingID,
+            amount: 1,
+          },
+          {
+            headers: { Accept: "application/json" },
           }
         );
+        console.log("QRResponse", qrResponse);
 
-        const base64Image = `data:image/png;base64,${encode(qrResponse.data)}`;
-        setQrImage(base64Image);
+        // If backend returns Razorpay-style payload { image_url: ... }
+        if (qrResponse?.data && typeof qrResponse.data === "object" && qrResponse.data.image_url) {
+          setQrImage(qrResponse.data.image_url);
+        } else if (qrResponse?.data && (qrResponse.request?.responseType === "arraybuffer" || qrResponse.data instanceof ArrayBuffer)) {
+          // Fallback: if binary data was returned, base64 encode it
+          const base64Image = `data:image/png;base64,${encode(qrResponse.data)}`;
+          setQrImage(base64Image);
+        } else if (qrResponse?.data?.image_url === undefined && typeof qrResponse?.data === "string") {
+          // Edge case: backend returns URL as plain string
+          setQrImage(qrResponse.data);
+        } else {
+          console.warn("Unexpected QR response format", qrResponse?.data);
+          setQrImage(null);
+        }
       } catch (error) {
-        console.error("QR Generation Error:", error.response?.data || error);
+        console.error("QR Generation Error:", error);
         console.log("Error", "Failed to generate QR code");
       } finally {
         setLoading(false);
