@@ -31,7 +31,10 @@ export default function CollectPayment() {
   const [qrImage, setQrImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-
+  const [qrId, setQrId] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("Payment Successful");
+console.log("qrId",qrId)
   const handleCompletePayment = async () => {
     try {
       const payload = {
@@ -70,35 +73,64 @@ export default function CollectPayment() {
         setLoading(true);
 
         const bookingID = booking?.BookingID;
-        // console.log(bookingID)
+        console.log("bookingID",bookingID)
         const amount = Math.round(Number(booking?.TotalPrice));
 
         const qrResponse = await axios.post(
+          // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
           `${API_BASE_URL}payments/qr`,
           {
-            bookingID: bookingID,
-            amount: 1,
-          },
-          {
-            headers: { Accept: "application/json" },
+            // responseType: "arraybuffer",
+              bookingID: bookingID,
+              amount: 1,
           }
         );
-        console.log("QRResponse", qrResponse);
+        console.log("qrResponse", qrResponse?.data);
 
-        // If backend returns Razorpay-style payload { image_url: ... }
-        if (qrResponse?.data && typeof qrResponse.data === "object" && qrResponse.data.image_url) {
-          setQrImage(qrResponse.data.image_url);
-        } else if (qrResponse?.data && (qrResponse.request?.responseType === "arraybuffer" || qrResponse.data instanceof ArrayBuffer)) {
-          // Fallback: if binary data was returned, base64 encode it
-          const base64Image = `data:image/png;base64,${encode(qrResponse.data)}`;
-          setQrImage(base64Image);
-        } else if (qrResponse?.data?.image_url === undefined && typeof qrResponse?.data === "string") {
-          // Edge case: backend returns URL as plain string
-          setQrImage(qrResponse.data);
+        // Extract identifiers and URLs from response
+        const responseData = qrResponse?.data;
+        const returnedQrId =
+          responseData?.qrId ||
+          responseData?.QRID ||
+          responseData?.id ||
+          qrResponse?.headers?.qrid ||
+          qrResponse?.headers?.["x-qr-id"] ||
+          qrResponse?.headers?.["qr-id"];
+
+        if (returnedQrId) {
+          setQrId(String(returnedQrId));
         } else {
-          console.warn("Unexpected QR response format", qrResponse?.data);
-          setQrImage(null);
+          // Fallback: try extracting from booking payments array if present
+          const pendingPaymentFromBooking = booking?.Payments?.find(
+            (p) => p?.PaymentStatus === "Pending"
+          );
+          const bookingQrId =
+            pendingPaymentFromBooking?.QRID ||
+            pendingPaymentFromBooking?.qrId ||
+            pendingPaymentFromBooking?.QrId;
+          if (bookingQrId) {
+            setQrId(String(bookingQrId));
+          }
         }
+
+        // Determine QR content/source
+        const directImageUrl = responseData?.imageUrl || responseData?.qrImageUrl;
+        const razorpayShortLink =
+          responseData?.url ||
+          responseData?.paymentUrl ||
+          (typeof responseData === "string" ? responseData : null);
+
+        // If backend returned a page/link (e.g., https://rzp.io/rzp/XXXX), generate a QR image from it
+        const qrImageUrl = directImageUrl
+          ? directImageUrl
+          : razorpayShortLink
+          ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=2&data=${encodeURIComponent(
+              razorpayShortLink
+            )}`
+          : null;
+
+        setQrImage(qrImageUrl);
+        console.log(qrImageUrl);
       } catch (error) {
         console.error("QR Generation Error:", error);
         console.log("Error", "Failed to generate QR code");
@@ -109,6 +141,40 @@ export default function CollectPayment() {
 
     generateQR();
   }, [booking]);
+
+  // Poll payment status by QR ID and open modal when captured
+  useEffect(() => {
+    if (!qrId) return;
+
+    let isActive = true;
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}Payments/status/${qrId}`);
+        const status = res?.data?.status || res?.data?.Status;
+        const success = res?.data?.success;
+console.log("status",status);
+        if (!isActive) return;
+        if (status) {
+          setPaymentStatus(status);
+        }
+
+        const normalized = typeof status === "string" ? status.toLowerCase() : status;
+        if (normalized === "captured" || normalized === "closed") {
+          const idToShow = res?.data?.bookingId ?? booking?.BookingID;
+          setSuccessMessage(`Payment done successfully`);
+          clearInterval(intervalId);
+          setShowSuccessModal(true);
+        }
+      } catch (e) {
+        // keep polling on transient errors
+      }
+    }, 3000);
+
+    return () => {
+      isActive = false;
+      clearInterval(intervalId);
+    };
+  }, [qrId]);
 
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
@@ -210,7 +276,7 @@ export default function CollectPayment() {
           </CustomText>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={handleCompletePayment}
           style={[
             globalStyles.blackButton,
@@ -221,7 +287,7 @@ export default function CollectPayment() {
           <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
             Mark as Completed
           </CustomText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <Modal
@@ -249,20 +315,9 @@ export default function CollectPayment() {
                 { marginTop: 4 },
               ]}
             >
-              🎉 Payment Successful 🎉
+               {successMessage} 
             </CustomText>
 
-            <CustomText
-              style={[
-                globalStyles.f16,
-                globalStyles.textac,
-                globalStyles.gray,
-                globalStyles.mt2,
-              ]}
-            >
-              Thank you for your payment!{"\n"}
-              We truly appreciate your trust and support
-            </CustomText>
 
             <Pressable
               style={[styles.button, styles.doneButton]}
@@ -282,7 +337,7 @@ export default function CollectPayment() {
               <CustomText
                 style={[globalStyles.textWhite, globalStyles.f14Bold]}
               >
-                Back to Dashboard
+                Home
               </CustomText>
             </Pressable>
           </Pressable>
