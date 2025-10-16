@@ -364,7 +364,7 @@ export default function Bookings() {
                     </View>
                   </View>
 
-                  <View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <View
                       style={[
                         globalStyles.flexrow,
@@ -383,20 +383,14 @@ export default function Bookings() {
                       </CustomText>
                     </View>
 
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.mt2,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
+                    <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
                       <Ionicons
                         name="time-outline"
                         size={16}
                         color={color.primary}
                         style={{ marginRight: 6 }}
                       />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]}>
                         {item.TimeSlot}
                       </CustomText>
                     </View>
@@ -481,4 +475,8 @@ const styles = StyleSheet.create({
   skelLineSmall: { height: 12, borderRadius: 6 },
   skelFlexLine: { height: 12, borderRadius: 6, width: "90%" },
   skelIcon: { width: 16, height: 16, borderRadius: 8 },
+  timeValue: {
+    flex: 1,
+    flexWrap: "wrap",
+  },
 });

@@ -80,18 +80,36 @@ function Reportlist() {
     timeZone: "Asia/Kolkata",
   });
 
+  // const pastBookings = Array.isArray(bookings)
+  //   ? bookings.filter((booking) => {
+  //       if (!booking.BookingDate) return false;
+
+  //       const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+  //         "en-CA",
+  //         { timeZone: "Asia/Kolkata" }
+  //       );
+
+  //       return assignDateStr < todayIST;
+  //     })
+  //   : [];
   const pastBookings = Array.isArray(bookings)
-    ? bookings.filter((booking) => {
-        if (!booking.BookingDate) return false;
+  ? bookings.filter((booking) => {
+      if (!booking.BookingDate) return false;
 
-        const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
-          "en-CA",
-          { timeZone: "Asia/Kolkata" }
-        );
+      const bookingDateStr = new Date(booking.BookingDate).toLocaleDateString(
+        "en-CA",
+        { timeZone: "Asia/Kolkata" }
+      );
 
-        return assignDateStr < todayIST;
-      })
-    : [];
+      const isPastDate = bookingDateStr < todayIST;
+      const isCompleted =
+        booking.Status?.toLowerCase() === "completed" ||
+        booking.BookingStatus?.toLowerCase() === "completed";
+
+      return isPastDate || isCompleted;
+    })
+  : [];
+
 
   const renderBookingCard = ({ item, index }) => (
     <TouchableOpacity
@@ -117,7 +135,7 @@ function Reportlist() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Assigned on:
         </CustomText>
-        <CustomText style={globalStyles.f10Regular}>
+        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
           {item.BookingDate
             ? new Date(item.BookingDate).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -134,7 +152,7 @@ function Reportlist() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Time Slot:
         </CustomText>
-        <CustomText style={globalStyles.f10Regular}>
+        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
           {item.TimeSlot || "N/A"}
         </CustomText>
       </View>
@@ -145,7 +163,7 @@ function Reportlist() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Category:
         </CustomText>
-        <View>
+        <View style={{ flex: 1 }}>
           {item.Packages?.map((pkg, idx) => (
             <CustomText
               key={`cat-${item.BookingID ?? "x"}-${idx}`}
@@ -163,7 +181,7 @@ function Reportlist() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Package:
         </CustomText>
-        <View>
+        <View style={{ flex: 1 }}>
           {item.Packages?.map((pkg, idx) => (
             <CustomText
               key={`pkg-${item.BookingID ?? "x"}-${idx}`}
@@ -445,10 +463,16 @@ const styles = StyleSheet.create({
     ...globalStyles.flexrow,
     ...globalStyles.alineItemscenter,
     marginTop: 10,
+    flexWrap: "wrap",
+    alignItems: "flex-start",
   },
   infoLabel: {
     marginLeft: 4,
     marginRight: 4,
+  },
+  infoValue: {
+    flex: 1,
+    flexWrap: "wrap",
   },
 });
 

@@ -123,7 +123,7 @@ function TaskReportsScreen() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Assigned on:
         </CustomText>
-        <CustomText style={globalStyles.f10Regular}>
+        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
           {item.BookingDate
             ? new Date(item.BookingDate).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -140,7 +140,7 @@ function TaskReportsScreen() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Time Slot:
         </CustomText>
-        <CustomText style={globalStyles.f10Regular}>
+        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
           {item.TimeSlot || "N/A"}
         </CustomText>
       </View>
@@ -151,7 +151,7 @@ function TaskReportsScreen() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Category:
         </CustomText>
-        <View>
+        <View style={{ flex: 1 }}>
           {item.Packages?.map((pkg, idx) => (
             <CustomText
               key={`category-${item.BookingID}-${idx}`}
@@ -169,7 +169,7 @@ function TaskReportsScreen() {
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Package:
         </CustomText>
-        <View>
+        <View style={{ flex: 1 }}>
           {item.Packages?.map((pkg, idx) => (
             <CustomText
               key={`package-${item.BookingID}-${idx}`}
@@ -427,10 +427,16 @@ const styles = StyleSheet.create({
     ...globalStyles.flexrow,
     ...globalStyles.alineItemscenter,
     marginTop: 10,
+    flexWrap: "wrap",
+    alignItems: "flex-start",
   },
   infoLabel: {
     marginLeft: 4,
     marginRight: 4,
+  },
+  infoValue: {
+    flex: 1,
+    flexWrap: "wrap",
   },
 });
 
