@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CustomerTabNavigator from "./CustomerTabNavigator";
-import MyCars from "../screens/MyCars";
+// import MyCars from "../screens/MyCars";
 import InteriorService from "../screens/InteriorService";
 import TaskReportsScreen from "../screens/TaskReportsScreen";
 import Reviews from "../screens/Reviews";
@@ -27,11 +27,11 @@ export default function CustomerStackNavigator() {
         options={{ headerShown: false }}
       />
 
-      <Stack.Screen
+      {/* <Stack.Screen
         name="SelectCarBrand"
         component={MyCars}
         options={{ title: "Select Your Car" }}
-      />
+      /> */}
       {/* <Stack.Screen name="Tasks" component={TaskReportsScreen} /> */}
 
       <Stack.Screen
