@@ -185,19 +185,19 @@ export default function ServiceEnd() {
       setError("Please enter a valid 6-digit OTP");
       return;
     }
-    
+
     // First verify OTP with Auth API
     const otpValid = await verifyOTP();
     if (!otpValid) {
       return;
     }
-    
+
     // After OTP verification, update technician tracking status
     const statusUpdated = await updateTechnicianTracking("Completed");
     if (!statusUpdated) {
       return;
     }
-    
+
     navigation.navigate("CollectPayment", { booking });
   };
   useEffect(() => {
@@ -227,7 +227,6 @@ export default function ServiceEnd() {
     "Customer said not to do",
     "Unable to do that service part",
   ];
-  
 
   return (
     <KeyboardAvoidingView
@@ -411,7 +410,6 @@ export default function ServiceEnd() {
                 </CustomText>
               </View>
             ))}
-
           </View>
 
           {/* Estimated and Extended Time */}
@@ -488,79 +486,100 @@ export default function ServiceEnd() {
             </CustomText>
           </View>
 
-          {/* Get OTP Button */}
-          {!otpSent && (
-            <TouchableOpacity
-              onPress={sendOTP}
-              disabled={isLoading}
-              style={[
-                globalStyles.blackButton,
-                { marginTop: 16, opacity: isLoading ? 0.6 : 1 },
-              ]}
-            >
-              <CustomText
-                style={[globalStyles.f12Bold, globalStyles.textWhite]}
-              >
-                {isLoading ? "Sending OTP..." : "Get OTP"}
-              </CustomText>
-            </TouchableOpacity>
-          )}
-
           {/* OTP Section - Only show after OTP is sent */}
-          {otpSent && (
-            <>
-              <CustomText
-                style={[
-                  globalStyles.f16Light,
-                  globalStyles.mt3,
-                  globalStyles.neutral500,
-                ]}
-              >
-                Enter OTP
-              </CustomText>
-              <TextInput
-                style={[
-                  globalStyles.inputBox,
-                  globalStyles.mt1,
-                  { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
-                ]}
-                placeholder="Enter OTP"
-                value={otp}
-                onChangeText={(text) => {
-                  if (/^\d{0,6}$/.test(text)) {
-                    setOtp(text);
-                    setError("");
-                  }
-                }}
-                keyboardType="numeric"
-                maxLength={6}
-              />
-
-              {error ? (
-                <CustomText style={{ color: "red", marginTop: 5 }}>
-                  {error}
-                </CustomText>
-              ) : null}
-            </>
-          )}
-
-       
-          {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && (
-            <TouchableOpacity
-              onPress={Completedservice}
-              disabled={isLoading}
+          {/* {otpSent && ( */}
+          {/* <> */}
+          <CustomText
+            style={[
+              globalStyles.f16Light,
+              globalStyles.mt2,
+              globalStyles.neutral500,
+            ]}
+          >
+            Enter OTP
+          </CustomText>
+          <View
+            style={[
+              globalStyles.flexrow,
+              globalStyles.alineItemscenter,
+              { width: "100%" },
+            ]}
+          >
+            {/* OTP Input */}
+            <TextInput
               style={[
-                globalStyles.blackButton,
-                { marginTop: 16, marginBottom: keyboardVisible ? 130 : 12, opacity: isLoading ? 0.6 : 1 },
+                globalStyles.inputBox,
+                {
+                  flex: 1,
+                  borderColor: error ? "red" : "#ccc",
+                  borderWidth: 1,
+                  marginRight: 8,
+                },
               ]}
-            >
-              <CustomText
-                style={[globalStyles.f12Bold, globalStyles.textWhite]}
+              placeholder="Enter OTP"
+              value={otp}
+              onChangeText={(text) => {
+                if (/^\d{0,6}$/.test(text)) {
+                  setOtp(text);
+                  setError("");
+                }
+              }}
+              keyboardType="numeric"
+              maxLength={6}
+            />
+
+            {/* OTP Button */}
+            {/* {!otpSent && ( */}
+              <TouchableOpacity
+                onPress={sendOTP}
+                disabled={isLoading}
+                style={[
+                  globalStyles.blackButtonotp,
+                  globalStyles.alineItemscenter,
+                  globalStyles.justifyContentcenter,
+                  globalStyles.pv4,
+                  globalStyles.px3,
+                  {
+                    flex: 1,
+                    opacity: isLoading ? 0.6 : 1,
+                  },
+                ]}
               >
-                {isLoading ? "Verifying..." : "Completed"}
-              </CustomText>
-            </TouchableOpacity>
-          )}
+                <CustomText
+                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                >
+                  {isLoading ? "Sending OTP" : "Get OTP"}
+                </CustomText>
+              </TouchableOpacity>
+            {/* )} */}
+          </View>
+
+          {error ? (
+            <CustomText style={{ color: "red"}}>
+              {error}
+            </CustomText>
+          ) : null}
+          {/* </> */}
+          {/* )} */}
+
+          {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && ( */}
+          <TouchableOpacity
+            onPress={Completedservice}
+            disabled={isLoading}
+            style={[
+              globalStyles.blackButton,
+              {
+                marginTop: 16,
+                marginBottom: keyboardVisible ? 130 : 12,
+                opacity: isLoading ? 0.6 : 1,
+              },
+            ]}
+          >
+            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+              {isLoading ? "Verifying..." : "Completed"}
+            </CustomText>
+          </TouchableOpacity>
+          {/* )} */}
           <Modal
             animationType="fade"
             transparent={true}
@@ -570,7 +589,11 @@ export default function ServiceEnd() {
             <View style={styles.modalOverlay}>
               <View style={styles.modalBox}>
                 <CustomText
-                  style={[globalStyles.f16Bold, globalStyles.textac, { marginTop: 10 }]}
+                  style={[
+                    globalStyles.f16Bold,
+                    globalStyles.textac,
+                    { marginTop: 10 },
+                  ]}
                 >
                   {modalMessage}
                 </CustomText>
@@ -578,7 +601,9 @@ export default function ServiceEnd() {
                   style={styles.okButton}
                   onPress={() => setModalVisible(false)}
                 >
-                  <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  >
                     OK
                   </CustomText>
                 </TouchableOpacity>

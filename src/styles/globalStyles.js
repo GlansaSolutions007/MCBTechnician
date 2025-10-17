@@ -333,6 +333,12 @@ export default StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
+   blackButtonotp: {
+    backgroundColor: color.black,
+    paddingVertical: 18,
+    borderRadius: 12,
+    alignItems: "center",
+  },
   // Login button .............. end
 
   // Card ----------start
