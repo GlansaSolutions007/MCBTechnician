@@ -276,7 +276,7 @@ console.log("status",status);
           </CustomText>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={handleCompletePayment}
           style={[
             globalStyles.blackButton,
@@ -287,7 +287,7 @@ console.log("status",status);
           <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
             Mark as Completed
           </CustomText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <Modal
