@@ -82,7 +82,7 @@ console.log("qrId",qrId)
           {
             // responseType: "arraybuffer",
               bookingID: bookingID,
-              amount: 1,
+              amount: amount,
           }
         );
         console.log("qrResponse", qrResponse?.data);
