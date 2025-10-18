@@ -41,6 +41,7 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0 } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
+  console.log("booking=================", booking);
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(
     booking?.Packages.flatMap((pkg, pkgIndex) =>
@@ -68,6 +69,8 @@ export default function ServiceEnd() {
   const [otpValid, setOtpValid] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [cooldownTimer, setCooldownTimer] = useState(null);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -82,6 +85,32 @@ export default function ServiceEnd() {
       hideListener.remove();
     };
   }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+      }
+    };
+  }, [cooldownTimer]);
+
+  const startCooldownTimer = () => {
+    setOtpCooldown(180); 
+    
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCooldownTimer(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    setCooldownTimer(timer);
+  };
 
   const sendOTP = async () => {
     try {
@@ -99,6 +128,7 @@ export default function ServiceEnd() {
         setOtpSent(true);
         setModalMessage("OTP sent successfully to customer!");
         setModalVisible(true);
+        startCooldownTimer(); // Start 3-minute cooldown
       } else {
         setModalMessage("Failed to send OTP. Please try again.");
         setModalVisible(true);
@@ -529,7 +559,7 @@ export default function ServiceEnd() {
             />
 
             {/* OTP Button */}
-            {/* {!otpSent && ( */}
+            {otpCooldown === 0 ? (
               <TouchableOpacity
                 onPress={sendOTP}
                 disabled={isLoading}
@@ -548,10 +578,31 @@ export default function ServiceEnd() {
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  {isLoading ? "Sending OTP" : "Get OTP"}
+                  {isLoading ? "Sending OTP" : "Resend OTP"}
                 </CustomText>
               </TouchableOpacity>
-            {/* )} */}
+            ) : (
+              <View
+                style={[
+                  globalStyles.blackButtonotp,
+                  globalStyles.alineItemscenter,
+                  globalStyles.justifyContentcenter,
+                  globalStyles.pv4,
+                  globalStyles.px3,
+                  {
+                    flex: 1,
+                    opacity: 0.6,
+                    backgroundColor: color.neutral[300],
+                  },
+                ]}
+              >
+                <CustomText
+                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                >
+                  Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
+                </CustomText>
+              </View>
+            )}
           </View>
 
           {error ? (
@@ -570,7 +621,7 @@ export default function ServiceEnd() {
               globalStyles.blackButton,
               {
                 marginTop: 16,
-                marginBottom: keyboardVisible ? 130 : 12,
+                marginBottom: keyboardVisible ? 130 : 80,
                 opacity: isLoading ? 0.6 : 1,
               },
             ]}
