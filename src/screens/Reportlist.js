@@ -76,6 +76,30 @@ function Reportlist() {
     }
   };
 
+  // Helper function to get unique categories
+  const getUniqueCategories = (packages) => {
+    if (!packages || !Array.isArray(packages)) return [];
+    const uniqueCategories = new Set();
+    packages.forEach(pkg => {
+      if (pkg?.Category?.CategoryName) {
+        uniqueCategories.add(pkg.Category.CategoryName);
+      }
+    });
+    return Array.from(uniqueCategories);
+  };
+
+  // Helper function to get unique packages
+  const getUniquePackages = (packages) => {
+    if (!packages || !Array.isArray(packages)) return [];
+    const uniquePackages = new Set();
+    packages.forEach(pkg => {
+      if (pkg?.PackageName) {
+        uniquePackages.add(pkg.PackageName);
+      }
+    });
+    return Array.from(uniquePackages);
+  };
+
   const todayIST = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
   });
@@ -164,12 +188,12 @@ function Reportlist() {
           Category:
         </CustomText>
         <View style={{ flex: 1 }}>
-          {item.Packages?.map((pkg, idx) => (
+          {getUniqueCategories(item.Packages).map((categoryName, idx) => (
             <CustomText
               key={`cat-${item.BookingID ?? "x"}-${idx}`}
               style={globalStyles.f10Regular}
             >
-              {pkg?.Category?.CategoryName || "N/A"}
+              {categoryName}
             </CustomText>
           ))}
         </View>
@@ -182,12 +206,12 @@ function Reportlist() {
           Package:
         </CustomText>
         <View style={{ flex: 1 }}>
-          {item.Packages?.map((pkg, idx) => (
+          {getUniquePackages(item.Packages).map((packageName, idx) => (
             <CustomText
               key={`pkg-${item.BookingID ?? "x"}-${idx}`}
               style={globalStyles.f10Regular}
             >
-              {pkg?.PackageName || "N/A"}
+              {packageName}
             </CustomText>
           ))}
         </View>

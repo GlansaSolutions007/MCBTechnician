@@ -442,78 +442,99 @@ export default function ServiceEnd() {
             ))}
           </View>
 
-          {/* Estimated and Extended Time */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 24,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "#1A9C8D",
-                borderRadius: 10,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                flex: 1,
-                marginRight: 8,
-                alignItems: "center",
-              }}
-            >
-              <CustomText
-                style={[globalStyles.textWhite, globalStyles.f12Bold]}
-              >
-                Estimated Time
-              </CustomText>
-              <CustomText
-                style={[globalStyles.textWhite, globalStyles.f14Bold]}
-              >
-                {formatReadableTime(estimatedTime)}
+          {/* Time Summary Card */}
+          <View style={styles.timeSummaryCard}>
+            {/* Card Header */}
+            <View style={styles.cardHeader}>
+              <View style={styles.headerIconContainer}>
+                <Ionicons name="analytics" size={24} color={color.primary} />
+              </View>
+              <CustomText style={styles.cardTitle}>
+                Service Time Analytics
               </CustomText>
             </View>
 
-            <View
-              style={{
-                backgroundColor: "#F4A100",
-                borderRadius: 10,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                flex: 1,
-                marginLeft: 8,
-                alignItems: "center",
-              }}
-            >
-              <CustomText
-                style={[globalStyles.textWhite, globalStyles.f12Bold]}
-              >
-                Extended Time
-              </CustomText>
-              <CustomText
-                style={[globalStyles.textWhite, globalStyles.f14Bold]}
-              >
-                {extendedTime > 0 ? formatReadableTime(extendedTime) : "0 min"}
-              </CustomText>
-            </View>
-          </View>
+            {/* Time Metrics Grid */}
+            <View style={styles.metricsGrid}>
+              {/* Estimated Time Card */}
+              <View style={[styles.metricCard, styles.estimatedCard]}>
+                <View style={styles.metricIconContainer}>
+                  <Ionicons name="time-outline" size={22} color="#4CAF50" />
+                </View>
+                <CustomText style={styles.metricLabel}>Estimated Time</CustomText>
+                <CustomText style={styles.metricValue}>
+                  {formatReadableTime(estimatedTime)}
+                </CustomText>
+                <View style={styles.metricBadge}>
+                  <CustomText style={styles.badgeText}>Planned</CustomText>
+                </View>
+              </View>
 
-          {/* Total Time */}
-          <View
-            style={[
-              globalStyles.bgBlack,
-              globalStyles.pv4,
-              globalStyles.radius,
-              globalStyles.mt4,
-              globalStyles.alineItemscenter,
-              globalStyles.p4,
-            ]}
-          >
-            <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
-              Total Hours
-            </CustomText>
-            <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
-              {formatReadableTime(actualTime)}
-            </CustomText>
+              {/* Extended Time Card */}
+              <View style={[styles.metricCard, styles.extendedCard]}>
+                <View style={styles.metricIconContainer}>
+                  <Ionicons name="timer-outline" size={22} color="#FF9800" />
+                </View>
+                <CustomText style={styles.metricLabel}>Extended Time</CustomText>
+                <CustomText style={styles.metricValue}>
+                  {extendedTime > 0 ? formatReadableTime(extendedTime) : "0 min"}
+                </CustomText>
+                <View style={[styles.metricBadge, extendedTime > 0 ? styles.overtimeBadge : styles.noOvertimeBadge]}>
+                  <CustomText style={styles.badgeText}>
+                    {extendedTime > 0 ? "Overtime" : "On Time"}
+                  </CustomText>
+                </View>
+              </View>
+            </View>
+
+            {/* Total Time Highlight Card */}
+            <View style={styles.totalTimeHighlight}>
+              <View style={styles.totalTimeHeader}>
+                <View style={styles.totalTimeIconContainer}>
+                  <Ionicons name="stopwatch" size={28} color={color.white} />
+                </View>
+                <View style={styles.totalTimeTextContainer}>
+                  <CustomText style={styles.totalTimeLabel}>
+                    Total Service Duration
+                  </CustomText>
+                  <CustomText style={styles.totalTimeSubLabel}>
+                    {extendedTime > 0 ? "Including overtime" : "As planned"}
+                  </CustomText>
+                </View>
+              </View>
+              
+              <View style={styles.totalTimeValueContainer}>
+                <CustomText style={styles.totalTimeValue}>
+                  {formatReadableTime(actualTime)}
+                </CustomText>
+                {extendedTime > 0 && (
+                  <View style={styles.overtimeIndicator}>
+                    <Ionicons name="trending-up" size={16} color={color.white} />
+                    <CustomText style={styles.overtimeText}>
+                      +{formatReadableTime(extendedTime)}
+                    </CustomText>
+                  </View>
+                )}
+              </View>
+
+              {/* Progress Bar */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { 
+                        width: `${Math.min((actualTime / estimatedTime) * 100, 100)}%`,
+                        backgroundColor: actualTime > estimatedTime ? "#FF9800" : "#4CAF50"
+                      }
+                    ]} 
+                  />
+                </View>
+                <CustomText style={styles.progressText}>
+                  {actualTime > estimatedTime ? "Over estimated" : "Within estimate"}
+                </CustomText>
+              </View>
+            </View>
           </View>
 
           {/* OTP Section - Only show after OTP is sent */}
@@ -692,5 +713,197 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 8,
+  },
+  
+  // Time Summary Card Styles
+  timeSummaryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E8F5E8",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: color.primary,
+    flex: 1,
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    marginHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  estimatedCard: {
+    borderColor: "#4CAF50",
+    backgroundColor: "#F8FFF8",
+  },
+  extendedCard: {
+    borderColor: "#FF9800",
+    backgroundColor: "#FFFBF5",
+  },
+  metricIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  metricBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "#E8F5E8",
+  },
+  overtimeBadge: {
+    backgroundColor: "#FFE0B2",
+  },
+  noOvertimeBadge: {
+    backgroundColor: "#E8F5E8",
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#4CAF50",
+  },
+  totalTimeHighlight: {
+    backgroundColor: color.primary,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: color.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  totalTimeHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  totalTimeIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  totalTimeTextContainer: {
+    flex: 1,
+  },
+  totalTimeLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  totalTimeSubLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+  },
+  totalTimeValueContainer: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  totalTimeValue: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+  },
+  overtimeIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  overtimeText: {
+    fontSize: 12,
+    color: "#fff",
+    marginLeft: 4,
+    fontWeight: "600",
+  },
+  progressContainer: {
+    marginTop: 8,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.9)",
+    textAlign: "center",
+    fontWeight: "500",
   },
 });

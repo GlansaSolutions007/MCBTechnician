@@ -11,18 +11,20 @@ import {
   Vibration,
   Linking,
   Alert,
+  BackHandler,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
 import base64 from "react-native-base64";
 import { API_BASE_URL } from "@env";
 // import qrImage from "../../assets/images/QrCode.jpeg.jpg";
 import { color } from "../styles/theme";
 import { encode } from "base64-arraybuffer";
+import helpcall from "../../assets/icons/Customer Care.png";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
@@ -35,6 +37,28 @@ export default function CollectPayment() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
 console.log("qrId",qrId)
+
+  // Handle back button to navigate directly to dashboard
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "CustomerTabNavigator",
+              params: { screen: "Dashboard" },
+            },
+          ],
+        });
+        return true; // Prevent default back behavior
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      
+      return () => backHandler.remove();
+    }, [navigation])
+  );
   const handleCompletePayment = async () => {
     try {
       const payload = {
@@ -275,6 +299,39 @@ console.log("status",status);
             Call to customer
           </CustomText>
         </TouchableOpacity>
+
+        <TouchableOpacity
+                style={[
+                  globalStyles.flex1,
+                  globalStyles.bgBlack,
+                  globalStyles.borderRadiuslarge,
+                  globalStyles.p4,
+                  globalStyles.justifycenter,
+                  globalStyles.alineItemscenter,
+                  globalStyles.mt5,
+                ]}
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  const phoneNumber = 7075243939;
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <Image source={helpcall} />
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.ml2]}
+                  >
+                    Call help line
+                  </CustomText>
+                </View>
+              </TouchableOpacity>
 
         {/* <TouchableOpacity
           onPress={handleCompletePayment}

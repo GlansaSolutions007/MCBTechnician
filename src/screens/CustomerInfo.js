@@ -9,6 +9,7 @@ import {
   Linking,
   Text,
   Vibration,
+  Animated,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -54,6 +55,8 @@ export default function CustomerInfo() {
   const [updatedBookings, setUpdatedBookings] = useState(booking);
   const [expandedPackages, setExpandedPackages] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pulse] = useState(new Animated.Value(0));
   // const today = new Date().toISOString().split("T")[0];
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -66,6 +69,7 @@ export default function CustomerInfo() {
   };
   const onRefresh = async () => {
     setRefreshing(true);
+    setLoading(true);
 
     try {
       const response = await axios.get(
@@ -85,11 +89,31 @@ export default function CustomerInfo() {
       console.error("Error refreshing booking:", error);
     } finally {
       setRefreshing(false);
+      setLoading(false);
     }
   };
   useEffect(() => {
     onRefresh();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 700,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, pulse]);
   // useEffect(() => {
   //   const interval = setInterval(() => {
   //     onRefresh();
@@ -377,6 +401,252 @@ export default function CustomerInfo() {
       Latitude: rawLat,
       Longitude: rawLng,
     });
+  }
+
+  // Skeleton Components
+  const SkeletonText = ({ width, height, style }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <Animated.View
+        style={[
+          {
+            width,
+            height,
+            backgroundColor: bg,
+            borderRadius: 4,
+          },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const SkeletonAvatar = ({ size = 46 }) => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <Animated.View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 10,
+          backgroundColor: bg,
+        }}
+      />
+    );
+  };
+
+  const SkeletonCustomerCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View
+        style={[
+          globalStyles.bgwhite,
+          globalStyles.radius,
+          globalStyles.card,
+          globalStyles.p3,
+          globalStyles.mt3,
+        ]}
+      >
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+          <SkeletonAvatar size={46} />
+          <View style={[globalStyles.ml3, { flex: 1 }]}>
+            <SkeletonText width={150} height={16} style={{ marginBottom: 8 }} />
+            <SkeletonText width={120} height={12} />
+          </View>
+          <Animated.View
+            style={[
+              globalStyles.p2,
+              globalStyles.bgprimary,
+              globalStyles.borderRadiuslarge,
+              { width: 40, height: 40, backgroundColor: bg },
+            ]}
+          />
+        </View>
+        <View style={[globalStyles.divider, globalStyles.mt2]} />
+        <View style={[globalStyles.flexrow]}>
+          <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter, globalStyles.w40]}>
+            <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+            <SkeletonText width={80} height={12} style={{ marginLeft: 8 }} />
+          </View>
+          <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
+            <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+            <SkeletonText width={60} height={12} style={{ marginLeft: 8 }} />
+          </View>
+        </View>
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+          <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
+            <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+            <SkeletonText width={100} height={12} style={{ marginLeft: 8 }} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const SkeletonCarDetails = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[styles.blackcard]}>
+        <View style={[styles.width60, globalStyles.borderRadiuslarge, globalStyles.alineItemscenter, globalStyles.bgwhite]}>
+          <SkeletonText width={120} height={14} style={{ marginTop: 8, marginBottom: 8 }} />
+          <View style={[styles.width60]}>
+            <View>
+              <Animated.View
+                style={[
+                  styles.imageContainer,
+                  { backgroundColor: bg }
+                ]}
+              />
+            </View>
+          </View>
+        </View>
+        <View style={[styles.width30]}>
+          <View style={{ marginBottom: 16 }}>
+            <SkeletonText width={40} height={10} style={{ marginBottom: 4 }} />
+            <SkeletonText width={60} height={12} />
+          </View>
+          <View style={{ marginBottom: 16 }}>
+            <SkeletonText width={50} height={10} style={{ marginBottom: 4 }} />
+            <SkeletonText width={70} height={12} />
+          </View>
+          <View>
+            <SkeletonText width={60} height={10} style={{ marginBottom: 4 }} />
+            <SkeletonText width={80} height={12} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const SkeletonServiceCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View
+        style={[
+          globalStyles.mt3,
+          globalStyles.bgwhite,
+          globalStyles.radius,
+          globalStyles.p2,
+          globalStyles.card,
+        ]}
+      >
+        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.justifysb, globalStyles.p1]}>
+          <View style={{ flex: 1 }}>
+            <SkeletonText width={120} height={16} style={{ marginBottom: 4 }} />
+            <SkeletonText width={80} height={12} />
+          </View>
+          <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
+        </View>
+      </View>
+    );
+  };
+
+  const SkeletonTotalTimeCard = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View
+        style={[
+          globalStyles.flexrow,
+          globalStyles.justifysb,
+          globalStyles.mt4,
+          globalStyles.bgprimary,
+          globalStyles.p4,
+          globalStyles.borderRadiuslarge,
+        ]}
+      >
+        <View style={globalStyles.alineSelfcenter}>
+          <SkeletonText width={120} height={12} style={{ marginBottom: 8 }} />
+          <SkeletonText width={80} height={24} />
+        </View>
+        <View style={styles.pricecard}>
+          <SkeletonText width={40} height={12} style={{ marginBottom: 8 }} />
+          <SkeletonText width={60} height={28} />
+        </View>
+      </View>
+    );
+  };
+
+  const SkeletonCustomerNote = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[globalStyles.container, globalStyles.bgBlack, globalStyles.pb5]}>
+        <SkeletonText width={120} height={16} style={{ marginTop: 8, marginBottom: 8 }} />
+        <SkeletonText width={200} height={12} style={{ marginBottom: 4 }} />
+        <SkeletonText width={180} height={12} style={{ marginBottom: 4 }} />
+        <SkeletonText width={150} height={12} />
+      </View>
+    );
+  };
+
+  const SkeletonActionButtons = () => {
+    const bg = pulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [color.neutral[200], color.neutral[100]],
+    });
+
+    return (
+      <View style={[globalStyles.mt2]}>
+        <Animated.View
+          style={[
+            styles.NextButton,
+            { backgroundColor: bg, height: 48 }
+          ]}
+        />
+      </View>
+    );
+  };
+
+  const CustomerInfoSkeleton = () => (
+    <ScrollView style={[globalStyles.bgcontainer]}>
+      <View>
+        <View style={[globalStyles.container, globalStyles.pb4]}>
+          <SkeletonCustomerCard />
+          <SkeletonText width={100} height={16} style={{ marginTop: 24, marginBottom: 8 }} />
+          <SkeletonCarDetails />
+          <View style={[globalStyles.divider, globalStyles.mt5]} />
+          <SkeletonText width={120} height={16} style={{ marginTop: 8, marginBottom: 8 }} />
+          <SkeletonServiceCard />
+          <SkeletonServiceCard />
+          <SkeletonTotalTimeCard />
+        </View>
+        <SkeletonCustomerNote />
+        <View style={[globalStyles.container, globalStyles.bgBlack, globalStyles.pb5]}>
+          <SkeletonActionButtons />
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  if (loading) {
+    return <CustomerInfoSkeleton />;
   }
 
   return (
@@ -1102,7 +1372,7 @@ const styles = StyleSheet.create({
 
   avatar: {
     width: "100%",
-    height: "55%",
+    height: "65%",
     marginTop: 10,
   },
 
@@ -1155,6 +1425,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
+  },
+  // Skeleton styles
+  skelIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
 });
 

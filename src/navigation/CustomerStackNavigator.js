@@ -1,4 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import CustomerTabNavigator from "./CustomerTabNavigator";
 // import MyCars from "../screens/MyCars";
 import InteriorService from "../screens/InteriorService";
@@ -87,7 +89,27 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="CollectPayment"
         component={CollectPayment}
-        options={{ title: "Collect Payment" }}
+        options={({ navigation }) => ({
+          title: "Collect Payment",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: "CustomerTabNavigator",
+                      params: { screen: "Dashboard" },
+                    },
+                  ],
+                });
+              }}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Stack.Screen
         name="Booking"
