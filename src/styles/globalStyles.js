@@ -339,6 +339,12 @@ export default StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
+   smallyellowButtonotp: {
+    backgroundColor: color.yellow,
+    paddingVertical: 18,
+    borderRadius: 12,
+    alignItems: "center",
+  },
   // Login button .............. end
 
   // Card ----------start

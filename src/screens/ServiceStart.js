@@ -11,6 +11,9 @@ import {
   Linking,
   Vibration,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -20,7 +23,7 @@ import { AnimatedCircularProgress } from "react-native-circular-progress";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
@@ -47,6 +50,21 @@ export default function ServiceStart() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showListener = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardVisible(true)
+    );
+    const hideListener = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardVisible(false)
+    );
+
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -136,13 +154,12 @@ export default function ServiceStart() {
   useEffect(() => {
     let interval = null;
 
-    if (booking.ServiceStartedAt) {
+    if (booking.ServiceStartedAt && timerStarted) {
       // set initial values
       const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
       setElapsedTime(elapsedFromAPI);
       setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
-      setTimerStarted(true);
-      setTimerCompleted(false);
+      setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
 
       // keep calculating every second
       interval = setInterval(() => {
@@ -156,29 +173,47 @@ export default function ServiceStart() {
       }, 1000);
     }
 
-    return () => clearInterval(interval);
-  }, [booking.ServiceStartedAt, booking.TotalEstimatedDurationMinutes]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [booking.ServiceStartedAt, booking.TotalEstimatedDurationMinutes, timerStarted]);
 
   useEffect(() => {
     const loadTimerState = async () => {
       try {
-        const storedState = await AsyncStorage.getItem(
-          `timerState_${booking.BookingID}`
-        );
-
-        if (storedState) {
-          const parsedState = JSON.parse(storedState);
-          setElapsedTime(parsedState.elapsedTime);
-          setMaxTime(parsedState.maxTime);
-          setTimerStarted(parsedState.timerStarted);
-          setTimerCompleted(parsedState.timerCompleted);
-        } else if (booking.ServiceStartedAt) {
-          const elapsedFromAPI = calculateElapsedFromAPI(
-            booking.ServiceStartedAt
-          );
+        // Always check if service has started from API first
+        if (booking.ServiceStartedAt) {
+          const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
           setElapsedTime(elapsedFromAPI);
           setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
           setTimerStarted(true);
+          setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
+          
+          // Update stored state with current API data
+          await AsyncStorage.setItem(
+            `timerState_${booking.BookingID}`,
+            JSON.stringify({
+              timerStarted: true,
+              elapsedTime: elapsedFromAPI,
+              maxTime: booking.TotalEstimatedDurationMinutes * 60,
+              timerCompleted: elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60,
+            })
+          );
+        } else {
+          // Check stored state only if service hasn't started
+          const storedState = await AsyncStorage.getItem(
+            `timerState_${booking.BookingID}`
+          );
+
+          if (storedState) {
+            const parsedState = JSON.parse(storedState);
+            setElapsedTime(parsedState.elapsedTime);
+            setMaxTime(parsedState.maxTime);
+            setTimerStarted(parsedState.timerStarted);
+            setTimerCompleted(parsedState.timerCompleted);
+          }
         }
       } catch (error) {
         console.error("Failed to load timer state", error);
@@ -212,6 +247,17 @@ export default function ServiceStart() {
 
     loadTimerState();
   }, [bookingId]);
+
+  // Refresh timer when screen comes back into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (booking.ServiceStartedAt && timerStarted) {
+        const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+        setElapsedTime(elapsedFromAPI);
+        setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
+      }
+    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes])
+  );
 
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600)
@@ -256,8 +302,16 @@ export default function ServiceStart() {
   };
 
   return (
-    <ScrollView style={globalStyles.bgcontainer}>
-      <View style={globalStyles.container}>
+    <KeyboardAvoidingView
+      style={[globalStyles.flex1, globalStyles.bgcontainer]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
+    >
+      <ScrollView 
+        style={globalStyles.bgcontainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={globalStyles.container}>
         {/* <AvailabilityHeader /> */}
 
         {/* Booking Summary */}
@@ -549,6 +603,7 @@ export default function ServiceStart() {
                 globalStyles.bgprimary,
                 globalStyles.p4,
                 globalStyles.borderRadiuslarge,
+                { marginBottom: keyboardVisible ? 20 : 0 },
               ]}
             >
               <View style={globalStyles.alineSelfcenter}>
@@ -567,7 +622,7 @@ export default function ServiceStart() {
               </View>
 
               <TouchableOpacity
-                style={styles.pricecard}
+                style={[styles.pricecard, { minHeight: 50, justifyContent: 'center' }]}
                 onPress={async () => {
                   if (!otp || otp.length !== 6) {
                     setError("Please enter a valid 6-digit OTP");
@@ -999,8 +1054,9 @@ export default function ServiceStart() {
             </View>
           </View>
         </Modal>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -1033,10 +1089,12 @@ const styles = StyleSheet.create({
   pricecard: {
     backgroundColor: color.white,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
+    minHeight: 50,
+    minWidth: 100,
   },
   imageupload: {
     backgroundColor: color.primary,

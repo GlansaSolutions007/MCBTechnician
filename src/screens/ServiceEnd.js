@@ -71,6 +71,7 @@ export default function ServiceEnd() {
   const [isLoading, setIsLoading] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -228,7 +229,12 @@ export default function ServiceEnd() {
       return;
     }
 
-    navigation.navigate("CollectPayment", { booking });
+    // Check payment mode and navigate accordingly
+    if (booking.PaymentMode === "Razorpay" || booking.PaymentMode === "razorpay") {
+      setShowPaymentModal(true);
+    } else {
+      navigation.navigate("CollectPayment", { booking });
+    }
   };
   useEffect(() => {
     const fetchLeads = async () => {
@@ -585,7 +591,7 @@ export default function ServiceEnd() {
                 onPress={sendOTP}
                 disabled={isLoading}
                 style={[
-                  globalStyles.blackButtonotp,
+                  globalStyles.smallyellowButtonotp,
                   globalStyles.alineItemscenter,
                   globalStyles.justifyContentcenter,
                   globalStyles.pv4,
@@ -599,7 +605,7 @@ export default function ServiceEnd() {
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  {isLoading ? "Sending OTP" : "Resend OTP"}
+                  {isLoading ? "Sending OTP" : "Resend OTP"}  
                 </CustomText>
               </TouchableOpacity>
             ) : (
@@ -680,8 +686,67 @@ export default function ServiceEnd() {
                   </CustomText>
                 </TouchableOpacity>
               </View>
+          </View>
+        </Modal>
+
+        {/* Payment Completion Modal for Razorpay */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showPaymentModal}
+          onRequestClose={() => setShowPaymentModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Ionicons
+                name="checkmark-circle"
+                size={64}
+                color="#4CAF50"
+                style={{ alignSelf: "center", marginBottom: 16 }}
+              />
+              <CustomText
+                style={[
+                  globalStyles.f20Bold,
+                  globalStyles.textac,
+                  { marginBottom: 8 },
+                ]}
+              >
+                Payment Completed!
+              </CustomText>
+              <CustomText
+                style={[
+                  globalStyles.f14Regular,
+                  globalStyles.textac,
+                  globalStyles.neutral500,
+                  { marginBottom: 24, textAlign: "center" },
+                ]}
+              >
+                Your service has been completed successfully. Payment has been processed through Razorpay.
+              </CustomText>
+              <TouchableOpacity
+                style={styles.okButton}
+                onPress={() => {
+                  setShowPaymentModal(false);
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: "CustomerTabNavigator",
+                        params: { screen: "Dashboard" },
+                      },
+                    ],
+                  });
+                }}
+              >
+                <CustomText
+                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                >
+                  Go to Dashboard
+                </CustomText>
+              </TouchableOpacity>
             </View>
-          </Modal>
+          </View>
+        </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
