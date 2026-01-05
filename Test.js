@@ -815,7 +815,7 @@ export default function ServiceStart() {
                 Service Details
               </CustomText>
 
-              {booking.Packages.map((pkg) => (
+              {booking.Packages && booking.Packages.map((pkg) => (
                 <View
                   key={pkg.PackageID}
                   style={[

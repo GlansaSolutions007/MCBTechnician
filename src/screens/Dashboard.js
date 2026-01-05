@@ -199,6 +199,7 @@ export default function Dashboard() {
   const fetchBookings = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
+      // console.log("Tech ID in fetchBookings:", techID);
       const token = await AsyncStorage.getItem("token");
       if (techID) {
         const res = await axios.get(

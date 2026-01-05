@@ -11,6 +11,7 @@ import {
   Vibration,
   Animated,
 } from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
@@ -54,6 +55,7 @@ export default function CustomerInfo() {
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
   const [expandedPackages, setExpandedPackages] = useState({});
+  const [expandedAddOns, setExpandedAddOns] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pulse] = useState(new Animated.Value(0));
@@ -175,6 +177,13 @@ export default function CustomerInfo() {
     setExpandedPackages((prev) => ({
       ...prev,
       [packageId]: !prev[packageId],
+    }));
+  };
+
+  const toggleAddOnExpanded = (addOnId) => {
+    setExpandedAddOns((prev) => ({
+      ...prev,
+      [addOnId]: !prev[addOnId],
     }));
   };
 
@@ -777,7 +786,7 @@ export default function CustomerInfo() {
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {booking.TimeSlot?.split(",").map((slot, index) => (
+                  {booking.TimeSlot && booking.TimeSlot.split(",").map((slot, index) => (
                     <CustomText
                       key={index}
                       style={[
@@ -794,122 +803,151 @@ export default function CustomerInfo() {
             </View>
           </View>
 
-          <CustomText
-            style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}
-          >
-            Car Details
-          </CustomText>
-          <View style={[styles.blackcard]}>
-            <View
-              style={[
-                styles.width60,
-                globalStyles.borderRadiuslarge,
-                globalStyles.alineItemscenter,
-                globalStyles.bgwhite,
-              ]}
-            >
+          {(booking.ModelName || booking.VehicleNumber || booking.VehicleImage || booking.BrandName || booking.FuelTypeName) && (
+            <>
               <CustomText
-                style={[
-                  globalStyles.f10Bold,
-                  globalStyles.mt1,
-                  globalStyles.primary,
-                ]}
+                style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}
               >
-                Model Name:{" "}
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.primary]}
-                >
-                  {booking.ModelName}
-                </CustomText>
+                Car Details
               </CustomText>
-              <View style={[styles.width60]}>
-                <View>
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={
-                        booking.VehicleImage
-                          ? {
-                              uri: `https://api.mycarsbuddy.com/images/${booking.VehicleImage}`,
-                            }
-                          : defaultAvatar
-                      }
-                      style={styles.avatar}
-                      resizeMode="cover"
-                    />
+              <View style={[styles.blackcard]}>
+                <View
+                  style={[
+                    styles.width60,
+                    globalStyles.borderRadiuslarge,
+                    globalStyles.alineItemscenter,
+                    globalStyles.bgwhite,
+                  ]}
+                >
+                  {booking.ModelName && (
+                    <CustomText
+                      style={[
+                        globalStyles.f10Bold,
+                        globalStyles.mt1,
+                        globalStyles.primary,
+                      ]}
+                    >
+                      Model Name:{" "}
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.primary]}
+                      >
+                        {booking.ModelName}
+                      </CustomText>
+                    </CustomText>
+                  )}
+                  <View style={[styles.width60]}>
+                    <View>
+                      <View style={styles.imageContainer}>
+                        <Image
+                          source={
+                            booking.VehicleImage
+                              ? {
+                                  uri: `https://api.mycarsbuddy.com/images/${booking.VehicleImage}`,
+                                }
+                              : defaultAvatar
+                          }
+                          style={styles.avatar}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    </View>
                   </View>
                 </View>
+                <View style={[styles.width30]}>
+                  {booking.VehicleNumber && (
+                    <View>
+                      <CustomText
+                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                      >
+                        Reg No
+                      </CustomText>
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        {booking.VehicleNumber}
+                      </CustomText>
+                    </View>
+                  )}
+                  {booking.FuelTypeName && (
+                    <View>
+                      <CustomText
+                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                      >
+                        Fuel Type
+                      </CustomText>
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        {booking.FuelTypeName}
+                      </CustomText>
+                    </View>
+                  )}
+                  {booking.BrandName && (
+                    <View>
+                      <CustomText
+                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                      >
+                        Manufacturer
+                      </CustomText>
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        {booking.BrandName}
+                      </CustomText>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-            <View style={[styles.width30]}>
-              <View>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textyellow]}
-                >
-                  Reg No
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  {booking.VehicleNumber}
-                </CustomText>
-              </View>
-              <View>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textyellow]}
-                >
-                  Fuel Type
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  {booking.FuelTypeName}
-                </CustomText>
-              </View>
-              <View>
-                <CustomText
-                  style={[globalStyles.f10Light, globalStyles.textyellow]}
-                >
-                  Manufacturer
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  {booking.BrandName}
-                </CustomText>
-              </View>
-            </View>
-          </View>
+            </>
+          )}
           <View style={[globalStyles.divider, globalStyles.mt5]} />
-          {/* <View>
-            <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-              Service Details
-            </CustomText>
-            {booking.Packages.map((pkg) => (
-              <View>
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {pkg.PackageName}
-                </CustomText>
 
-                {pkg.Category?.map((sub) => (
-                  <View style={[globalStyles.mt2, globalStyles.ph4]}>
-                    <CustomText>{sub.CategoryName}</CustomText>
+          {/* Map Section - Show only if coordinates are available */}
+          {Number.isFinite(Latitude) && Number.isFinite(Longitude) && (
+            <View style={[globalStyles.mt3]}>
+              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                Location
+              </CustomText>
+              <View style={[globalStyles.mt2, { height: 200, borderRadius: 10, overflow: 'hidden' }]}>
+                <MapView
+                  ref={mapRef}
+                  style={{ flex: 1 }}
+                  initialRegion={{
+                    latitude: Latitude,
+                    longitude: Longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  showsUserLocation={true}
+                  showsMyLocationButton={true}
+                >
+                  {/* Destination Marker */}
+                  <Marker
+                    coordinate={{
+                      latitude: Latitude,
+                      longitude: Longitude,
+                    }}
+                    title="Destination"
+                    description={booking.CustomerName}
+                    pinColor="red"
+                  />
 
-                    {pkg.Category?.SubCategories?.map((sub) => (
-                      <View style={[globalStyles.mt2, globalStyles.ph4]}>
-                        <CustomText
-                          style={globalStyles.f12Medium}
-                          key={sub.SubCategoryID}
-                        >
-                          {sub.SubCategoryName}
-                        </CustomText>
-                        <CustomText style={globalStyles.f18Medium}></CustomText>
-                      </View>
-                    ))}
-                  </View>
-                ))}
+                  {/* Route Polyline */}
+                  {routeCoords && routeCoords.length > 0 && (
+                    <Polyline
+                      coordinates={routeCoords.map(coord => ({
+                        latitude: coord.Latitude,
+                        longitude: coord.Longitude,
+                      }))}
+                      strokeColor="#0000FF"
+                      strokeWidth={3}
+                    />
+                  )}
+                </MapView>
               </View>
-            ))}
-          </View> */}
+            </View>
+          )}
+
           <View>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
               Service Details
@@ -965,7 +1003,8 @@ export default function CustomerInfo() {
                 )}
               </View>
             ))} */}
-            {booking.Packages.map((pkg) => (
+            {/* Display Packages if available */}
+            {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
               <View
                 key={pkg.PackageID}
                 style={[
@@ -1063,6 +1102,153 @@ export default function CustomerInfo() {
                 )}
               </View>
             ))}
+
+            {/* Display BookingAddOns if available */}
+            {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+              <View
+                key={addOn.AddOnID}
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.p2,
+                  globalStyles.card,
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={() => toggleAddOnExpanded(addOn.AddOnID)}
+                  style={[
+                    globalStyles.flexrow,
+                    globalStyles.alineItemscenter,
+                    globalStyles.justifysb,
+                    globalStyles.p1,
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <CustomText
+                      style={[
+                        globalStyles.f16Bold,
+                        globalStyles.black,
+                      ]}
+                    >
+                      {addOn.ServiceName}
+                    </CustomText>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
+                      <CustomText
+                        style={[globalStyles.f12Medium, globalStyles.primary]}
+                      >
+                        ₹{addOn.TotalPrice}
+                      </CustomText>
+                      {addOn.GarageName && (
+                        <CustomText
+                          style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.ml2]}
+                        >
+                          • {addOn.GarageName}
+                        </CustomText>
+                      )}
+                    </View>
+                  </View>
+                  <Ionicons
+                    name={expandedAddOns[addOn.AddOnID] ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={color.primary}
+                  />
+                </TouchableOpacity>
+
+                {expandedAddOns[addOn.AddOnID] && (
+                  <View style={[globalStyles.mt1, globalStyles.p2]}>
+                    {addOn.Description && (
+                      <CustomText
+                        style={[
+                          globalStyles.f12Regular,
+                          globalStyles.neutral500,
+                          globalStyles.mb2,
+                        ]}
+                      >
+                        {addOn.Description}
+                      </CustomText>
+                    )}
+
+                    <View style={[globalStyles.mt2]}>
+                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                          Service Price:
+                        </CustomText>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                          ₹{addOn.ServicePrice}
+                        </CustomText>
+                      </View>
+
+                      {addOn.LabourCharges > 0 && (
+                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                          <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                            Labour Charges:
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                            ₹{addOn.LabourCharges}
+                          </CustomText>
+                        </View>
+                      )}
+
+                      {addOn.GSTPercent > 0 && (
+                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                          <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                            GST ({addOn.GSTPercent}%):
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                            ₹{addOn.GSTPrice}
+                          </CustomText>
+                        </View>
+                      )}
+
+                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt2, globalStyles.pt2, { borderTopWidth: 1, borderTopColor: color.neutral[200] }]}>
+                        <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
+                          Total Price:
+                        </CustomText>
+                        <CustomText style={[globalStyles.f14Bold, globalStyles.primary]}>
+                          ₹{addOn.TotalPrice}
+                        </CustomText>
+                      </View>
+                    </View>
+
+                    {addOn.Includes && addOn.Includes.length > 0 && (
+                      <View style={[globalStyles.mt3]}>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.primary,
+                            globalStyles.mb2,
+                          ]}
+                        >
+                          Includes:
+                        </CustomText>
+                        {addOn.Includes.map((inc) => (
+                          <View
+                            key={inc.IncludeID}
+                            style={[
+                              globalStyles.mt1,
+                              globalStyles.bgneutral100,
+                              globalStyles.radius,
+                              globalStyles.p2,
+                            ]}
+                          >
+                            <CustomText
+                              style={[
+                                globalStyles.f12Regular,
+                                globalStyles.primary,
+                                globalStyles.ml1,
+                              ]}
+                            >
+                              • {inc.IncludeName}
+                            </CustomText>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
 
           <View
@@ -1085,9 +1271,11 @@ export default function CustomerInfo() {
                 <CustomText
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
-                  {`${Math.floor(
-                    booking.TotalEstimatedDurationMinutes / 60
-                  )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
+                  {booking.TotalEstimatedDurationMinutes
+                    ? `${Math.floor(
+                        booking.TotalEstimatedDurationMinutes / 60
+                      )}h ${booking.TotalEstimatedDurationMinutes % 60}m`
+                    : "N/A"}
                 </CustomText>
               </View>
             </View>
@@ -1097,7 +1285,13 @@ export default function CustomerInfo() {
               </CustomText>
               <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
                 {"₹"}
-                {booking.TotalPrice}
+                {booking.TotalPrice ||
+                  (booking.BookingAddOns &&
+                    booking.BookingAddOns.reduce(
+                      (sum, addOn) => sum + (addOn.TotalPrice || 0),
+                      0
+                    )) ||
+                  0}
               </CustomText>
             </View>
           </View>

@@ -51,6 +51,8 @@ export default function ServiceStart() {
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [carPickedUp, setCarPickedUp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -248,6 +250,13 @@ export default function ServiceStart() {
     loadTimerState();
   }, [bookingId]);
 
+  // Check if car has been picked up based on CarPickUpDate
+  useEffect(() => {
+    if (booking.CarPickUpDate) {
+      setCarPickedUp(true);
+    }
+  }, [booking.CarPickUpDate]);
+
   // Refresh timer when screen comes back into focus
   useFocusEffect(
     React.useCallback(() => {
@@ -256,7 +265,11 @@ export default function ServiceStart() {
         setElapsedTime(elapsedFromAPI);
         setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
       }
-    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes])
+      // Check CarPickUpDate when screen comes into focus
+      if (booking.CarPickUpDate) {
+        setCarPickedUp(true);
+      }
+    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes, booking.CarPickUpDate])
   );
 
   const formatTime = (totalSeconds) => {
@@ -272,30 +285,50 @@ export default function ServiceStart() {
 
   const updateTechnicianTracking = async (actionType) => {
     try {
+      const payload = {
+        bookingID: Number(bookingId),
+        actionType: actionType,
+      };
+      
+      // Only include OTP if it exists (for actions that require it)
+      if (otp) {
+        payload.bookingOTP = otp;
+      }
+
       const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: actionType,
-          bookingOTP: otp,
-        }
+        payload
       );
 
       if (
         response?.data?.status === false ||
         response?.data?.isValid === false
       ) {
-        setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
-        setModalVisible(true);
+        // Only show OTP error for actions that require OTP
+        if (actionType === "ServiceStarted") {
+          setOtpValid(false);
+          setModalMessage("Invalid OTP. Please try again.");
+          setModalVisible(true);
+        } else {
+          setModalMessage(response?.data?.message || "Action failed. Please try again.");
+          setModalVisible(true);
+        }
         return false;
       }
-      setOtpValid(true);
+      
+      // Only set OTP valid for ServiceStarted action
+      if (actionType === "ServiceStarted") {
+        setOtpValid(true);
+      }
       return true;
     } catch (error) {
-      // console.error(`Error sending ${actionType} action:`, error.message);
-      setOtpValid(false);
-      setModalMessage("Invalid OTP. Please try again.");
+      console.error(`Error sending ${actionType} action:`, error.message);
+      if (actionType === "ServiceStarted") {
+        setOtpValid(false);
+        setModalMessage("Invalid OTP. Please try again.");
+      } else {
+        setModalMessage("Action failed. Please try again.");
+      }
       setModalVisible(true);
       return false;
     }
@@ -562,72 +595,154 @@ export default function ServiceStart() {
                 </View>
               )}
             </View>
-            <CustomText
-              style={[
-                globalStyles.f16Light,
-                globalStyles.mt3,
-                globalStyles.neutral500,
-              ]}
-            >
-              Enter OTP
-            </CustomText>
-            <TextInput
-              style={[
-                globalStyles.inputBox,
-                globalStyles.mt1,
-                { borderColor: error ? "red" : "#ccc", borderWidth: 1 },
-              ]}
-              placeholder="Enter OTP"
-              value={otp}
-              onChangeText={(text) => {
-                if (/^\d{0,6}$/.test(text)) {
-                  setOtp(text);
-                  setError("");
-                }
-              }}
-              keyboardType="numeric"
-              maxLength={6}
-            />
-
-            {error ? (
-              <CustomText style={{ color: "red", marginTop: 5 }}>
-                {error}
-              </CustomText>
-            ) : null}
-
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.mt4,
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.borderRadiuslarge,
-                { marginBottom: keyboardVisible ? 20 : 0 },
-              ]}
-            >
-              <View style={globalStyles.alineSelfcenter}>
-                <CustomText
-                  style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                >
-                  Estimated Time
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f32Bold, globalStyles.textWhite]}
-                >
-                  {`${Math.floor(
-                    booking.TotalEstimatedDurationMinutes / 60
-                  )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
-                </CustomText>
-              </View>
-
+            {!booking.CarPickUpDate && (
               <TouchableOpacity
-                style={[styles.pricecard, { minHeight: 50, justifyContent: 'center' }]}
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgprimary,
+                  globalStyles.p4,
+                  globalStyles.borderRadiuslarge,
+                  globalStyles.justifycenter,
+                  globalStyles.alineItemscenter,
+                ]}
                 onPress={async () => {
-                  if (!otp || otp.length !== 6) {
-                    setError("Please enter a valid 6-digit OTP");
-                    return;
+                  const success = await updateTechnicianTracking("CarPickUp");
+                  if (success) {
+                    setCarPickedUp(true);
                   }
+                }}
+                disabled={carPickedUp}
+              >
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <Ionicons
+                    name="car"
+                    size={20}
+                    color={color.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText
+                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                  >
+                    Pickup Car
+                  </CustomText>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {(booking.CarPickUpDate || carPickedUp) && !otpSent && (
+              <TouchableOpacity
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgprimary,
+                  globalStyles.p4,
+                  globalStyles.borderRadiuslarge,
+                  globalStyles.justifycenter,
+                  globalStyles.alineItemscenter,
+                ]}
+                onPress={() => {
+                  setOtpSent(true);
+                }}
+              >
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <Ionicons
+                    name="send"
+                    size={20}
+                    color={color.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <CustomText
+                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                  >
+                    Send OTP
+                  </CustomText>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {otpSent && (
+              <>
+                <CustomText
+                  style={[
+                    globalStyles.f16Light,
+                    globalStyles.mt3,
+                    globalStyles.neutral500,
+                  ]}
+                >
+                  Enter OTP
+                </CustomText>
+                <TextInput
+                  style={[
+                    globalStyles.inputBox,
+                    globalStyles.mt1,
+                    {
+                      borderColor: error ? "red" : "#ccc",
+                      borderWidth: 1,
+                    },
+                  ]}
+                  placeholder="Enter OTP"
+                  value={otp}
+                  onChangeText={(text) => {
+                    if (/^\d{0,6}$/.test(text)) {
+                      setOtp(text);
+                      setError("");
+                    }
+                  }}
+                  keyboardType="numeric"
+                  maxLength={6}
+                />
+
+                {error ? (
+                  <CustomText style={{ color: "red", marginTop: 5 }}>
+                    {error}
+                  </CustomText>
+                ) : null}
+              </>
+            )}
+
+            {otpSent && (
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifysb,
+                  globalStyles.mt4,
+                  globalStyles.bgprimary,
+                  globalStyles.p4,
+                  globalStyles.borderRadiuslarge,
+                  { marginBottom: keyboardVisible ? 20 : 0 },
+                ]}
+              >
+                <View style={globalStyles.alineSelfcenter}>
+                  <CustomText
+                    style={[globalStyles.f12Medium, globalStyles.textWhite]}
+                  >
+                    Estimated Time
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f32Bold, globalStyles.textWhite]}
+                  >
+                    {`${Math.floor(
+                      booking.TotalEstimatedDurationMinutes / 60
+                    )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
+                  </CustomText>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.pricecard,
+                    {
+                      minHeight: 50,
+                      justifyContent: "center",
+                    },
+                  ]}
+                  onPress={async () => {
+                    if (!otp || otp.length !== 6) {
+                      setError("Please enter a valid 6-digit OTP");
+                      return;
+                    }
 
                   const isValid = await updateTechnicianTracking(
                     "ServiceStarted"
@@ -678,6 +793,7 @@ export default function ServiceStart() {
                 </CustomText>
               </TouchableOpacity>
             </View>
+            )}
             {/* <CustomText
               style={[
                 globalStyles.f28Medium,
@@ -903,7 +1019,7 @@ export default function ServiceStart() {
                 Service Details
               </CustomText>
 
-              {booking.Packages.map((pkg) => (
+              {booking.Packages && booking.Packages.map((pkg) => (
                 <View
                   key={pkg.PackageID}
                   style={[

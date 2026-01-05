@@ -22,20 +22,63 @@ import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Bookings() {
   const navigation = useNavigation();
   const route = useRoute();
   const { bookings, techId } = route.params;
-  
-  const [todaysBookings, setTodaysBookings] = useState(bookings);
+
+  const [todaysBookings, setTodaysBookings] = useState([]);
+
   const [refreshing, setRefreshing] = useState(false);
   const pulse = useRef(new Animated.Value(0)).current;
-  const [filterType, setFilterType] = useState('all'); // 'all', 'completed', 'pending'
+  const [filterType, setFilterType] = useState('pending');
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
+const [loading, setLoading] = useState(true);
 
+useEffect(() => {
+  fetchBookings();
+}, []);
+
+const fetchBookings = async () => {
+  try {
+    setLoading(true);
+
+    const techID = await AsyncStorage.getItem("techID");
+
+    if (!techID) {
+      console.log("Tech ID not found");
+      setTodaysBookings([]);
+      return;
+    }
+
+    const response = await axios.get(
+      `${API_BASE_URL}Bookings/GetAssignedBookings`,
+      {
+        params: { Id: techID },
+      }
+    );
+
+    // ✅ ALWAYS ensure array
+    const bookingsData = Array.isArray(response?.data)
+      ? response.data
+      : response?.data?.data || [];
+
+    setTodaysBookings(bookingsData);
+  } catch (error) {
+    console.error("Error fetching bookings:", error?.response || error.message);
+    setTodaysBookings([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+  
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -149,21 +192,13 @@ export default function Bookings() {
     });
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`
-      );
-      if (response.data) {
-        setTodaysBookings(response.data);
-      }
-    } catch (error) {
-      console.error("Error refreshing bookings:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchBookings();
+  setRefreshing(false);
+};
+
+
 
   return (
     <ScrollView
@@ -240,7 +275,12 @@ export default function Bookings() {
           </View>
         )}
 
-        {filteredBookings.length === 0 ? (
+       {loading ? (
+  [0, 1, 2, 3, 4, 5].map((i) => (
+    <SkeletonBookingCard key={`s-${i}`} index={i} />
+  ))
+) : filteredBookings.length === 0 ? (
+
           <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, { paddingVertical: 40 }]}>
             <Ionicons name="document-text-outline" size={48} color={color.neutral[300]} />
             <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt2, globalStyles.textac]}>
@@ -260,7 +300,9 @@ export default function Bookings() {
             {filteredBookings.map((item, index) => (
             <Pressable
               onPress={() => customerInfo(item)}
-              key={item.BookingID?.toString() || `idx-${index}`}
+              // key={item.BookingID?.toString() || `idx-${index}`}
+              key={`${item.BookingID ?? "booking"}-${index}`}
+
               style={[
                 item.BookingStatus === 'Completed' ? globalStyles.bgneutral100 : globalStyles.bgwhite,
                 globalStyles.p4,
