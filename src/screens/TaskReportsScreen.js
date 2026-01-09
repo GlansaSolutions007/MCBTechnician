@@ -85,11 +85,18 @@ function TaskReportsScreen() {
     timeZone: "Asia/Kolkata",
   });
 
+  // Show pending bookings with future assigned dates in Schedules/Tasks
   const upcomingBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        if (!booking.BookingDate) return false;
+        // Only show pending or confirmed bookings
+        const isPending = booking.BookingStatus === "Pending" || booking.BookingStatus === "Confirmed";
+        if (!isPending) return false;
 
-        const assignDateStr = new Date(booking.BookingDate).toLocaleDateString(
+        // Check if assigned date is in the future
+        const assignDate = booking.TechAssignDate || booking.BookingDate;
+        if (!assignDate) return false;
+
+        const assignDateStr = new Date(assignDate).toLocaleDateString(
           "en-CA",
           { timeZone: "Asia/Kolkata" }
         );

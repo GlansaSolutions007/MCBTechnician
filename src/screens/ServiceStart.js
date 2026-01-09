@@ -712,43 +712,21 @@ export default function ServiceStart() {
             )}
 
             {otpSent && (
-              <View
+              <TouchableOpacity
                 style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
                   globalStyles.mt4,
                   globalStyles.bgprimary,
                   globalStyles.p4,
                   globalStyles.borderRadiuslarge,
-                  { marginBottom: keyboardVisible ? 20 : 0 },
+                  {
+                    width: "100%",
+                    minHeight: 50,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: keyboardVisible ? 20 : 0,
+                  },
                 ]}
-              >
-                {/* <View style={globalStyles.alineSelfcenter}>
-                  <CustomText
-                    style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                  >
-                    Estimated Time
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f32Bold, globalStyles.textWhite]}
-                  >
-                    {booking.TotalEstimatedDurationMinutes
-                      ? `${Math.floor(
-                          booking.TotalEstimatedDurationMinutes / 60
-                        )}h ${booking.TotalEstimatedDurationMinutes % 60}m`
-                      : "N/A"}
-                  </CustomText>
-                </View> */}
-
-                <TouchableOpacity
-                  style={[
-                    styles.pricecard,
-                    {
-                      minHeight: 50,
-                      justifyContent: "center",
-                    },
-                  ]}
-                  onPress={async () => {
+                onPress={async () => {
                     if (!otp || otp.length !== 6) {
                       setError("Please enter a valid 6-digit OTP");
                       return;
@@ -799,11 +777,10 @@ export default function ServiceStart() {
                   navigation.replace(route.name, { booking: updatedBooking });
                 }}
               >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
                   Lets Start
                 </CustomText>
               </TouchableOpacity>
-            </View>
             )}
             {/* <CustomText
               style={[

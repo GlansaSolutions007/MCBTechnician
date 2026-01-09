@@ -116,21 +116,14 @@ function Reportlist() {
   //       return assignDateStr < todayIST;
   //     })
   //   : [];
+  // Show only completed bookings in Reports
   const pastBookings = Array.isArray(bookings)
   ? bookings.filter((booking) => {
-      if (!booking.BookingDate) return false;
-
-      const bookingDateStr = new Date(booking.BookingDate).toLocaleDateString(
-        "en-CA",
-        { timeZone: "Asia/Kolkata" }
-      );
-
-      const isPastDate = bookingDateStr < todayIST;
       const isCompleted =
         booking.Status?.toLowerCase() === "completed" ||
         booking.BookingStatus?.toLowerCase() === "completed";
 
-      return isPastDate || isCompleted;
+      return isCompleted;
     })
   : [];
 

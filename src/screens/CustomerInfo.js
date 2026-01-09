@@ -61,7 +61,7 @@ export default function CustomerInfo() {
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = booking.VehicleImage || null;
-  const fullAddress = booking.FullAddress || booking.Leads?.City || "";
+  const fullAddress = booking.FullAddress || booking.Leads?.FullAddress || booking.Leads?.City || "";
   
   // Helper function to format date (YYYY-MM-DD to DD MMM YYYY)
   const formatDate = (dateString) => {
@@ -94,6 +94,7 @@ export default function CustomerInfo() {
   
   const [location, setLocation] = useState(null);
   const [addressLocation, setAddressLocation] = useState(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -209,14 +210,18 @@ export default function CustomerInfo() {
   // const Longitude = booking.Longitude;
   const rawLat = booking?.latitude ?? booking?.Latitude;
   const rawLng = booking?.longitude ?? booking?.Longitude;
-  const Latitude = Number(rawLat);
-  const Longitude = Number(rawLng);
+  // Check if coordinates are valid (not null/undefined and are valid numbers)
+  const hasValidCoordinates = rawLat != null && rawLng != null && 
+                              !isNaN(Number(rawLat)) && !isNaN(Number(rawLng)) &&
+                              Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng));
+  const Latitude = hasValidCoordinates ? Number(rawLat) : null;
+  const Longitude = hasValidCoordinates ? Number(rawLng) : null;
 
   const bookingId = booking.BookingID;
-  const destination = {
+  const destination = hasValidCoordinates ? {
     Latitude: parseFloat(Latitude),
     Longitude: parseFloat(Longitude),
-  };
+  } : null;
 
   const togglePackageExpanded = (packageId) => {
     setExpandedPackages((prev) => ({
@@ -263,10 +268,21 @@ export default function CustomerInfo() {
             setLocation(coords);
             try {
               if (mapRef.current?.animateToRegion) {
-                mapRef.current.animateToRegion(coords, 1000);
+                // Center on customer location (geocoded address) if available, otherwise on current location
+                if (addressLocation) {
+                  const region = {
+                    latitude: addressLocation.Latitude,
+                    longitude: addressLocation.Longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                  };
+                  mapRef.current.animateToRegion(region, 1000);
+                } else {
+                  mapRef.current.animateToRegion(coords, 1000);
+                }
               }
             } catch (_) {}
-            fetchRoute(coords);
+            // Route will be fetched by the useEffect that watches location and addressLocation
           }
         );
       } catch (e) {
@@ -283,37 +299,58 @@ export default function CustomerInfo() {
     };
   }, []);
 
-  // Geocode address if location is null
+  // Always geocode FullAddress to show customer location on map
   useEffect(() => {
     const geocodeAddressLocation = async () => {
-      // Only geocode if location is null and we have an address
-      if (!location && fullAddress && fullAddress.trim() !== "") {
-        const geocodedLocation = await geocodeAddress(fullAddress);
-        if (geocodedLocation) {
-          setAddressLocation(geocodedLocation);
-          // Center map on geocoded address location
-          try {
-            if (mapRef.current?.animateToRegion) {
-              mapRef.current.animateToRegion(geocodedLocation, 1000);
+      // Always geocode FullAddress when available to show customer location
+      if (fullAddress && fullAddress.trim() !== "" && !addressLocation) {
+        setIsGeocoding(true);
+        try {
+          const geocodedLocation = await geocodeAddress(fullAddress);
+          setIsGeocoding(false);
+          if (geocodedLocation) {
+            setAddressLocation(geocodedLocation);
+            // Center map on geocoded customer address location
+            try {
+              if (mapRef.current?.animateToRegion) {
+                const region = {
+                  ...geocodedLocation,
+                  latitudeDelta: 0.05, // Show area around customer location
+                  longitudeDelta: 0.05,
+                };
+                mapRef.current.animateToRegion(region, 1000);
+              }
+            } catch (error) {
+              console.error("Error animating to address location:", error);
             }
-          } catch (error) {
-            console.error("Error animating to address location:", error);
           }
-          // Fetch route from address location to destination
-          fetchRoute(geocodedLocation);
+        } catch (error) {
+          setIsGeocoding(false);
+          console.error("Error geocoding address:", error);
         }
       }
     };
 
-    // Add a delay to check if location becomes available
-    const timeoutId = setTimeout(() => {
-      geocodeAddressLocation();
-    }, 3000); // Wait 3 seconds for GPS location, then geocode address
+    // Start geocoding immediately when FullAddress is available
+    geocodeAddressLocation();
+  }, [fullAddress]);
 
-    return () => clearTimeout(timeoutId);
-  }, [location, fullAddress]);
+  // Fetch route from current location to customer location when both are available
+  useEffect(() => {
+    if (location && addressLocation) {
+      // Use geocoded address location as destination
+      const customerDestination = {
+        Latitude: addressLocation.Latitude,
+        Longitude: addressLocation.Longitude,
+      };
+      fetchRoute(location, customerDestination);
+    } else if (location && hasValidCoordinates && destination) {
+      // Use booking coordinates as destination if available
+      fetchRoute(location, destination);
+    }
+  }, [location, addressLocation, hasValidCoordinates]);
 
-  const fetchRoute = async (origin) => {
+  const fetchRoute = async (origin, dest = null) => {
     try {
       if (
         !origin ||
@@ -322,9 +359,13 @@ export default function CustomerInfo() {
       ) {
         return;
       }
+      
+      // Use provided destination or fallback to default destination
+      const routeDestination = dest || destination;
       if (
-        !Number.isFinite(destination?.Latitude) ||
-        !Number.isFinite(destination?.Longitude)
+        !routeDestination ||
+        !Number.isFinite(routeDestination.Latitude) ||
+        !Number.isFinite(routeDestination.Longitude)
       ) {
         return;
       }
@@ -334,7 +375,7 @@ export default function CustomerInfo() {
         {
           params: {
             origin: `${origin.Latitude},${origin.Longitude}`,
-            destination: `${destination.Latitude},${destination.Longitude}`,
+            destination: `${routeDestination.Latitude},${routeDestination.Longitude}`,
             key: GOOGLE_MAPS_APIKEY,
           },
         }
@@ -437,20 +478,48 @@ export default function CustomerInfo() {
     }
   };
   const openGoogleMaps = async () => {
-    if (location && destination) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destination.Latitude},${destination.Longitude}&travelmode=driving`;
-
-      try {
+    try {
+      let url = "";
+      
+      // Determine destination - prioritize geocoded address location, then coordinates, then address string
+      let destinationCoords = null;
+      if (addressLocation) {
+        destinationCoords = addressLocation;
+      } else if (hasValidCoordinates && destination) {
+        destinationCoords = destination;
+      }
+      
+      // If we have current location and destination coordinates, show route
+      if (location && destinationCoords) {
+        url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destinationCoords.Latitude},${destinationCoords.Longitude}&travelmode=driving`;
+      } 
+      // If we have destination coordinates but no current location, just show destination
+      else if (destinationCoords) {
+        url = `https://www.google.com/maps/?api=1&q=${destinationCoords.Latitude},${destinationCoords.Longitude}`;
+      }
+      // If we have fullAddress but no coordinates, use address string
+      else if (fullAddress && fullAddress.trim() !== "") {
+        const encodedAddress = encodeURIComponent(fullAddress);
+        url = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+      }
+      // If we have coordinates from booking
+      else if (hasValidCoordinates) {
+        url = `https://www.google.com/maps/?api=1&q=${Latitude},${Longitude}`;
+      }
+      
+      if (url) {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
           await Linking.openURL(url);
         } else {
           Alert.alert("Error", "Google Maps not available on this device");
         }
-      } catch (error) {
-        console.error("Error opening Google Maps:", error);
-        Alert.alert("Error", "Failed to open Google Maps");
+      } else {
+        Alert.alert("Error", "Location information not available");
       }
+    } catch (error) {
+      console.error("Error opening Google Maps:", error);
+      Alert.alert("Error", "Failed to open Google Maps");
     }
   };
 
@@ -511,10 +580,11 @@ export default function CustomerInfo() {
     return istStr === today;
   };
 
-  if (!Number.isFinite(Latitude) || !Number.isFinite(Longitude)) {
-    console.warn("Invalid booking coordinates", {
+  if (!hasValidCoordinates) {
+    console.warn("Invalid booking coordinates, will use FullAddress for geocoding", {
       Latitude: rawLat,
       Longitude: rawLng,
+      FullAddress: fullAddress,
     });
   }
 
@@ -1106,27 +1176,35 @@ export default function CustomerInfo() {
           )}
           <View style={[globalStyles.divider, globalStyles.mt5]} />
 
-          {/* Map Section - Show only if coordinates are available */}
-          {Number.isFinite(Latitude) && Number.isFinite(Longitude) && (
-            <View style={[globalStyles.mt3]}>
-              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                Location
-              </CustomText>
+          {/* Map Section - Always show, display map when coordinates or geocoded address available */}
+          <View style={[globalStyles.mt3]}>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+              Location
+            </CustomText>
+            {(hasValidCoordinates || addressLocation) ? (
               <View style={[globalStyles.mt2, { height: 200, borderRadius: 10, overflow: 'hidden' }]}>
                 <MapView
                   ref={mapRef}
                   style={{ flex: 1 }}
                   initialRegion={
-                    addressLocation && !location
+                    // Prioritize geocoded address location (customer location from FullAddress)
+                    addressLocation
                       ? {
                           latitude: addressLocation.Latitude,
                           longitude: addressLocation.Longitude,
-                          latitudeDelta: addressLocation.latitudeDelta || 0.01,
-                          longitudeDelta: addressLocation.longitudeDelta || 0.01,
+                          latitudeDelta: 0.05, // Show area around customer location
+                          longitudeDelta: 0.05,
                         }
-                      : {
+                      : hasValidCoordinates
+                      ? {
                           latitude: Latitude,
                           longitude: Longitude,
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }
+                      : {
+                          latitude: 0,
+                          longitude: 0,
                           latitudeDelta: 0.01,
                           longitudeDelta: 0.01,
                         }
@@ -1134,32 +1212,34 @@ export default function CustomerInfo() {
                   showsUserLocation={!!location}
                   showsMyLocationButton={!!location}
                 >
-                  {/* Address Location Marker (when GPS location is null) */}
-                  {addressLocation && !location && (
+                  {/* Customer Location Marker - Always show when geocoded from FullAddress */}
+                  {addressLocation && (
                     <Marker
                       coordinate={{
                         latitude: addressLocation.Latitude,
                         longitude: addressLocation.Longitude,
                       }}
-                      title="Address Location"
+                      title="Customer Location"
                       description={fullAddress}
-                      pinColor="blue"
+                      pinColor="red"
                     />
                   )}
 
-                  {/* Destination Marker */}
-                  <Marker
-                    coordinate={{
-                      latitude: Latitude,
-                      longitude: Longitude,
-                    }}
-                    title="Destination"
-                    description={booking.CustomerName}
-                    pinColor="red"
-                  />
+                  {/* Destination Marker - Show if we have valid coordinates (may be same as customer location) */}
+                  {hasValidCoordinates && (
+                    <Marker
+                      coordinate={{
+                        latitude: Latitude,
+                        longitude: Longitude,
+                      }}
+                      title="Destination"
+                      description={booking.CustomerName}
+                      pinColor={addressLocation ? "orange" : "red"}
+                    />
+                  )}
 
-                  {/* Route Polyline */}
-                  {routeCoords && routeCoords.length > 0 && (
+                  {/* Route Polyline - Show route from current location to customer location */}
+                  {routeCoords && routeCoords.length > 0 && location && addressLocation && (
                     <Polyline
                       coordinates={routeCoords.map(coord => ({
                         latitude: coord.Latitude,
@@ -1171,133 +1251,106 @@ export default function CustomerInfo() {
                   )}
                 </MapView>
               </View>
-            </View>
-          )}
+            ) : isGeocoding ? (
+              <View style={[globalStyles.mt2, { height: 200, borderRadius: 10, overflow: 'hidden', backgroundColor: color.neutral[200], justifyContent: 'center', alignItems: 'center' }]}>
+                <CustomText style={[globalStyles.f14Medium, globalStyles.neutral500]}>
+                  Loading location...
+                </CustomText>
+              </View>
+            ) : fullAddress && fullAddress.trim() !== "" ? (
+              <View style={[globalStyles.mt2]}>
+                <View
+                  style={[
+                    globalStyles.bgwhite,
+                    globalStyles.radius,
+                    globalStyles.card,
+                    globalStyles.p3,
+                  ]}
+                >
+                  <CustomText
+                    style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mb2]}
+                  >
+                    {fullAddress}
+                  </CustomText>
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                  >
+                    Map will be available shortly...
+                  </CustomText>
+                </View>
+              </View>
+            ) : (
+              <View style={[globalStyles.mt2]}>
+                <View
+                  style={[
+                    globalStyles.bgwhite,
+                    globalStyles.radius,
+                    globalStyles.card,
+                    globalStyles.p3,
+                  ]}
+                >
+                  <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                    Location information not available
+                  </CustomText>
+                </View>
+              </View>
+            )}
+          </View>
 
           <View>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
               Service Details
             </CustomText>
 
-            {/* {booking.Packages.map((pkg) => (
-              <View key={pkg.PackageID} style={[globalStyles.mt2]}>
-                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {pkg.PackageName}
-                </CustomText>
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <CustomText style={[globalStyles.f12Medium]}>
-                    Estimated Time:
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f12Bold, globalStyles.black]}
-                  >
-                    {" "}
-                    {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}:${
-                      pkg.EstimatedDurationMinutes % 60
-                    }m`}
-                  </CustomText>
-                </View>
-
-                {pkg.Category && (
-                  <View style={[globalStyles.mt1, globalStyles.ph4]}>
-                    <CustomText style={globalStyles.f16Medium}>
-                      {pkg.Category.CategoryName}
-                    </CustomText>
-
-                    {pkg.Category.SubCategories?.map((sub) => (
-                      <View
-                        key={sub.SubCategoryID}
-                        style={[globalStyles.mt2, globalStyles.ph4]}
-                      >
-                        <CustomText style={globalStyles.f12Medium}>
-                          {sub.SubCategoryName}
-                        </CustomText>
-
-                        {sub.Includes?.map((inc) => (
-                          <CustomText
-                            key={inc.IncludeID}
-                            style={globalStyles.f10Regular}
-                          >
-                            {inc.IncludeName}
-                          </CustomText>
-                        ))}
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))} */}
-            {/* Display Packages if available */}
-            {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
-              <View
-                key={pkg.PackageID}
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgwhite,
-                  globalStyles.radius,
-                  globalStyles.p2,
-                  globalStyles.card,
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => togglePackageExpanded(pkg.PackageID)}
+            {/* Service Details Card with point-wise services, pickup/delivery, and price */}
+            <View
+              style={[
+                globalStyles.mt3,
+                globalStyles.bgwhite,
+                globalStyles.radius,
+                globalStyles.p4,
+                globalStyles.card,
+              ]}
+            >
+              {/* Service Details - Point-wise */}
+              <View>
+                <CustomText
                   style={[
-                    globalStyles.flexrow,
-                    globalStyles.alineItemscenter,
-                    globalStyles.justifysb,
-                    globalStyles.p1,
+                    globalStyles.f14Bold,
+                    globalStyles.black,
+                    globalStyles.mb2,
                   ]}
                 >
-                  <View style={{ flex: 1 }}>
+                  Services:
+                </CustomText>
+                
+                {/* Packages - Point-wise */}
+                {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
+                  <View key={pkg.PackageID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
-                        globalStyles.f16Bold,
-                        globalStyles.black,
+                        globalStyles.f12Bold,
+                        globalStyles.primary,
                       ]}
                     >
-                      {pkg.PackageName}
+                      • {pkg.PackageName}
                     </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                    >
-                      {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
-                        pkg.EstimatedDurationMinutes % 60
-                      }m`}
-                    </CustomText>
-                  </View>
-                  <Ionicons
-                    name={expandedPackages[pkg.PackageID] ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={color.primary}
-                  />
-                </TouchableOpacity>
-
-                {expandedPackages[pkg.PackageID] && (
-                  <View style={[globalStyles.mt1, globalStyles.p2]}>
+                    {pkg.Description && (
+                      <CustomText
+                        style={[
+                          globalStyles.f12Regular,
+                          globalStyles.neutral500,
+                          globalStyles.mt1,
+                          globalStyles.ml3,
+                        ]}
+                      >
+                        {pkg.Description}
+                      </CustomText>
+                    )}
                     {pkg.Category && (
-                      <View style={globalStyles.mt1}>
-                        <CustomText
-                          style={[
-                            globalStyles.f14Bold,
-                            globalStyles.primary,
-                            globalStyles.mb1,
-                          ]}
-                        >
-                          {pkg.Category.CategoryName}
-                        </CustomText>
-
+                      <View style={[globalStyles.ml3, globalStyles.mt1]}>
                         {pkg.Category.SubCategories?.map((sub) => (
-                          <View
-                            key={sub.SubCategoryID}
-                            style={[
-                              globalStyles.mt2,
-                              globalStyles.bgneutral100,
-                              globalStyles.radius,
-                              globalStyles.p2,
-                            ]}
-                          >
+                          <View key={sub.SubCategoryID} style={[globalStyles.mb1]}>
                             <CustomText
                               style={[
                                 globalStyles.f12Medium,
@@ -1307,17 +1360,16 @@ export default function CustomerInfo() {
                             >
                               {sub.SubCategoryName}
                             </CustomText>
-
                             {sub.Includes?.map((inc) => (
                               <CustomText
                                 key={inc.IncludeID}
                                 style={[
                                   globalStyles.f12Regular,
-                                  globalStyles.primary,
+                                  globalStyles.neutral500,
                                   globalStyles.ml2,
                                 ]}
                               >
-                                • {inc.IncludeName}
+                                - {inc.IncludeName}
                               </CustomText>
                             ))}
                           </View>
@@ -1325,242 +1377,126 @@ export default function CustomerInfo() {
                       </View>
                     )}
                   </View>
-                )}
-              </View>
-            ))}
+                ))}
 
-            {/* Display BookingAddOns if available */}
-            {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
-              <View
-                key={addOn.AddOnID}
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgwhite,
-                  globalStyles.radius,
-                  globalStyles.p2,
-                  globalStyles.card,
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => toggleAddOnExpanded(addOn.AddOnID)}
-                  style={[
-                    globalStyles.flexrow,
-                    globalStyles.alineItemscenter,
-                    globalStyles.justifysb,
-                    globalStyles.p1,
-                  ]}
-                >
-                  <View style={{ flex: 1 }}>
+                {/* BookingAddOns - Point-wise */}
+                {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+                  <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
-                        globalStyles.f16Bold,
-                        globalStyles.black,
+                        globalStyles.f12Bold,
+                        globalStyles.primary,
                       ]}
                     >
-                      {addOn.ServiceName}
+                      • {addOn.ServiceName}
                     </CustomText>
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
-                      <CustomText
-                        style={[globalStyles.f12Medium, globalStyles.primary]}
-                      >
-                        ₹{addOn.TotalPrice}
-                      </CustomText>
-                      {addOn.GarageName && (
-                        <CustomText
-                          style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.ml2]}
-                        >
-                          • {addOn.GarageName}
-                        </CustomText>
-                      )}
-                    </View>
-                  </View>
-                  <Ionicons
-                    name={expandedAddOns[addOn.AddOnID] ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color={color.primary}
-                  />
-                </TouchableOpacity>
-
-                {expandedAddOns[addOn.AddOnID] && (
-                  <View style={[globalStyles.mt1, globalStyles.p2]}>
                     {addOn.Description && (
                       <CustomText
                         style={[
                           globalStyles.f12Regular,
                           globalStyles.neutral500,
-                          globalStyles.mb2,
+                          globalStyles.mt1,
+                          globalStyles.ml3,
                         ]}
                       >
                         {addOn.Description}
                       </CustomText>
                     )}
-
-                    <View style={[globalStyles.mt2]}>
-                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                          Service Price:
-                        </CustomText>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                          ₹{addOn.ServicePrice}
-                        </CustomText>
-                      </View>
-
-                      {addOn.LabourCharges > 0 && (
-                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                          <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                            Labour Charges:
-                          </CustomText>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                            ₹{addOn.LabourCharges}
-                          </CustomText>
-                        </View>
-                      )}
-
-                      {addOn.GSTPercent > 0 && (
-                        <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                          <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                            GST ({addOn.GSTPercent}%):
-                          </CustomText>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                            ₹{addOn.GSTPrice}
-                          </CustomText>
-                        </View>
-                      )}
-
-                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt2, globalStyles.pt2, { borderTopWidth: 1, borderTopColor: color.neutral[200] }]}>
-                        <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
-                          Total Price:
-                        </CustomText>
-                        <CustomText style={[globalStyles.f14Bold, globalStyles.primary]}>
-                          ₹{addOn.TotalPrice}
-                        </CustomText>
-                      </View>
-                    </View>
-
                     {addOn.Includes && addOn.Includes.length > 0 && (
-                      <View style={[globalStyles.mt3]}>
-                        <CustomText
-                          style={[
-                            globalStyles.f14Bold,
-                            globalStyles.primary,
-                            globalStyles.mb2,
-                          ]}
-                        >
-                          Includes:
-                        </CustomText>
+                      <View style={[globalStyles.ml3, globalStyles.mt1]}>
                         {addOn.Includes.map((inc) => (
-                          <View
+                          <CustomText
                             key={inc.IncludeID}
                             style={[
-                              globalStyles.mt1,
-                              globalStyles.bgneutral100,
-                              globalStyles.radius,
-                              globalStyles.p2,
+                              globalStyles.f12Regular,
+                              globalStyles.neutral500,
                             ]}
                           >
-                            <CustomText
-                              style={[
-                                globalStyles.f12Regular,
-                                globalStyles.primary,
-                                globalStyles.ml1,
-                              ]}
-                            >
-                              • {inc.IncludeName}
-                            </CustomText>
-                          </View>
+                            - {inc.IncludeName}
+                          </CustomText>
                         ))}
                       </View>
                     )}
                   </View>
+                ))}
+
+                {(!booking.Packages || booking.Packages.length === 0) &&
+                 (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
+                  <CustomText
+                    style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                  >
+                    No services available
+                  </CustomText>
                 )}
               </View>
-            ))}
-          </View>
 
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.justifysb,
-              globalStyles.mt4,
-              globalStyles.bgprimary,
-              globalStyles.p4,
-              globalStyles.borderRadiuslarge,
-            ]}
-          >
-            <View style={globalStyles.alineSelfcenter}>
+              {/* Divider */}
+              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
+
+              {/* Pickup and Delivery Details */}
               {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
-                <>
-                  <View style={[globalStyles.mb3]}>
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb1]}>
-                      <Ionicons name="arrow-down-circle" size={18} color={color.white} style={{ marginRight: 8 }} />
-                      <CustomText
-                        style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                      >
-                        Pickup Details
-                      </CustomText>
-                    </View>
-                    <View style={{ marginLeft: 26 }}>
-                      <CustomText
-                        style={[globalStyles.f12Medium, globalStyles.textWhite, globalStyles.mb1]}
-                      >
-                        Date: {formatDate(booking.PickupDelivery[0].PickupDate)}
-                      </CustomText>
-                      {booking.PickupDelivery[0].PickupTime && (
-                        <CustomText
-                          style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                        >
-                          Time: {formatTime(booking.PickupDelivery[0].PickupTime)}
-                        </CustomText>
-                      )}
-                    </View>
+                <View style={[globalStyles.mb3]}>
+                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
+                    <Ionicons name="arrow-down-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                    <CustomText
+                      style={[globalStyles.f14Bold, globalStyles.black]}
+                    >
+                      Pickup
+                    </CustomText>
                   </View>
-                  <View>
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb1]}>
-                      <Ionicons name="arrow-up-circle" size={18} color={color.white} style={{ marginRight: 8 }} />
-                      <CustomText
-                        style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                      >
-                        Delivery Details
-                      </CustomText>
-                    </View>
-                    <View style={{ marginLeft: 26 }}>
-                      <CustomText
-                        style={[globalStyles.f12Medium, globalStyles.textWhite, globalStyles.mb1]}
-                      >
-                        Date: {formatDate(booking.PickupDelivery[0].DeliveryDate)}
-                      </CustomText>
-                      {booking.PickupDelivery[0].DeliveryTime && (
-                        <CustomText
-                          style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                        >
-                          Time: {formatTime(booking.PickupDelivery[0].DeliveryTime)}
-                        </CustomText>
-                      )}
-                    </View>
+                  <View style={{ marginLeft: 22 }}>
+                    <CustomText
+                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                    >
+                      {formatDate(booking.PickupDelivery[0].PickupDate)} {booking.PickupDelivery[0].PickupTime && `(${formatTime(booking.PickupDelivery[0].PickupTime)})`}
+                    </CustomText>
                   </View>
-                </>
+
+                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2, globalStyles.mb2]}>
+                    <Ionicons name="arrow-up-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                    <CustomText
+                      style={[globalStyles.f14Bold, globalStyles.black]}
+                    >
+                      Delivery
+                    </CustomText>
+                  </View>
+                  <View style={{ marginLeft: 22 }}>
+                    <CustomText
+                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                    >
+                      {formatDate(booking.PickupDelivery[0].DeliveryDate)} {booking.PickupDelivery[0].DeliveryTime && `(${formatTime(booking.PickupDelivery[0].DeliveryTime)})`}
+                    </CustomText>
+                  </View>
+                </View>
               ) : (
-                <CustomText
-                  style={[globalStyles.f12Medium, globalStyles.textWhite]}
-                >
-                  No pickup/delivery scheduled
-                </CustomText>
+                <View style={[globalStyles.mb3]}>
+                  <CustomText
+                    style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                  >
+                    No pickup/delivery scheduled
+                  </CustomText>
+                </View>
               )}
-            </View>
-            <View style={styles.pricecard}>
-              <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                Price
-              </CustomText>
-              <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
-                {"₹"}
-                {booking.TotalPrice ||
-                  (booking.BookingAddOns &&
-                    booking.BookingAddOns.reduce(
-                      (sum, addOn) => sum + (addOn.TotalPrice || 0),
-                      0
-                    )) ||
-                  0}
-              </CustomText>
+
+              {/* Divider */}
+              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
+
+              {/* Price - Aligned at bottom */}
+              <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
+                <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
+                  Total Price:
+                </CustomText>
+                <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
+                  {"₹"}
+                  {booking.TotalPrice ||
+                    (booking.BookingAddOns &&
+                      booking.BookingAddOns.reduce(
+                        (sum, addOn) => sum + (addOn.TotalPrice || 0),
+                        0
+                      )) ||
+                    0}
+                </CustomText>
+              </View>
             </View>
           </View>
         </View>

@@ -140,14 +140,47 @@ const fetchBookings = async () => {
     navigation.navigate("customerInfo", { booking });
   };
 
+  // Helper function to check if a date is in the future
+  const isFutureDate = (dateString) => {
+    if (!dateString) return false;
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+    const dateStr = new Date(dateString).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+    return dateStr > today;
+  };
+
   const getFilteredBookings = () => {
     switch (filterType) {
       case 'completed':
+        // Show only completed bookings (these should go to Reports)
         return todaysBookings.filter(booking => booking.BookingStatus === 'Completed');
       case 'pending':
-        return todaysBookings.filter(booking => booking.BookingStatus !== 'Completed');
+        // Show only pending bookings that are NOT completed and NOT in the future
+        return todaysBookings.filter(booking => {
+          // Exclude completed
+          if (booking.BookingStatus === 'Completed') return false;
+          
+          // Exclude pending with future assigned dates (these go to Schedules)
+          if (booking.BookingStatus === 'Pending' || booking.BookingStatus === 'Confirmed') {
+            const assignDate = booking.TechAssignDate || booking.BookingDate;
+            if (isFutureDate(assignDate)) return false;
+          }
+          
+          return true;
+        });
       default:
-        return todaysBookings;
+        // Default: show pending (not completed, not future)
+        return todaysBookings.filter(booking => {
+          if (booking.BookingStatus === 'Completed') return false;
+          if (booking.BookingStatus === 'Pending' || booking.BookingStatus === 'Confirmed') {
+            const assignDate = booking.TechAssignDate || booking.BookingDate;
+            if (isFutureDate(assignDate)) return false;
+          }
+          return true;
+        });
     }
   };
 

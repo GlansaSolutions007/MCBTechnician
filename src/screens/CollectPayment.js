@@ -38,6 +38,31 @@ export default function CollectPayment() {
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
 console.log("qrId",qrId)
 
+  // Calculate total amount to collect with fallbacks
+  const getCollectAmount = () => {
+    // First try booking TotalPrice
+    if (booking?.TotalPrice) {
+      return booking.TotalPrice;
+    }
+    // Try pending payment amount
+    const pendingPayment = booking?.Payments?.find(
+      (p) => p?.PaymentStatus === "Pending"
+    );
+    if (pendingPayment?.Amount) {
+      return pendingPayment.Amount;
+    }
+    // Calculate from BookingAddOns
+    if (booking?.BookingAddOns && booking.BookingAddOns.length > 0) {
+      return booking.BookingAddOns.reduce(
+        (sum, addOn) => sum + (addOn.TotalPrice || 0),
+        0
+      );
+    }
+    return 0;
+  };
+
+  const collectAmount = getCollectAmount();
+
   // Handle back button to navigate directly to dashboard
   useFocusEffect(
     React.useCallback(() => {
@@ -63,7 +88,7 @@ console.log("qrId",qrId)
     try {
       const payload = {
         bookingID: booking?.BookingID,
-        amountPaid: booking?.TotalPrice,
+        amountPaid: collectAmount,
       };
 
       const response = await axios.post(
@@ -98,7 +123,7 @@ console.log("qrId",qrId)
 
         const bookingID = booking?.BookingID;
         console.log("bookingID",bookingID)
-        const amount = Math.round(Number(booking?.TotalPrice));
+        const amount = Math.round(Number(collectAmount));
 
         const qrResponse = await axios.post(
           // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
@@ -234,7 +259,7 @@ console.log("status",status);
               { marginTop: 4 },
             ]}
           >
-            ₹{booking?.TotalPrice}
+            ₹{collectAmount}
           </CustomText>
         </View>
 

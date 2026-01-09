@@ -50,12 +50,47 @@ export default function Dashboard() {
   };
 
   const [bookings, setBookings] = useState([]);
+  const [allBookings, setAllBookings] = useState([]); // Store all bookings before filtering
   const [bookingCounts, setBookingCounts] = useState({
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,
     TodayCustomerCount: 0,
     CompletedBookingsCount: 0,
   });
+
+  // Helper function to check if a date is in the future
+  const isFutureDate = (dateString) => {
+    if (!dateString) return false;
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+    const dateStr = new Date(dateString).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+    return dateStr > today;
+  };
+
+  // Filter bookings for Dashboard: Exclude completed and pending with future dates
+  const filterBookingsForDashboard = (allBookingsData) => {
+    if (!Array.isArray(allBookingsData)) return [];
+    
+    return allBookingsData.filter((booking) => {
+      // Exclude completed bookings
+      if (booking.BookingStatus === "Completed") {
+        return false;
+      }
+      
+      // Exclude pending bookings with future assigned dates
+      if (booking.BookingStatus === "Pending" || booking.BookingStatus === "Confirmed") {
+        const assignDate = booking.TechAssignDate || booking.BookingDate;
+        if (isFutureDate(assignDate)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
   const CollectPayment = async (item) => {
     navigation.navigate("CollectPayment", { booking: item });
   };
@@ -122,7 +157,11 @@ export default function Dashboard() {
             }
           );
 
-          setBookings(Array.isArray(res.data) ? res.data : []);
+          const allBookingsData = Array.isArray(res.data) ? res.data : [];
+          setAllBookings(allBookingsData);
+          // Filter bookings: exclude completed and pending with future dates
+          const filteredBookings = filterBookingsForDashboard(allBookingsData);
+          setBookings(filteredBookings);
         } else {
           console.warn("No technicianId found");
         }
@@ -206,7 +245,11 @@ export default function Dashboard() {
           `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setBookings(Array.isArray(res.data) ? res.data : []);
+        const allBookingsData = Array.isArray(res.data) ? res.data : [];
+        setAllBookings(allBookingsData);
+        // Filter bookings: exclude completed and pending with future dates
+        const filteredBookings = filterBookingsForDashboard(allBookingsData);
+        setBookings(filteredBookings);
       }
     } catch (err) {
       console.error("fetchBookings error", err);
@@ -632,7 +675,33 @@ export default function Dashboard() {
         </Pressable>
 
         <View style={[globalStyles.mt4]}>
-          <CustomText style={[globalStyles.f14Bold]}>Active Service</CustomText>
+          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.justifysb]}>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>Active Services</CustomText>
+            {bookings.some(
+              (item) =>
+                item.BookingStatus === "StartJourney" ||
+                item.BookingStatus === "ServiceStarted" ||
+                item.BookingStatus === "Reached" ||
+                item.Payments?.[0]?.PaymentStatus === "Pending"
+            ) && (
+              <View style={[
+                globalStyles.bgprimary,
+                globalStyles.p1,
+                globalStyles.ph2,
+                { borderRadius: 12 }
+              ]}>
+                <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                  {bookings.filter(
+                    (item) =>
+                      item.BookingStatus === "ServiceStarted" ||
+                      item.BookingStatus === "StartJourney" ||
+                      item.BookingStatus === "Reached" ||
+                      item.Payments?.[0]?.PaymentStatus === "Pending"
+                  ).length}
+                </CustomText>
+              </View>
+            )}
+          </View>
           {bookings.some(
             (item) =>
               item.BookingStatus === "StartJourney" ||
@@ -662,6 +731,29 @@ export default function Dashboard() {
                     ]}
                   >
                     {/* Status Indicator */}
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
+                      <View style={[
+                        globalStyles.p1,
+                        globalStyles.ph2,
+                        { 
+                          borderRadius: 8,
+                          backgroundColor: 
+                            item.BookingStatus === "ServiceStarted" ? color.alertSuccess :
+                            item.BookingStatus === "StartJourney" ? color.alertInfo :
+                            item.BookingStatus === "Reached" ? color.primary :
+                            item.Payments?.[0]?.PaymentStatus === "Pending" ? color.alertWarning :
+                            color.neutral[300]
+                        }
+                      ]}>
+                        <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
+                          {item.BookingStatus === "ServiceStarted" ? "In Progress" :
+                           item.BookingStatus === "StartJourney" ? "On Journey" :
+                           item.BookingStatus === "Reached" ? "Reached" :
+                           item.Payments?.[0]?.PaymentStatus === "Pending" ? "Payment Pending" :
+                           item.BookingStatus}
+                        </CustomText>
+                      </View>
+                    </View>
 
                     <View style={[globalStyles.flexrow]}>
                       <View style={styles.avatarContainer}>
