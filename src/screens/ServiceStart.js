@@ -156,19 +156,20 @@ export default function ServiceStart() {
   useEffect(() => {
     let interval = null;
 
-    if (booking.ServiceStartedAt && timerStarted) {
+    if (booking.ServiceStartedAt && timerStarted && booking.TotalEstimatedDurationMinutes) {
       // set initial values
       const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+      const maxTimeSeconds = booking.TotalEstimatedDurationMinutes * 60;
       setElapsedTime(elapsedFromAPI);
-      setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
-      setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
+      setMaxTime(maxTimeSeconds);
+      setTimerCompleted(elapsedFromAPI >= maxTimeSeconds);
 
       // keep calculating every second
       interval = setInterval(() => {
         const updated = calculateElapsedFromAPI(booking.ServiceStartedAt);
         setElapsedTime(updated);
 
-        if (updated >= booking.TotalEstimatedDurationMinutes * 60) {
+        if (updated >= maxTimeSeconds) {
           setTimerCompleted(true);
           clearInterval(interval);
         }
@@ -188,10 +189,11 @@ export default function ServiceStart() {
         // Always check if service has started from API first
         if (booking.ServiceStartedAt) {
           const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+          const maxTimeSeconds = booking.TotalEstimatedDurationMinutes ? booking.TotalEstimatedDurationMinutes * 60 : 0;
           setElapsedTime(elapsedFromAPI);
-          setMaxTime(booking.TotalEstimatedDurationMinutes * 60);
+          setMaxTime(maxTimeSeconds);
           setTimerStarted(true);
-          setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
+          setTimerCompleted(maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds);
           
           // Update stored state with current API data
           await AsyncStorage.setItem(
@@ -199,8 +201,8 @@ export default function ServiceStart() {
             JSON.stringify({
               timerStarted: true,
               elapsedTime: elapsedFromAPI,
-              maxTime: booking.TotalEstimatedDurationMinutes * 60,
-              timerCompleted: elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60,
+              maxTime: maxTimeSeconds,
+              timerCompleted: maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds,
             })
           );
         } else {
@@ -260,10 +262,11 @@ export default function ServiceStart() {
   // Refresh timer when screen comes back into focus
   useFocusEffect(
     React.useCallback(() => {
-      if (booking.ServiceStartedAt && timerStarted) {
+      if (booking.ServiceStartedAt && timerStarted && booking.TotalEstimatedDurationMinutes) {
         const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
         setElapsedTime(elapsedFromAPI);
-        setTimerCompleted(elapsedFromAPI >= booking.TotalEstimatedDurationMinutes * 60);
+        const maxTimeSeconds = booking.TotalEstimatedDurationMinutes * 60;
+        setTimerCompleted(elapsedFromAPI >= maxTimeSeconds);
       }
       // Check CarPickUpDate when screen comes into focus
       if (booking.CarPickUpDate) {
@@ -289,7 +292,9 @@ export default function ServiceStart() {
         bookingID: Number(bookingId),
         actionType: actionType,
       };
-      
+      console.log("updateTechnicianTracking123333333", updateTechnicianTracking);
+      console.log("actionType", actionType);
+      console.log("bookingId", bookingId);
       // Only include OTP if it exists (for actions that require it)
       if (otp) {
         payload.bookingOTP = otp;
@@ -641,8 +646,11 @@ export default function ServiceStart() {
                   globalStyles.justifycenter,
                   globalStyles.alineItemscenter,
                 ]}
-                onPress={() => {
-                  setOtpSent(true);
+                onPress={async () => {
+                  const success = await updateTechnicianTracking("BookingStartOTP");
+                  if (success) {
+                    setOtpSent(true);
+                  }
                 }}
               >
                 <View
@@ -715,7 +723,7 @@ export default function ServiceStart() {
                   { marginBottom: keyboardVisible ? 20 : 0 },
                 ]}
               >
-                <View style={globalStyles.alineSelfcenter}>
+                {/* <View style={globalStyles.alineSelfcenter}>
                   <CustomText
                     style={[globalStyles.f12Medium, globalStyles.textWhite]}
                   >
@@ -724,11 +732,13 @@ export default function ServiceStart() {
                   <CustomText
                     style={[globalStyles.f32Bold, globalStyles.textWhite]}
                   >
-                    {`${Math.floor(
-                      booking.TotalEstimatedDurationMinutes / 60
-                    )}h ${booking.TotalEstimatedDurationMinutes % 60}m`}
+                    {booking.TotalEstimatedDurationMinutes
+                      ? `${Math.floor(
+                          booking.TotalEstimatedDurationMinutes / 60
+                        )}h ${booking.TotalEstimatedDurationMinutes % 60}m`
+                      : "N/A"}
                   </CustomText>
-                </View>
+                </View> */}
 
                 <TouchableOpacity
                   style={[
@@ -752,8 +762,9 @@ export default function ServiceStart() {
                   }
 
                   handleUpload();
-                  const totalSeconds =
-                    booking.TotalEstimatedDurationMinutes * 60;
+                  const totalSeconds = booking.TotalEstimatedDurationMinutes
+                    ? booking.TotalEstimatedDurationMinutes * 60
+                    : 0;
                   setMaxTime(totalSeconds);
 
                   const elapsedFromAPI = booking.ServiceStartedAt
@@ -916,7 +927,7 @@ export default function ServiceStart() {
 
         {timerStarted && (
           <View>
-            <View
+            {/* <View
               style={[
                 globalStyles.flexrow,
                 globalStyles.justifysb,
@@ -942,14 +953,16 @@ export default function ServiceStart() {
                   style={[globalStyles.f24Bold, globalStyles.textWhite]}
                 >
                   {" "}
-                  {`${Math.floor(
-                    booking.TotalEstimatedDurationMinutes / 60
-                  )}h:${booking.TotalEstimatedDurationMinutes % 60}m`}
+                  {booking.TotalEstimatedDurationMinutes
+                    ? `${Math.floor(
+                        booking.TotalEstimatedDurationMinutes / 60
+                      )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
+                    : "N/A"}
                 </CustomText>
               </View>
-            </View>
+            </View> */}
 
-            <View style={{ alignItems: "center", marginTop: 30 }}>
+            {/* <View style={{ alignItems: "center", marginTop: 30 }}>
               <AnimatedCircularProgress
                 size={240}
                 width={10}
@@ -964,9 +977,11 @@ export default function ServiceStart() {
                     <CustomText
                       style={[globalStyles.f12Medium, { color: color.black }]}
                     >
-                      {`${Math.floor(
-                        booking.TotalEstimatedDurationMinutes / 60
-                      )}h:${booking.TotalEstimatedDurationMinutes % 60}m`}
+                      {booking.TotalEstimatedDurationMinutes
+                        ? `${Math.floor(
+                            booking.TotalEstimatedDurationMinutes / 60
+                          )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
+                        : "N/A"}
                     </CustomText>
                     <CustomText
                       style={[globalStyles.f12Medium, { color: color.black }]}
@@ -1012,14 +1027,14 @@ export default function ServiceStart() {
                   </View>
                 </>
               )}
-            </View>
+            </View> */}
 
             <View>
               <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                 Service Details
               </CustomText>
 
-              {booking.Packages && booking.Packages.map((pkg) => (
+              {booking.Packages && Array.isArray(booking.Packages) && booking.Packages.map((pkg) => (
                 <View
                   key={pkg.PackageID}
                   style={[
@@ -1042,26 +1057,28 @@ export default function ServiceStart() {
                   </CustomText>
 
                   {/* Estimated Time */}
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.alineItemscenter,
-                      globalStyles.mb2,
-                    ]}
-                  >
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                  {/* {pkg.EstimatedDurationMinutes && (
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.alineItemscenter,
+                        globalStyles.mb2,
+                      ]}
                     >
-                      Estimated Time:{" "}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Bold, globalStyles.black]}
-                    >
-                      {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
-                        pkg.EstimatedDurationMinutes % 60
-                      }m`}
-                    </CustomText>
-                  </View>
+                      <CustomText
+                        style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                      >
+                        Estimated Time:{" "}
+                      </CustomText>
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.black]}
+                      >
+                        {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
+                          pkg.EstimatedDurationMinutes % 60
+                        }m`}
+                      </CustomText>
+                    </View>
+                  )} */}
 
                   {/* Category */}
                   {pkg.Category && (
@@ -1077,7 +1094,7 @@ export default function ServiceStart() {
                       </CustomText>
 
                       {/* Subcategories */}
-                      {pkg.Category.SubCategories?.map((sub) => (
+                      {pkg.Category.SubCategories && Array.isArray(pkg.Category.SubCategories) && pkg.Category.SubCategories.map((sub) => (
                         <View
                           key={sub.SubCategoryID}
                           style={[
@@ -1098,7 +1115,7 @@ export default function ServiceStart() {
                           </CustomText>
 
                           {/* Includes */}
-                          {sub.Includes?.map((inc) => (
+                          {sub.Includes && Array.isArray(sub.Includes) && sub.Includes.map((inc) => (
                             <CustomText
                               key={inc.IncludeID}
                               style={[
@@ -1110,6 +1127,145 @@ export default function ServiceStart() {
                               • {inc.IncludeName}
                             </CustomText>
                           ))}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+
+              {/* Display BookingAddOns if available */}
+              {booking.BookingAddOns && Array.isArray(booking.BookingAddOns) && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+                <View
+                  key={addOn.AddOnID}
+                  style={[
+                    globalStyles.mt3,
+                    globalStyles.bgwhite,
+                    globalStyles.radius,
+                    globalStyles.p3,
+                    globalStyles.card,
+                  ]}
+                >
+                  {/* Service Name */}
+                  <CustomText
+                    style={[
+                      globalStyles.f16Bold,
+                      globalStyles.black,
+                      globalStyles.mb1,
+                    ]}
+                  >
+                    {addOn.ServiceName}
+                  </CustomText>
+
+                  {/* Price and Garage */}
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.alineItemscenter,
+                      globalStyles.mb2,
+                    ]}
+                  >
+                    <CustomText
+                      style={[globalStyles.f12Medium, globalStyles.primary]}
+                    >
+                      ₹{addOn.TotalPrice}
+                    </CustomText>
+                    {addOn.GarageName && (
+                      <CustomText
+                        style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.ml2]}
+                      >
+                        • {addOn.GarageName}
+                      </CustomText>
+                    )}
+                  </View>
+
+                  {/* Description */}
+                  {addOn.Description && (
+                    <CustomText
+                      style={[
+                        globalStyles.f12Regular,
+                        globalStyles.neutral500,
+                        globalStyles.mb2,
+                      ]}
+                    >
+                      {addOn.Description}
+                    </CustomText>
+                  )}
+
+                  {/* Price Breakdown */}
+                  <View style={[globalStyles.mt2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                      <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                        Service Price:
+                      </CustomText>
+                      <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                        ₹{addOn.ServicePrice}
+                      </CustomText>
+                    </View>
+
+                    {addOn.LabourCharges > 0 && (
+                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                          Labour Charges:
+                        </CustomText>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                          ₹{addOn.LabourCharges}
+                        </CustomText>
+                      </View>
+                    )}
+
+                    {addOn.GSTPercent > 0 && (
+                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
+                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
+                          GST ({addOn.GSTPercent}%):
+                        </CustomText>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
+                          ₹{addOn.GSTPrice}
+                        </CustomText>
+                      </View>
+                    )}
+
+                    <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt2, globalStyles.pt2, { borderTopWidth: 1, borderTopColor: color.neutral[200] }]}>
+                      <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
+                        Total Price:
+                      </CustomText>
+                      <CustomText style={[globalStyles.f14Bold, globalStyles.primary]}>
+                        ₹{addOn.TotalPrice}
+                      </CustomText>
+                    </View>
+                  </View>
+
+                  {/* Includes */}
+                  {addOn.Includes && Array.isArray(addOn.Includes) && addOn.Includes.length > 0 && (
+                    <View style={[globalStyles.mt3]}>
+                      <CustomText
+                        style={[
+                          globalStyles.f14Bold,
+                          globalStyles.primary,
+                          globalStyles.mb2,
+                        ]}
+                      >
+                        Includes:
+                      </CustomText>
+                      {addOn.Includes.map((inc) => (
+                        <View
+                          key={inc.IncludeID}
+                          style={[
+                            globalStyles.mt1,
+                            globalStyles.bgneutral100,
+                            globalStyles.radius,
+                            globalStyles.p2,
+                          ]}
+                        >
+                          <CustomText
+                            style={[
+                              globalStyles.f12Regular,
+                              globalStyles.primary,
+                              globalStyles.ml1,
+                            ]}
+                          >
+                            • {inc.IncludeName}
+                          </CustomText>
                         </View>
                       ))}
                     </View>

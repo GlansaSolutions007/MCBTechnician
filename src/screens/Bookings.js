@@ -334,7 +334,7 @@ const onRefresh = async () => {
                     ]}
                   >
                     <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                    {item.CustomerName}
+                    {item.CustomerName || item.Leads?.FullName || "N/A"}
                   </CustomText>
                     {/* <View style={[
                       styles.statusChip,
@@ -347,13 +347,13 @@ const onRefresh = async () => {
                   </View>
 
                   <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}>
-                    Mobile: <CustomText style={globalStyles.black}>{item.PhoneNumber}</CustomText>
+                    Mobile: <CustomText style={globalStyles.black}>{item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}</CustomText>
                   </CustomText>
                   <CustomText
                     style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}
                     numberOfLines={2}
                   >
-                    {item.FullAddress}
+                    {item.FullAddress || item.Leads?.City || "N/A"}
                   </CustomText>
                 </View>
               </View>
@@ -401,7 +401,7 @@ const onRefresh = async () => {
                         style={{ marginRight: 6 }}
                       />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                        {item.VehicleNumber}
+                        {item.VehicleNumber || item.Leads?.Vehicle?.ModelName || item.Leads?.Vehicle?.RegistrationNumber || "N/A"}
                       </CustomText>
                     </View>
                   </View>

@@ -16,7 +16,7 @@ import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
@@ -48,7 +48,52 @@ export default function CustomerInfo() {
     );
   }
   const booking = bookingParam;
+  
+  // Merge booking data with Leads data for missing fields
+  const customerName = booking.CustomerName || booking.Leads?.FullName || "";
+  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
+  const profileImage = booking.ProfileImage || null;
+  // Vehicle number: Use booking.VehicleNumber if available, otherwise use Leads.Vehicle.RegistrationNumber
+  const vehicleNumber = booking.VehicleNumber 
+    ? booking.VehicleNumber 
+    : (booking.Leads?.Vehicle?.RegistrationNumber || "");
+  const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
+  const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
+  const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
+  const vehicleImage = booking.VehicleImage || null;
+  const fullAddress = booking.FullAddress || booking.Leads?.City || "";
+  
+  // Helper function to format date (YYYY-MM-DD to DD MMM YYYY)
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Helper function to format time (HH:MM:SS to HH:MM AM/PM)
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    try {
+      const [hours, minutes] = timeString.split(":");
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const hour12 = hour % 12 || 12;
+      return `${hour12}:${minutes} ${ampm}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
+  
   const [location, setLocation] = useState(null);
+  const [addressLocation, setAddressLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const mapRef = useRef(null);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -238,6 +283,36 @@ export default function CustomerInfo() {
     };
   }, []);
 
+  // Geocode address if location is null
+  useEffect(() => {
+    const geocodeAddressLocation = async () => {
+      // Only geocode if location is null and we have an address
+      if (!location && fullAddress && fullAddress.trim() !== "") {
+        const geocodedLocation = await geocodeAddress(fullAddress);
+        if (geocodedLocation) {
+          setAddressLocation(geocodedLocation);
+          // Center map on geocoded address location
+          try {
+            if (mapRef.current?.animateToRegion) {
+              mapRef.current.animateToRegion(geocodedLocation, 1000);
+            }
+          } catch (error) {
+            console.error("Error animating to address location:", error);
+          }
+          // Fetch route from address location to destination
+          fetchRoute(geocodedLocation);
+        }
+      }
+    };
+
+    // Add a delay to check if location becomes available
+    const timeoutId = setTimeout(() => {
+      geocodeAddressLocation();
+    }, 3000); // Wait 3 seconds for GPS location, then geocode address
+
+    return () => clearTimeout(timeoutId);
+  }, [location, fullAddress]);
+
   const fetchRoute = async (origin) => {
     try {
       if (
@@ -329,6 +404,37 @@ export default function CustomerInfo() {
       });
     }
     return points;
+  };
+
+  // Geocode address to get coordinates
+  const geocodeAddress = async (address) => {
+    if (!address || address.trim() === "") return null;
+    
+    try {
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/geocode/json`,
+        {
+          params: {
+            address: address,
+            key: GOOGLE_MAPS_APIKEY,
+          },
+        }
+      );
+
+      if (response.data && response.data.status === "OK" && response.data.results.length > 0) {
+        const location = response.data.results[0].geometry.location;
+        return {
+          Latitude: location.lat,
+          Longitude: location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Geocoding error:", error?.response?.data || error?.message || error);
+      return null;
+    }
   };
   const openGoogleMaps = async () => {
     if (location && destination) {
@@ -689,9 +795,9 @@ export default function CustomerInfo() {
             /> */}
               <Image
                 source={
-                  booking.ProfileImage
+                  profileImage
                     ? {
-                        uri: `https://api.mycarsbuddy.com/images/${booking.ProfileImage}`,
+                        uri: `https://api.mycarsbuddy.com/images/${profileImage}`,
                       }
                     : defaultAvatar
                 }
@@ -699,19 +805,18 @@ export default function CustomerInfo() {
               />
               <View style={[globalStyles.ml3, { flex: 1 }]}>
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {booking.CustomerName}
+                  {customerName}
                 </CustomText>
                 <CustomText
                   style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
-                  Mobile: {booking.PhoneNumber}
+                  Mobile: {phoneNumber}
                 </CustomText>
               </View>
               <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
-                  const phoneNumber = booking.PhoneNumber;
                   if (phoneNumber) {
                     Linking.openURL(`tel:${phoneNumber}`);
                   } else {
@@ -782,6 +887,25 @@ export default function CustomerInfo() {
                   globalStyles.flexrow,
                   globalStyles.mt2,
                   globalStyles.alineItemscenter,
+                  globalStyles.w40,
+                ]}
+              >
+                <Ionicons name="car" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {modelName || vehicleNumber || "N/A"}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
                 ]}
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
@@ -803,96 +927,176 @@ export default function CustomerInfo() {
             </View>
           </View>
 
-          {(booking.ModelName || booking.VehicleNumber || booking.VehicleImage || booking.BrandName || booking.FuelTypeName) && (
+          {(modelName || vehicleNumber || brandName || fuelTypeName) && (
             <>
               <CustomText
                 style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}
               >
                 Car Details
               </CustomText>
-              <View style={[styles.blackcard]}>
-                <View
-                  style={[
-                    styles.width60,
-                    globalStyles.borderRadiuslarge,
-                    globalStyles.alineItemscenter,
-                    globalStyles.bgwhite,
-                  ]}
-                >
-                  {booking.ModelName && (
-                    <CustomText
+              <View
+                style={[
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.card,
+                  globalStyles.p3,
+                  globalStyles.mt2,
+                ]}
+              >
+                <View style={[globalStyles.flexrow, { flexWrap: "wrap" }]}>
+                  {modelName && (
+                    <View
                       style={[
-                        globalStyles.f10Bold,
-                        globalStyles.mt1,
-                        globalStyles.primary,
+                        {
+                          width: "50%",
+                          paddingRight: 8,
+                          marginBottom: 16,
+                        },
                       ]}
                     >
-                      Model Name:{" "}
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.primary]}
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.alineItemscenter,
+                          globalStyles.mb1,
+                        ]}
                       >
-                        {booking.ModelName}
-                      </CustomText>
-                    </CustomText>
-                  )}
-                  <View style={[styles.width60]}>
-                    <View>
-                      <View style={styles.imageContainer}>
-                        <Image
-                          source={
-                            booking.VehicleImage
-                              ? {
-                                  uri: `https://api.mycarsbuddy.com/images/${booking.VehicleImage}`,
-                                }
-                              : defaultAvatar
-                          }
-                          style={styles.avatar}
-                          resizeMode="cover"
+                        <Ionicons
+                          name="car"
+                          size={16}
+                          color={color.primary}
+                          style={{ marginRight: 6 }}
                         />
+                        <CustomText
+                          style={[
+                            globalStyles.f10Medium,
+                            globalStyles.neutral500,
+                          ]}
+                        >
+                          Model Name
+                        </CustomText>
                       </View>
-                    </View>
-                  </View>
-                </View>
-                <View style={[styles.width30]}>
-                  {booking.VehicleNumber && (
-                    <View>
                       <CustomText
-                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                        style={[globalStyles.f14Bold, globalStyles.black]}
                       >
-                        Reg No
-                      </CustomText>
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                      >
-                        {booking.VehicleNumber}
+                        {modelName}
                       </CustomText>
                     </View>
                   )}
-                  {booking.FuelTypeName && (
-                    <View>
-                      <CustomText
-                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                  {vehicleNumber && (
+                    <View
+                      style={[
+                        {
+                          width: "50%",
+                          paddingLeft: 8,
+                          marginBottom: 16,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.alineItemscenter,
+                          globalStyles.mb1,
+                        ]}
                       >
-                        Fuel Type
-                      </CustomText>
+                        <MaterialCommunityIcons
+                          name="card-account-details-outline"
+                          size={16}
+                          color={color.primary}
+                          style={{ marginRight: 6 }}
+                        />
+                        <CustomText
+                          style={[
+                            globalStyles.f10Medium,
+                            globalStyles.neutral500,
+                          ]}
+                        >
+                          Reg No
+                        </CustomText>
+                      </View>
                       <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                        style={[globalStyles.f14Bold, globalStyles.black]}
                       >
-                        {booking.FuelTypeName}
+                        {vehicleNumber}
                       </CustomText>
                     </View>
                   )}
-                  {booking.BrandName && (
-                    <View>
-                      <CustomText
-                        style={[globalStyles.f10Light, globalStyles.textyellow]}
+                  {brandName && (
+                    <View
+                      style={[
+                        {
+                          width: "50%",
+                          paddingRight: 8,
+                          marginBottom: 16,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.alineItemscenter,
+                          globalStyles.mb1,
+                        ]}
                       >
-                        Manufacturer
+                        <MaterialCommunityIcons
+                          name="factory"
+                          size={16}
+                          color={color.primary}
+                          style={{ marginRight: 6 }}
+                        />
+                        <CustomText
+                          style={[
+                            globalStyles.f10Medium,
+                            globalStyles.neutral500,
+                          ]}
+                        >
+                          Manufacturer
+                        </CustomText>
+                      </View>
+                      <CustomText
+                        style={[globalStyles.f14Bold, globalStyles.black]}
+                      >
+                        {brandName}
                       </CustomText>
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                    </View>
+                  )}
+                  {fuelTypeName && (
+                    <View
+                      style={[
+                        {
+                          width: "50%",
+                          paddingLeft: 8,
+                          marginBottom: 16,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.alineItemscenter,
+                          globalStyles.mb1,
+                        ]}
                       >
-                        {booking.BrandName}
+                        <Ionicons
+                          name="flash"
+                          size={16}
+                          color={color.primary}
+                          style={{ marginRight: 6 }}
+                        />
+                        <CustomText
+                          style={[
+                            globalStyles.f10Medium,
+                            globalStyles.neutral500,
+                          ]}
+                        >
+                          Fuel Type
+                        </CustomText>
+                      </View>
+                      <CustomText
+                        style={[globalStyles.f14Bold, globalStyles.black]}
+                      >
+                        {fuelTypeName}
                       </CustomText>
                     </View>
                   )}
@@ -912,15 +1116,37 @@ export default function CustomerInfo() {
                 <MapView
                   ref={mapRef}
                   style={{ flex: 1 }}
-                  initialRegion={{
-                    latitude: Latitude,
-                    longitude: Longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  showsUserLocation={true}
-                  showsMyLocationButton={true}
+                  initialRegion={
+                    addressLocation && !location
+                      ? {
+                          latitude: addressLocation.Latitude,
+                          longitude: addressLocation.Longitude,
+                          latitudeDelta: addressLocation.latitudeDelta || 0.01,
+                          longitudeDelta: addressLocation.longitudeDelta || 0.01,
+                        }
+                      : {
+                          latitude: Latitude,
+                          longitude: Longitude,
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }
+                  }
+                  showsUserLocation={!!location}
+                  showsMyLocationButton={!!location}
                 >
+                  {/* Address Location Marker (when GPS location is null) */}
+                  {addressLocation && !location && (
+                    <Marker
+                      coordinate={{
+                        latitude: addressLocation.Latitude,
+                        longitude: addressLocation.Longitude,
+                      }}
+                      title="Address Location"
+                      description={fullAddress}
+                      pinColor="blue"
+                    />
+                  )}
+
                   {/* Destination Marker */}
                   <Marker
                     coordinate={{
@@ -1262,22 +1488,64 @@ export default function CustomerInfo() {
             ]}
           >
             <View style={globalStyles.alineSelfcenter}>
-              <CustomText
-                style={[globalStyles.f12Medium, globalStyles.textWhite]}
-              >
-                Total Estimated Time
-              </CustomText>
-              <View>
+              {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
+                <>
+                  <View style={[globalStyles.mb3]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb1]}>
+                      <Ionicons name="arrow-down-circle" size={18} color={color.white} style={{ marginRight: 8 }} />
+                      <CustomText
+                        style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                      >
+                        Pickup Details
+                      </CustomText>
+                    </View>
+                    <View style={{ marginLeft: 26 }}>
+                      <CustomText
+                        style={[globalStyles.f12Medium, globalStyles.textWhite, globalStyles.mb1]}
+                      >
+                        Date: {formatDate(booking.PickupDelivery[0].PickupDate)}
+                      </CustomText>
+                      {booking.PickupDelivery[0].PickupTime && (
+                        <CustomText
+                          style={[globalStyles.f12Medium, globalStyles.textWhite]}
+                        >
+                          Time: {formatTime(booking.PickupDelivery[0].PickupTime)}
+                        </CustomText>
+                      )}
+                    </View>
+                  </View>
+                  <View>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb1]}>
+                      <Ionicons name="arrow-up-circle" size={18} color={color.white} style={{ marginRight: 8 }} />
+                      <CustomText
+                        style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                      >
+                        Delivery Details
+                      </CustomText>
+                    </View>
+                    <View style={{ marginLeft: 26 }}>
+                      <CustomText
+                        style={[globalStyles.f12Medium, globalStyles.textWhite, globalStyles.mb1]}
+                      >
+                        Date: {formatDate(booking.PickupDelivery[0].DeliveryDate)}
+                      </CustomText>
+                      {booking.PickupDelivery[0].DeliveryTime && (
+                        <CustomText
+                          style={[globalStyles.f12Medium, globalStyles.textWhite]}
+                        >
+                          Time: {formatTime(booking.PickupDelivery[0].DeliveryTime)}
+                        </CustomText>
+                      )}
+                    </View>
+                  </View>
+                </>
+              ) : (
                 <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
+                  style={[globalStyles.f12Medium, globalStyles.textWhite]}
                 >
-                  {booking.TotalEstimatedDurationMinutes
-                    ? `${Math.floor(
-                        booking.TotalEstimatedDurationMinutes / 60
-                      )}h ${booking.TotalEstimatedDurationMinutes % 60}m`
-                    : "N/A"}
+                  No pickup/delivery scheduled
                 </CustomText>
-              </View>
+              )}
             </View>
             <View style={styles.pricecard}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>

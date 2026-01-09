@@ -43,17 +43,45 @@ export default function ServiceEnd() {
   const { booking } = route.params;
   console.log("booking=================", booking);
   // const [services, setServices] = useState(booking?.Packages || []);
-  const [services, setServices] = useState(
-    booking?.Packages.flatMap((pkg, pkgIndex) =>
-      pkg.Category.SubCategories?.flatMap((sub, subIndex) =>
-        sub.Includes?.map((inc, incIndex) => ({
-          ...inc,
-          completed: true,
-          uniqueKey: `${pkgIndex}-${subIndex}-${incIndex}-${inc.IncludeID}`,
-        }))
-      )
-    ) || []
-  );
+  const [services, setServices] = useState(() => {
+    const servicesList = [];
+    
+    // Handle Packages
+    if (booking?.Packages && Array.isArray(booking.Packages)) {
+      booking.Packages.forEach((pkg, pkgIndex) => {
+        if (pkg.Category?.SubCategories && Array.isArray(pkg.Category.SubCategories)) {
+          pkg.Category.SubCategories.forEach((sub, subIndex) => {
+            if (sub.Includes && Array.isArray(sub.Includes)) {
+              sub.Includes.forEach((inc, incIndex) => {
+                servicesList.push({
+                  ...inc,
+                  completed: true,
+                  uniqueKey: `${pkgIndex}-${subIndex}-${incIndex}-${inc.IncludeID}`,
+                });
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    // Handle BookingAddOns
+    if (booking?.BookingAddOns && Array.isArray(booking.BookingAddOns)) {
+      booking.BookingAddOns.forEach((addOn, addOnIndex) => {
+        if (addOn.Includes && Array.isArray(addOn.Includes)) {
+          addOn.Includes.forEach((inc, incIndex) => {
+            servicesList.push({
+              ...inc,
+              completed: true,
+              uniqueKey: `addon-${addOnIndex}-${incIndex}-${inc.IncludeID}`,
+            });
+          });
+        }
+      });
+    }
+    
+    return servicesList;
+  });
 
   const [reason, setReason] = useState("");
   const [selectedReason2, setSelectedReason2] = useState("Customer Pending");
@@ -245,7 +273,7 @@ export default function ServiceEnd() {
             Authorization: `Bearer ${token}`,
           },
         });
-        setLeads(res.data.map((item) => item));
+        setLeads(Array.isArray(res.data) ? res.data.map((item) => item) : []);
       } catch (error) {
         console.log("Error fetching leads:", error);
       }
@@ -423,7 +451,7 @@ export default function ServiceEnd() {
               Please check completed services
             </CustomText>
 
-            {services.map((service) => (
+            {Array.isArray(services) && services.map((service) => (
               <View
                 key={service.uniqueKey}
                 style={{
@@ -449,8 +477,7 @@ export default function ServiceEnd() {
           </View>
 
           {/* Time Summary Card */}
-          <View style={styles.timeSummaryCard}>
-            {/* Card Header */}
+          {/* <View style={styles.timeSummaryCard}>
             <View style={styles.cardHeader}>
               <View style={styles.headerIconContainer}>
                 <Ionicons name="analytics" size={24} color={color.primary} />
@@ -460,9 +487,7 @@ export default function ServiceEnd() {
               </CustomText>
             </View>
 
-            {/* Time Metrics Grid */}
             <View style={styles.metricsGrid}>
-              {/* Estimated Time Card */}
               <View style={[styles.metricCard, styles.estimatedCard]}>
                 <View style={styles.metricIconContainer}>
                   <Ionicons name="time-outline" size={22} color="#4CAF50" />
@@ -476,7 +501,6 @@ export default function ServiceEnd() {
                 </View>
               </View>
 
-              {/* Extended Time Card */}
               <View style={[styles.metricCard, styles.extendedCard]}>
                 <View style={styles.metricIconContainer}>
                   <Ionicons name="timer-outline" size={22} color="#FF9800" />
@@ -493,7 +517,6 @@ export default function ServiceEnd() {
               </View>
             </View>
 
-            {/* Total Time Highlight Card */}
             <View style={styles.totalTimeHighlight}>
               <View style={styles.totalTimeHeader}>
                 <View style={styles.totalTimeIconContainer}>
@@ -523,7 +546,6 @@ export default function ServiceEnd() {
                 )}
               </View>
 
-              {/* Progress Bar */}
               <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
                   <View 
@@ -541,7 +563,7 @@ export default function ServiceEnd() {
                 </CustomText>
               </View>
             </View>
-          </View>
+          </View> */}
 
           {/* OTP Section - Only show after OTP is sent */}
           {/* {otpSent && ( */}
