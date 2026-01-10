@@ -175,7 +175,7 @@ function Reportlist() {
       </View>
 
       {/* Category */}
-      <View style={styles.infoRow}>
+      {/* <View style={styles.infoRow}>
         <FontAwesome5 style={[styles.icon]} name="th-list" size={16} />
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Category:
@@ -190,10 +190,10 @@ function Reportlist() {
             </CustomText>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Package */}
-      <View style={styles.infoRow}>
+      {/* <View style={styles.infoRow}>
         <FontAwesome5 style={[styles.icon]} name="spa" size={16} />
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Package:
@@ -208,7 +208,7 @@ function Reportlist() {
             </CustomText>
           ))}
         </View>
-      </View>
+      </View> */}
     </TouchableOpacity>
   );
 
