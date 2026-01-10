@@ -252,12 +252,45 @@ export default function ServiceStart() {
     loadTimerState();
   }, [bookingId]);
 
-  // Check if car has been picked up based on CarPickUpDate
+  // Check if car has been picked up based on CarPickUpDate or AsyncStorage
   useEffect(() => {
-    if (booking.CarPickUpDate) {
-      setCarPickedUp(true);
-    }
-  }, [booking.CarPickUpDate]);
+    const checkCarPickupState = async () => {
+      try {
+        // First check API data
+        if (booking.CarPickUpDate) {
+          setCarPickedUp(true);
+          await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
+          return;
+        }
+        
+        // Then check AsyncStorage for persisted state
+        const storedState = await AsyncStorage.getItem(`carPickedUp_${booking.BookingID}`);
+        if (storedState === "true") {
+          setCarPickedUp(true);
+        }
+      } catch (error) {
+        console.error("Error checking car pickup state:", error);
+      }
+    };
+    
+    checkCarPickupState();
+  }, [booking.CarPickUpDate, booking.BookingID]);
+
+  // Check OTP sent state from AsyncStorage on mount
+  useEffect(() => {
+    const checkOtpSentState = async () => {
+      try {
+        const storedOtpSent = await AsyncStorage.getItem(`otpSent_${booking.BookingID}`);
+        if (storedOtpSent === "true") {
+          setOtpSent(true);
+        }
+      } catch (error) {
+        console.error("Error checking OTP sent state:", error);
+      }
+    };
+    
+    checkOtpSentState();
+  }, [booking.BookingID]);
 
   // Refresh timer when screen comes back into focus
   useFocusEffect(
@@ -600,7 +633,7 @@ export default function ServiceStart() {
                 </View>
               )}
             </View>
-            {!booking.CarPickUpDate && (
+            {!booking.CarPickUpDate && !carPickedUp && (
               <TouchableOpacity
                 style={[
                   globalStyles.mt3,
@@ -614,6 +647,23 @@ export default function ServiceStart() {
                   const success = await updateTechnicianTracking("CarPickUp");
                   if (success) {
                     setCarPickedUp(true);
+                    // Store in AsyncStorage to persist across app restarts
+                    try {
+                      await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
+                    } catch (error) {
+                      console.error("Error storing car pickup state:", error);
+                    }
+                    // Automatically send OTP when car is picked up
+                    const otpSuccess = await updateTechnicianTracking("BookingStartOTP");
+                    if (otpSuccess) {
+                      setOtpSent(true);
+                      // Store in AsyncStorage to persist across app restarts
+                      try {
+                        await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
+                      } catch (error) {
+                        console.error("Error storing OTP sent state:", error);
+                      }
+                    }
                   }
                 }}
                 disabled={carPickedUp}
@@ -636,42 +686,7 @@ export default function ServiceStart() {
               </TouchableOpacity>
             )}
 
-            {(booking.CarPickUpDate || carPickedUp) && !otpSent && (
-              <TouchableOpacity
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                ]}
-                onPress={async () => {
-                  const success = await updateTechnicianTracking("BookingStartOTP");
-                  if (success) {
-                    setOtpSent(true);
-                  }
-                }}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Ionicons
-                    name="send"
-                    size={20}
-                    color={color.white}
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                  >
-                    Send OTP
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {otpSent && (
+            {(booking.CarPickUpDate || carPickedUp) && (
               <>
                 <CustomText
                   style={[
@@ -708,79 +723,118 @@ export default function ServiceStart() {
                     {error}
                   </CustomText>
                 ) : null}
-              </>
-            )}
 
-            {otpSent && (
-              <TouchableOpacity
-                style={[
-                  globalStyles.mt4,
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.borderRadiuslarge,
-                  {
-                    width: "100%",
-                    minHeight: 50,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: keyboardVisible ? 20 : 0,
-                  },
-                ]}
-                onPress={async () => {
+                <TouchableOpacity
+                  style={[
+                    globalStyles.mt4,
+                    globalStyles.bgprimary,
+                    globalStyles.p4,
+                    globalStyles.borderRadiuslarge,
+                    {
+                      width: "100%",
+                      minHeight: 50,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginBottom: keyboardVisible ? 10 : 0,
+                    },
+                  ]}
+                  onPress={async () => {
                     if (!otp || otp.length !== 6) {
                       setError("Please enter a valid 6-digit OTP");
                       return;
                     }
 
-                  const isValid = await updateTechnicianTracking(
-                    "ServiceStarted"
-                  );
-                  if (!isValid) {
-                    return;
-                  }
+                    const isValid = await updateTechnicianTracking(
+                      "ServiceStarted"
+                    );
+                    if (!isValid) {
+                      return;
+                    }
 
-                  handleUpload();
-                  const totalSeconds = booking.TotalEstimatedDurationMinutes
-                    ? booking.TotalEstimatedDurationMinutes * 60
-                    : 0;
-                  setMaxTime(totalSeconds);
+                    handleUpload();
+                    const totalSeconds = booking.TotalEstimatedDurationMinutes
+                      ? booking.TotalEstimatedDurationMinutes * 60
+                      : 0;
+                    setMaxTime(totalSeconds);
 
-                  const elapsedFromAPI = booking.ServiceStartedAt
-                    ? calculateElapsedFromAPI(booking.ServiceStartedAt)
-                    : 0;
+                    const elapsedFromAPI = booking.ServiceStartedAt
+                      ? calculateElapsedFromAPI(booking.ServiceStartedAt)
+                      : 0;
 
-                  setElapsedTime(elapsedFromAPI);
-                  setTimerStarted(true);
-                  setTimerCompleted(false);
+                    setElapsedTime(elapsedFromAPI);
+                    setTimerStarted(true);
+                    setTimerCompleted(false);
 
-                  await AsyncStorage.setItem(
-                    `serviceStarted_${booking.BookingID}`,
-                    "true"
-                  );
+                    await AsyncStorage.setItem(
+                      `serviceStarted_${booking.BookingID}`,
+                      "true"
+                    );
 
-                  // Store timer state for this specific booking
-                  await AsyncStorage.setItem(
-                    `timerState_${booking.BookingID}`,
-                    JSON.stringify({
-                      timerStarted: true,
-                      elapsedTime: elapsedFromAPI,
-                      maxTime: totalSeconds,
-                      timerCompleted: false,
-                    })
-                  );
+                    // Store timer state for this specific booking
+                    await AsyncStorage.setItem(
+                      `timerState_${booking.BookingID}`,
+                      JSON.stringify({
+                        timerStarted: true,
+                        elapsedTime: elapsedFromAPI,
+                        maxTime: totalSeconds,
+                        timerCompleted: false,
+                      })
+                    );
 
-                  // Reload this screen with updated booking so timer starts immediately
-                  const updatedBooking = {
-                    ...booking,
-                    ServiceStartedAt: new Date().toISOString(),
-                  };
-                  navigation.replace(route.name, { booking: updatedBooking });
-                }}
-              >
-                <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
-                  Lets Start
-                </CustomText>
-              </TouchableOpacity>
+                    // Reload this screen with updated booking so timer starts immediately
+                    const updatedBooking = {
+                      ...booking,
+                      ServiceStartedAt: new Date().toISOString(),
+                    };
+                    navigation.replace(route.name, { booking: updatedBooking });
+                  }}
+                >
+                  <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                    Lets Start
+                  </CustomText>
+                </TouchableOpacity>
+
+                {/* <TouchableOpacity
+                  style={[
+                    globalStyles.mt2,
+                    globalStyles.bgwhite,
+                    globalStyles.p3,
+                    globalStyles.borderRadiuslarge,
+                    {
+                      width: "100%",
+                      minHeight: 45,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: color.primary,
+                      marginBottom: keyboardVisible ? 20 : 0,
+                    },
+                  ]}
+                  onPress={async () => {
+                    const success = await updateTechnicianTracking("BookingStartOTP");
+                    if (success) {
+                      setModalMessage("OTP has been resent successfully");
+                      setModalVisible(true);
+                    }
+                  }}
+                >
+                  <View
+                    style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                  >
+                    <Ionicons
+                      name="refresh"
+                      size={18}
+                      color={color.primary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <CustomText
+                      style={[globalStyles.f14Bold, globalStyles.primary]}
+                    >
+                      Resend OTP
+                    </CustomText>
+                  </View>
+                </TouchableOpacity> */}
+              </>
             )}
             {/* <CustomText
               style={[
