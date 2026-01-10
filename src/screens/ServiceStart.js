@@ -654,16 +654,16 @@ export default function ServiceStart() {
                       console.error("Error storing car pickup state:", error);
                     }
                     // Automatically send OTP when car is picked up
-                    const otpSuccess = await updateTechnicianTracking("BookingStartOTP");
-                    if (otpSuccess) {
-                      setOtpSent(true);
-                      // Store in AsyncStorage to persist across app restarts
-                      try {
-                        await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
-                      } catch (error) {
-                        console.error("Error storing OTP sent state:", error);
-                      }
-                    }
+                    // const otpSuccess = await updateTechnicianTracking("BookingStartOTP");
+                    // if (otpSuccess) {
+                    //   setOtpSent(true);
+                    //   // Store in AsyncStorage to persist across app restarts
+                    //   try {
+                    //     await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
+                    //   } catch (error) {
+                    //     console.error("Error storing OTP sent state:", error);
+                    //   }
+                    // }
                   }
                 }}
                 disabled={carPickedUp}
@@ -1060,250 +1060,10 @@ export default function ServiceStart() {
               )}
             </View> */}
 
-            <View>
-              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                Service Details
-              </CustomText>
+          
+          
 
-              {booking.Packages && Array.isArray(booking.Packages) && booking.Packages.map((pkg) => (
-                <View
-                  key={pkg.PackageID}
-                  style={[
-                    globalStyles.mt3,
-                    globalStyles.bgwhite,
-                    globalStyles.radius,
-                    globalStyles.p3,
-                    globalStyles.card,
-                  ]}
-                >
-                  {/* Package Name */}
-                  <CustomText
-                    style={[
-                      globalStyles.f16Bold,
-                      globalStyles.black,
-                      globalStyles.mb1,
-                    ]}
-                  >
-                    {pkg.PackageName}
-                  </CustomText>
 
-                  {/* Estimated Time */}
-                  {/* {pkg.EstimatedDurationMinutes && (
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.alineItemscenter,
-                        globalStyles.mb2,
-                      ]}
-                    >
-                      <CustomText
-                        style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                      >
-                        Estimated Time:{" "}
-                      </CustomText>
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.black]}
-                      >
-                        {`${Math.floor(pkg.EstimatedDurationMinutes / 60)}h ${
-                          pkg.EstimatedDurationMinutes % 60
-                        }m`}
-                      </CustomText>
-                    </View>
-                  )} */}
-
-                  {/* Category */}
-                  {pkg.Category && (
-                    <View style={globalStyles.mt1}>
-                      <CustomText
-                        style={[
-                          globalStyles.f14Bold,
-                          globalStyles.primary,
-                          globalStyles.mb1,
-                        ]}
-                      >
-                        {pkg.Category.CategoryName}
-                      </CustomText>
-
-                      {/* Subcategories */}
-                      {pkg.Category.SubCategories && Array.isArray(pkg.Category.SubCategories) && pkg.Category.SubCategories.map((sub) => (
-                        <View
-                          key={sub.SubCategoryID}
-                          style={[
-                            globalStyles.mt2,
-                            globalStyles.bgneutral100,
-                            globalStyles.radius,
-                            globalStyles.p2,
-                          ]}
-                        >
-                          <CustomText
-                            style={[
-                              globalStyles.f12Medium,
-                              globalStyles.black,
-                              globalStyles.mb1,
-                            ]}
-                          >
-                            {sub.SubCategoryName}
-                          </CustomText>
-
-                          {/* Includes */}
-                          {sub.Includes && Array.isArray(sub.Includes) && sub.Includes.map((inc) => (
-                            <CustomText
-                              key={inc.IncludeID}
-                              style={[
-                                globalStyles.f12Regular,
-                                globalStyles.primary,
-                                globalStyles.ml2,
-                              ]}
-                            >
-                              • {inc.IncludeName}
-                            </CustomText>
-                          ))}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-
-              {/* Display BookingAddOns if available */}
-              {booking.BookingAddOns && Array.isArray(booking.BookingAddOns) && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
-                <View
-                  key={addOn.AddOnID}
-                  style={[
-                    globalStyles.mt3,
-                    globalStyles.bgwhite,
-                    globalStyles.radius,
-                    globalStyles.p3,
-                    globalStyles.card,
-                  ]}
-                >
-                  {/* Service Name */}
-                  <CustomText
-                    style={[
-                      globalStyles.f16Bold,
-                      globalStyles.black,
-                      globalStyles.mb1,
-                    ]}
-                  >
-                    {addOn.ServiceName}
-                  </CustomText>
-
-                  {/* Price and Garage */}
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.alineItemscenter,
-                      globalStyles.mb2,
-                    ]}
-                  >
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.primary]}
-                    >
-                      ₹{addOn.TotalPrice}
-                    </CustomText>
-                    {addOn.GarageName && (
-                      <CustomText
-                        style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.ml2]}
-                      >
-                        • {addOn.GarageName}
-                      </CustomText>
-                    )}
-                  </View>
-
-                  {/* Description */}
-                  {addOn.Description && (
-                    <CustomText
-                      style={[
-                        globalStyles.f12Regular,
-                        globalStyles.neutral500,
-                        globalStyles.mb2,
-                      ]}
-                    >
-                      {addOn.Description}
-                    </CustomText>
-                  )}
-
-                  {/* Price Breakdown */}
-                  <View style={[globalStyles.mt2]}>
-                    <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                      <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                        Service Price:
-                      </CustomText>
-                      <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                        ₹{addOn.ServicePrice}
-                      </CustomText>
-                    </View>
-
-                    {addOn.LabourCharges > 0 && (
-                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                          Labour Charges:
-                        </CustomText>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                          ₹{addOn.LabourCharges}
-                        </CustomText>
-                      </View>
-                    )}
-
-                    {addOn.GSTPercent > 0 && (
-                      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mb1]}>
-                        <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                          GST ({addOn.GSTPercent}%):
-                        </CustomText>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.black]}>
-                          ₹{addOn.GSTPrice}
-                        </CustomText>
-                      </View>
-                    )}
-
-                    <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.mt2, globalStyles.pt2, { borderTopWidth: 1, borderTopColor: color.neutral[200] }]}>
-                      <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
-                        Total Price:
-                      </CustomText>
-                      <CustomText style={[globalStyles.f14Bold, globalStyles.primary]}>
-                        ₹{addOn.TotalPrice}
-                      </CustomText>
-                    </View>
-                  </View>
-
-                  {/* Includes */}
-                  {addOn.Includes && Array.isArray(addOn.Includes) && addOn.Includes.length > 0 && (
-                    <View style={[globalStyles.mt3]}>
-                      <CustomText
-                        style={[
-                          globalStyles.f14Bold,
-                          globalStyles.primary,
-                          globalStyles.mb2,
-                        ]}
-                      >
-                        Includes:
-                      </CustomText>
-                      {addOn.Includes.map((inc) => (
-                        <View
-                          key={inc.IncludeID}
-                          style={[
-                            globalStyles.mt1,
-                            globalStyles.bgneutral100,
-                            globalStyles.radius,
-                            globalStyles.p2,
-                          ]}
-                        >
-                          <CustomText
-                            style={[
-                              globalStyles.f12Regular,
-                              globalStyles.primary,
-                              globalStyles.ml1,
-                            ]}
-                          >
-                            • {inc.IncludeName}
-                          </CustomText>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
             <TouchableOpacity
               onPress={async () => {
                 navigation.navigate("ServiceEnd", {

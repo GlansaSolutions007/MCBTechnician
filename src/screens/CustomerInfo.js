@@ -1491,7 +1491,7 @@ export default function CustomerInfo() {
                   {booking.TotalPrice ||
                     (booking.BookingAddOns &&
                       booking.BookingAddOns.reduce(
-                        (sum, addOn) => sum + (addOn.TotalPrice || 0),
+                        (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
                         0
                       )) ||
                     0}
