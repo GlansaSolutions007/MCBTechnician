@@ -61,7 +61,7 @@ export default function CustomerTabNavigator({ navigation }) {
             case "Dashboard":
               iconName = focused ? "home" : "home-outline";
               break;
-            case "Tasks":
+            case "Schedules":
               iconName = focused ? "calendar" : "calendar-outline";
               break;
             case "Reports":
@@ -78,7 +78,7 @@ export default function CustomerTabNavigator({ navigation }) {
       })}
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
-      <Tab.Screen name="Tasks" component={TaskReportsScreen} />
+      <Tab.Screen name="Schedules" component={TaskReportsScreen} />
       <Tab.Screen name="Reports" component={Reportlist} />
       {/* <Tab.Screen name="service locations" component={Servicelocations} /> */}
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />

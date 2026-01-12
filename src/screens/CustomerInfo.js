@@ -1508,7 +1508,7 @@ export default function CustomerInfo() {
             globalStyles.pb5,
           ]}
         >
-          <CustomText
+          {/* <CustomText
             style={[
               globalStyles.f16Bold,
               globalStyles.textWhite,
@@ -1521,7 +1521,7 @@ export default function CustomerInfo() {
             >
               {getNotePreview(booking.Notes)}
             </CustomText>
-          </CustomText>
+          </CustomText> */}
           {booking.Notes && booking.Notes.length > 140 && (
             <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>

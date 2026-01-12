@@ -101,7 +101,7 @@ export default function Dashboard() {
     navigation.navigate("ServiceStart", { booking: item });
   };
   const Schedules = () => {
-    navigation.navigate("Tasks");
+    navigation.navigate("Schedules");
   };
   const Reports = () => {
     navigation.navigate("Reports");
@@ -645,7 +645,7 @@ export default function Dashboard() {
                   globalStyles.alineSelfend,
                 ]}
               >
-                {bookingCounts.TodayAssignedBookingsCount}
+                {bookingCounts.ReportsCount}
               </CustomText>
             </View>
           </View>
@@ -662,7 +662,7 @@ export default function Dashboard() {
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="people-outline" />
               <CustomText style={globalStyles.f12Bold}>
-                {bookingCounts.TodayCustomerCount} customers
+                {bookingCounts.ReportsCount} customers
               </CustomText>
             </View>
             {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
