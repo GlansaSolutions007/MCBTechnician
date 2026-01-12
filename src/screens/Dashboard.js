@@ -106,17 +106,7 @@ export default function Dashboard() {
   const Reports = () => {
     navigation.navigate("Reports");
   };
-  const isActiveService = (item) => {
-    const status = item?.BookingStatus?.trim();
-  
-    return [
-      "ServiceStarted",
-      "Reached",
-      "StartJourney",
-    ].includes(status);
-  };
-  
-  
+
   useEffect(() => {
     const fetchBookingCounts = async () => {
       try {
@@ -195,8 +185,6 @@ export default function Dashboard() {
     loadTechID();
   }, []);
 
-
-  
   useEffect(() => {
     if (techID && bookings?.length) {
       const taskCount =
@@ -281,16 +269,7 @@ export default function Dashboard() {
   const refreshData = async () => {
     await Promise.all([fetchBookingCounts(), fetchBookings()]);
   };
-  const activeBookings = Array.isArray(bookings)
-  ? bookings.filter(isActiveService)
-  : [];
-  useEffect(() => {
-    console.log(
-      "ALL STATUSES ACTIVE BOOKINGS",
-      bookings.map(b => b.BookingStatus)
-    );
-  }, [bookings]);
-  
+
   useEffect(() => {
     refreshData();
 
@@ -698,9 +677,13 @@ export default function Dashboard() {
         <View style={[globalStyles.mt4]}>
           <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.justifysb]}>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>Active Services</CustomText>
-            {/* {bookings.some(isActiveService) && ( */}
-              {activeBookings.length > 0 && (
-
+            {bookings.some(
+              (item) =>
+                item.BookingStatus === "StartJourney" ||
+                item.BookingStatus === "ServiceStarted" ||
+                item.BookingStatus === "Reached" ||
+                item.Payments?.[0]?.PaymentStatus === "Pending"
+            ) && (
               <View style={[
                 globalStyles.bgprimary,
                 globalStyles.p1,
@@ -708,23 +691,34 @@ export default function Dashboard() {
                 { borderRadius: 12 }
               ]}>
                 <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                {/* {bookings.filter(isActiveService).length} */}
-                {activeBookings.length}
-
-
+                  {bookings.filter(
+                    (item) =>
+                      item.BookingStatus === "ServiceStarted" ||
+                      item.BookingStatus === "StartJourney" ||
+                      item.BookingStatus === "Reached" ||
+                      item.Payments?.[0]?.PaymentStatus === "Pending"
+                  ).length}
                 </CustomText>
               </View>
             )}
           </View>
-          {/* {bookings.filter(isActiveService).length > 0 ? ( */}
-            {activeBookings.length > 0 ? (
-
+          {bookings.some(
+            (item) =>
+              item.BookingStatus === "StartJourney" ||
+              item.BookingStatus === "ServiceStarted" ||
+              item.BookingStatus === "Reached" ||
+              item.Payments?.[0]?.PaymentStatus === "Pending"
+          ) ? (
             <View style={[globalStyles.mt3]}>
-             {/* {bookings
-  .filter(isActiveService)
-  .map((item, index) => ( */}
-{activeBookings.map((item, index) => (
-
+              {bookings
+                .filter(
+                  (item) =>
+                    item.BookingStatus === "ServiceStarted" ||
+                    item.BookingStatus === "StartJourney" ||
+                    item.BookingStatus === "Reached" ||
+                    item.Payments?.[0]?.PaymentStatus === "Pending"
+                )
+                .map((item, index) => (
                   <Pressable
                     onPress={() => CustomerInfo(item)}
                     key={index}
