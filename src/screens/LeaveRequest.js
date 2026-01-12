@@ -143,7 +143,7 @@ export default function LeaveRequest() {
             Add Leave Request
           </CustomText>
         </View>
-        <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
+        <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite, globalStyles.ml3]}>
           Submit your leave request for approval
         </CustomText>
       </View>

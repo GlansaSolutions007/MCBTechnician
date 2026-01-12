@@ -262,7 +262,7 @@ export default function LeaveRequestList() {
             Leave Request
           </CustomText>
         </View>
-        <CustomText style={[globalStyles.f14Regular, globalStyles.textWhite, globalStyles.ml3]}>
+        <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite, globalStyles.ml3]}>
           View and manage your leave requests
         </CustomText>
       </View>
