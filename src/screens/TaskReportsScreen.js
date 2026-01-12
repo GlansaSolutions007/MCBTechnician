@@ -81,27 +81,45 @@ function TaskReportsScreen() {
     }
   };
 
-  const todayIST = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Kolkata",
-  });
+  // Helper function to check if a date is in the future
+  const isFutureDate = (dateString) => {
+    if (!dateString) return false;
+    
+    try {
+      // Get today's date - set to start of day for comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      today.setMilliseconds(0);
+      
+      // Parse the date string (handles formats like "2026-02-01" or "2026-01-10T18:01:27.640")
+      const bookingDate = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(bookingDate.getTime())) {
+        return false;
+      }
+      
+      // Set to start of day for comparison (ignore time)
+      bookingDate.setHours(0, 0, 0, 0);
+      bookingDate.setMilliseconds(0);
+      
+      // Return true if booking date is greater than today (future date)
+      return bookingDate > today;
+    } catch (error) {
+      console.error("Error parsing date:", dateString, error);
+      return false;
+    }
+  };
 
-  // Show pending bookings with future assigned dates in Schedules/Tasks
+  // Show all bookings with future BookingDate (tomorrow and beyond)
   const upcomingBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        // Only show pending or confirmed bookings
-        const isPending = booking.BookingStatus === "Pending" || booking.BookingStatus === "Confirmed";
-        if (!isPending) return false;
+        // Prioritize BookingDate over TechAssignDate for filtering
+        const serviceDate = booking.BookingDate || booking.TechAssignDate;
+        if (!serviceDate) return false;
 
-        // Check if assigned date is in the future
-        const assignDate = booking.TechAssignDate || booking.BookingDate;
-        if (!assignDate) return false;
-
-        const assignDateStr = new Date(assignDate).toLocaleDateString(
-          "en-CA",
-          { timeZone: "Asia/Kolkata" }
-        );
-
-        return assignDateStr > todayIST;
+        // Use the helper function to check if date is future
+        return isFutureDate(serviceDate);
       })
     : [];
 
@@ -153,7 +171,7 @@ function TaskReportsScreen() {
       </View>
 
       {/* Category */}
-      <View style={styles.infoRow}>
+      {/* <View style={styles.infoRow}>
         <FontAwesome5 style={[styles.icon]} name="th-list" size={16} />
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Category:
@@ -168,10 +186,10 @@ function TaskReportsScreen() {
             </CustomText>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Package */}
-      <View style={styles.infoRow}>
+      {/* <View style={styles.infoRow}>
         <FontAwesome5 style={[styles.icon]} name="spa" size={16} />
         <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
           Package:
@@ -186,7 +204,7 @@ function TaskReportsScreen() {
             </CustomText>
           ))}
         </View>
-      </View>
+      </View> */}
     </TouchableOpacity>
   );
 

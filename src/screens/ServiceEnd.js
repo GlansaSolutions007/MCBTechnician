@@ -42,6 +42,15 @@ export default function ServiceEnd() {
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
   console.log("booking=================", booking);
+
+  // Merge booking data with Leads data for missing fields (same as ServiceStart.js)
+  const customerName = booking.CustomerName || booking.Leads?.FullName || "";
+  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
+  const profileImage = booking.ProfileImage || null;
+  const vehicleNumber = booking.VehicleNumber || booking.Leads?.Vehicle?.RegistrationNumber || "";
+  const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
+  const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
+  const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(() => {
     const servicesList = [];
@@ -315,27 +324,26 @@ export default function ServiceEnd() {
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <Image
                 source={
-                  booking.ProfileImage
-                    ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                  profileImage
+                    ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
                     : defaultAvatar
                 }
                 style={{ width: 46, height: 46, borderRadius: 10 }}
               />
               <View style={[globalStyles.ml3, { flex: 1 }]}>
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {booking.CustomerName}
+                  {customerName}
                 </CustomText>
                 <CustomText
                   style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
-                  Mobile: {booking.PhoneNumber}
+                  Mobile: {phoneNumber}
                 </CustomText>
               </View>
               <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
-                  const phoneNumber = booking.PhoneNumber;
                   if (phoneNumber) {
                     Linking.openURL(`tel:${phoneNumber}`);
                   } else {
@@ -417,7 +425,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {booking.VehicleNumber}
+                  {modelName || vehicleNumber || "N/A"}
                 </CustomText>
               </View>
               <View

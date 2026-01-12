@@ -54,6 +54,20 @@ export default function ServiceStart() {
   const [carPickedUp, setCarPickedUp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
+
+  const bookingParam = route?.params?.booking;
+  
+  // Merge booking data with Leads data for missing fields
+  const customerName = bookingParam.CustomerName || bookingParam.Leads?.FullName || "";
+  const phoneNumber = bookingParam.PhoneNumber || bookingParam.Leads?.PhoneNumber || "";
+  const profileImage = bookingParam.ProfileImage || null;
+  const vehicleNumber = bookingParam.VehicleNumber || bookingParam.Leads?.Vehicle?.RegistrationNumber || "";
+  const brandName = bookingParam.BrandName || bookingParam.Leads?.Vehicle?.BrandName || "";
+  const modelName = bookingParam.ModelName || bookingParam.Leads?.Vehicle?.ModelName || "";
+  const fuelTypeName = bookingParam.FuelTypeName || bookingParam.Leads?.Vehicle?.FuelTypeName || "";
+  const vehicleImage = bookingParam.VehicleImage || null;
+  const fullAddress = bookingParam.FullAddress || bookingParam.Leads?.FullAddress || bookingParam.Leads?.City || "";
+
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
       setKeyboardVisible(true)
@@ -469,7 +483,7 @@ export default function ServiceStart() {
                   globalStyles.ml1,
                 ]}
               >
-                {booking.BookingTrackID}
+                {bookingParam.BookingTrackID}
               </CustomText>
             </View>
             <View
@@ -487,7 +501,7 @@ export default function ServiceStart() {
                   globalStyles.ml1,
                 ]}
               >
-                {booking.BookingDate}
+                {bookingParam.BookingDate}
               </CustomText>
             </View>
           </View>
@@ -508,7 +522,7 @@ export default function ServiceStart() {
                   globalStyles.ml1,
                 ]}
               >
-                {booking.VehicleNumber}
+{modelName || vehicleNumber || "N/A"}
               </CustomText>
             </View>
             <View
@@ -520,7 +534,7 @@ export default function ServiceStart() {
             >
               <Ionicons name="time-outline" size={16} color={color.primary} />
               <View style={{ flexDirection: "column" }}>
-                {booking.TimeSlot?.split(",").map((slot, index) => (
+                {bookingParam.TimeSlot?.split(",").map((slot, index) => (
                   <CustomText
                     key={index}
                     style={[

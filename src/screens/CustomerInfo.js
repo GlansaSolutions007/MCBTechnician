@@ -112,6 +112,26 @@ export default function CustomerInfo() {
   const ServiceStart = async (item) => {
     navigation.navigate("ServiceStart", { booking: item });
   };
+  const ServiceEnd = async (item) => {
+    // Calculate estimated time from booking if available
+    const estimatedTime = item.TotalEstimatedDurationMinutes 
+      ? item.TotalEstimatedDurationMinutes * 60 
+      : 0;
+    
+    // Calculate actual time if service has started
+    let actualTime = 0;
+    if (item.ServiceStartedAt) {
+      const startTime = new Date(item.ServiceStartedAt);
+      const currentTime = new Date();
+      actualTime = Math.floor((currentTime - startTime) / 1000); // Convert to seconds
+    }
+    
+    navigation.navigate("ServiceEnd", {
+      booking: item,
+      estimatedTime: estimatedTime,
+      actualTime: actualTime,
+    });
+  };
   const CollectPayment = async (booking) => {
     navigation.navigate("CollectPayment", { booking: booking });
   };
@@ -1628,24 +1648,52 @@ export default function CustomerInfo() {
               {/* </View> */}
               {/* )} */}
             </View>
-            {(booking.BookingStatus === "Reached" ||
-              booking.BookingStatus === "ServiceStarted") && (
-              <TouchableOpacity
-                onPress={() => ServiceStart(booking)}
-                style={[styles.NextButton, globalStyles.mb3]}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.f14Bold,
-                    globalStyles.mr1,
-                    globalStyles.textWhite,
-                  ]}
-                >
-                  Next
-                </CustomText>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </TouchableOpacity>
-            )}
+            {(() => {
+              const currentBooking = updatedBookings.BookingStatus ? updatedBookings : booking;
+              const bookingStatus = currentBooking.BookingStatus;
+              
+              if (bookingStatus === "Reached") {
+                return (
+                  <TouchableOpacity
+                    onPress={() => ServiceStart(currentBooking)}
+                    style={[styles.NextButton, globalStyles.mb3]}
+                  >
+                    <CustomText
+                      style={[
+                        globalStyles.f14Bold,
+                        globalStyles.mr1,
+                        globalStyles.textWhite,
+                      ]}
+                    >
+                      Next
+                    </CustomText>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </TouchableOpacity>
+                );
+              }
+              
+              if (bookingStatus === "ServiceStarted") {
+                return (
+                  <TouchableOpacity
+                    onPress={() => ServiceEnd(currentBooking)}
+                    style={[styles.NextButton, globalStyles.mb3]}
+                  >
+                    <CustomText
+                      style={[
+                        globalStyles.f14Bold,
+                        globalStyles.mr1,
+                        globalStyles.textWhite,
+                      ]}
+                    >
+                      Next
+                    </CustomText>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </TouchableOpacity>
+                );
+              }
+              
+              return null;
+            })()}
 
             {updatedBookings.Payments?.some(
               (payment) => payment.PaymentStatus === "Pending"

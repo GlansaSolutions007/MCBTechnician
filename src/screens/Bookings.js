@@ -143,42 +143,61 @@ const fetchBookings = async () => {
   // Helper function to check if a date is in the future
   const isFutureDate = (dateString) => {
     if (!dateString) return false;
-    const today = new Date().toLocaleDateString("en-CA", {
-      timeZone: "Asia/Kolkata",
-    });
-    const dateStr = new Date(dateString).toLocaleDateString("en-CA", {
-      timeZone: "Asia/Kolkata",
-    });
-    return dateStr > today;
+    
+    try {
+      // Get today's date - set to start of day for comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      today.setMilliseconds(0);
+      
+      // Parse the date string (handles formats like "2026-02-01" or "2026-01-10T18:01:27.640")
+      const bookingDate = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(bookingDate.getTime())) {
+        return false;
+      }
+      
+      // Set to start of day for comparison (ignore time)
+      bookingDate.setHours(0, 0, 0, 0);
+      bookingDate.setMilliseconds(0);
+      
+      // Return true if booking date is greater than today (future date)
+      return bookingDate > today;
+    } catch (error) {
+      console.error("Error parsing date:", dateString, error);
+      return false;
+    }
   };
 
   const getFilteredBookings = () => {
+    // First, filter out ALL future bookings (regardless of status)
+    // Prioritize BookingDate over TechAssignDate for filtering
+    const nonFutureBookings = todaysBookings.filter(booking => {
+      // Use BookingDate first, then fallback to TechAssignDate
+      const serviceDate = booking.BookingDate || booking.TechAssignDate;
+      if (!serviceDate) return true; // If no date, include it (let other filters handle it)
+      
+      // Exclude any booking with a future service date
+      if (isFutureDate(serviceDate)) return false;
+      return true;
+    });
+
     switch (filterType) {
       case 'completed':
         // Show only completed bookings (these should go to Reports)
-        return todaysBookings.filter(booking => booking.BookingStatus === 'Completed');
+        return nonFutureBookings.filter(booking => booking.BookingStatus === 'Completed');
       case 'pending':
-        // Show only pending bookings that are NOT completed and NOT in the future
-        return todaysBookings.filter(booking => {
+        // Show only pending bookings that are NOT completed
+        return nonFutureBookings.filter(booking => {
           // Exclude completed
           if (booking.BookingStatus === 'Completed') return false;
-          
-          // Exclude pending with future assigned dates (these go to Schedules)
-          if (booking.BookingStatus === 'Pending' || booking.BookingStatus === 'Confirmed') {
-            const assignDate = booking.TechAssignDate || booking.BookingDate;
-            if (isFutureDate(assignDate)) return false;
-          }
-          
           return true;
         });
       default:
-        // Default: show pending (not completed, not future)
-        return todaysBookings.filter(booking => {
+        // Default: show all non-future bookings (not completed)
+        return nonFutureBookings.filter(booking => {
           if (booking.BookingStatus === 'Completed') return false;
-          if (booking.BookingStatus === 'Pending' || booking.BookingStatus === 'Confirmed') {
-            const assignDate = booking.TechAssignDate || booking.BookingDate;
-            if (isFutureDate(assignDate)) return false;
-          }
           return true;
         });
     }
