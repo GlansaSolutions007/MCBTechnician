@@ -134,7 +134,7 @@ export default function ServiceEnd() {
   }, [cooldownTimer]);
 
   const startCooldownTimer = () => {
-    setOtpCooldown(180); 
+    setOtpCooldown(60); 
     
     const timer = setInterval(() => {
       setOtpCooldown((prev) => {

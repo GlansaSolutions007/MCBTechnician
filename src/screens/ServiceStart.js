@@ -34,6 +34,8 @@ export default function ServiceStart() {
   const route = useRoute();
   const { booking } = route.params;
   console.log("booking", booking);
+const [isLoading, setIsLoading] = useState(false);
+const [cooldown, setCooldown] = useState(0);
 
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
@@ -67,6 +69,49 @@ export default function ServiceStart() {
   const fuelTypeName = bookingParam.FuelTypeName || bookingParam.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = bookingParam.VehicleImage || null;
   const fullAddress = bookingParam.FullAddress || bookingParam.Leads?.FullAddress || bookingParam.Leads?.City || "";
+useEffect(() => {
+  let timer;
+  if (cooldown > 0) {
+    timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+  }
+  return () => clearTimeout(timer);
+}, [cooldown]);
+
+const startCooldownTimer = () => {
+  setCooldown(60); 
+};
+
+
+const resendOTP = async () => {
+  try {
+    setIsLoading(true);
+
+    const response = await axios.post(
+      `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
+      {
+        bookingID: Number(bookingId),
+        actionType: "BookingStartOTP",
+      }
+    );
+
+    if (response?.data?.status === true || response?.data?.success === true) {
+      setOtpSent(true);
+      setModalMessage("OTP resent successfully to customer!");
+      setModalVisible(true);
+      startCooldownTimer();
+
+      await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
+    } else {
+      setModalMessage("Failed to resend OTP. Please try again.");
+      setModalVisible(true);
+    }
+  } catch (error) {
+    setModalMessage("Failed to resend OTP. Please try again.");
+    setModalVisible(true);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -703,34 +748,62 @@ export default function ServiceStart() {
             {(booking.CarPickUpDate || carPickedUp) && (
               <>
                 <CustomText
-                  style={[
-                    globalStyles.f16Light,
-                    globalStyles.mt3,
-                    globalStyles.neutral500,
-                  ]}
-                >
-                  Enter OTP
-                </CustomText>
-                <TextInput
-                  style={[
-                    globalStyles.inputBox,
-                    globalStyles.mt1,
-                    {
-                      borderColor: error ? "red" : "#ccc",
-                      borderWidth: 1,
-                    },
-                  ]}
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChangeText={(text) => {
-                    if (/^\d{0,6}$/.test(text)) {
-                      setOtp(text);
-                      setError("");
-                    }
-                  }}
-                  keyboardType="numeric"
-                  maxLength={6}
-                />
+  style={[
+    globalStyles.f16Light,
+    globalStyles.mt3,
+    globalStyles.neutral500,
+  ]}
+>
+  Enter OTP
+</CustomText>
+
+<View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+  <TextInput
+    style={[
+      globalStyles.inputBox,
+      {
+        flex: 1,
+        borderColor: error ? "red" : "#ccc",
+        borderWidth: 1,
+      },
+    ]}
+    placeholder="Enter OTP"
+    value={otp}
+    onChangeText={(text) => {
+      if (/^\d{0,6}$/.test(text)) {
+        setOtp(text);
+        setError("");
+      }
+    }}
+    keyboardType="numeric"
+    maxLength={6}
+  />
+
+  <TouchableOpacity
+    disabled={cooldown > 0 || isLoading}
+    onPress={resendOTP}
+    style={{
+      marginLeft: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 8,
+      backgroundColor:
+        cooldown > 0 ? "#ccc" : color.primary,
+    }}
+  >
+    <CustomText style={[globalStyles.textWhite, globalStyles.f12Bold]}>
+      {cooldown > 0 ? `Resend (${cooldown}s)` : "Resend OTP"}
+    </CustomText>
+  </TouchableOpacity>
+</View>
+
+{error ? (
+  <CustomText style={{ color: "red", marginTop: 5 }}>
+    {error}
+  </CustomText>
+) : null}
+
+             
 
                 {error ? (
                   <CustomText style={{ color: "red", marginTop: 5 }}>
