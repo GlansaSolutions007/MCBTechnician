@@ -8,6 +8,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  StatusBar,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
@@ -128,6 +129,7 @@ export default function LeaveRequest() {
       contentContainerStyle={styles.scrollContent}
       style={[globalStyles.bgcontainer]}
     >
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
       {/* Header Section */}
       <View style={styles.headerSection}>
         <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     backgroundColor: color.primary,
-    paddingTop: 20,
+    paddingTop: 15,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,

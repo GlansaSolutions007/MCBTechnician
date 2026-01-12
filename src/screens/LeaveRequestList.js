@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Platform,
+  StatusBar,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
@@ -246,11 +248,9 @@ export default function LeaveRequestList() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
       {/* Header Section */}
-      <View style={[
-        styles.headerContainer,
-        { paddingTop:20 },
-      ]}>
+      <View style={styles.headerContainer}>
         <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: color.primary,
+    paddingTop: 15,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomLeftRadius: 30,
