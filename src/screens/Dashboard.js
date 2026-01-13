@@ -35,7 +35,7 @@ export default function Dashboard() {
       item.BookingStatus === "ServiceStarted" ||
       item.BookingStatus === "Reached" ||
       item.BookingStatus === "StartJourney" ||
-      item.Payments?.[0]?.PaymentStatus !== "Pending"
+      item.Payments?.[0]?.PaymentStatus === "Pending"
     );
   };
 
