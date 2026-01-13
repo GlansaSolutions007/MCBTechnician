@@ -33,9 +33,10 @@ export default function ServiceStart() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  console.log("booking", booking);
+  // console.log("booking", booking);
 const [isLoading, setIsLoading] = useState(false);
-const [cooldown, setCooldown] = useState(0);
+const [otpCooldown, setOtpCooldown] = useState(0);
+const [cooldownTimer, setCooldownTimer] = useState(null);
 
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
@@ -69,49 +70,83 @@ const [cooldown, setCooldown] = useState(0);
   const fuelTypeName = bookingParam.FuelTypeName || bookingParam.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = bookingParam.VehicleImage || null;
   const fullAddress = bookingParam.FullAddress || bookingParam.Leads?.FullAddress || bookingParam.Leads?.City || "";
-useEffect(() => {
-  let timer;
-  if (cooldown > 0) {
-    timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-  }
-  return () => clearTimeout(timer);
-}, [cooldown]);
-
-const startCooldownTimer = () => {
-  setCooldown(60); 
-};
-
-
-const resendOTP = async () => {
-  try {
-    setIsLoading(true);
-
-    const response = await axios.post(
-      `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-      {
-        bookingID: Number(bookingId),
-        actionType: "BookingStartOTP",
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
       }
-    );
+    };
+  }, [cooldownTimer]);
 
-    if (response?.data?.status === true || response?.data?.success === true) {
-      setOtpSent(true);
-      setModalMessage("OTP resent successfully to customer!");
-      setModalVisible(true);
-      startCooldownTimer();
+  const startCooldownTimer = () => {
+    setOtpCooldown(60); 
+    
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCooldownTimer(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    setCooldownTimer(timer);
+  };
 
-      await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
-    } else {
+
+  const resendOTP = async () => {
+    try {
+      setIsLoading(true);
+      const payload = {
+        bookingID: Number(bookingId),
+        // actionType: "SendOTP",
+        actionType: "BookingStartOTP",
+      };
+      
+      console.log("=== Resend OTP Request ===");
+      console.log("URL:", `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`);
+      console.log("Payload:", payload);
+      
+      const response = await axios.post(
+        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
+        payload
+      );
+
+      console.log("=== Resend OTP Response ===");
+      console.log("Full Response:", response);
+      console.log("Response Data:", response?.data);
+      console.log("Response Status:", response?.status);
+      console.log("Response Status Text:", response?.statusText);
+
+      if (response?.data?.status === true || response?.data?.success === true) {
+        console.log(" OTP Resent Successfully");
+        setOtpSent(true);
+        setModalMessage("OTP resent successfully to customer!");
+        setModalVisible(true);
+        startCooldownTimer(); // Start 60-second cooldown
+        await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
+      } else {
+        console.log("❌ OTP Resend Failed - Invalid Response");
+        console.log("Response Data:", response?.data);
+        setModalMessage("Failed to resend OTP. Please try again.");
+        setModalVisible(true);
+      }
+    } catch (error) {
+      console.log("=== Resend OTP Error ===");
+      console.log("Error:", error);
+      console.log("Error Message:", error?.message);
+      console.log("Error Response:", error?.response);
+      console.log("Error Response Data:", error?.response?.data);
+      console.log("Error Status:", error?.response?.status);
       setModalMessage("Failed to resend OTP. Please try again.");
       setModalVisible(true);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    setModalMessage("Failed to resend OTP. Please try again.");
-    setModalVisible(true);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -465,27 +500,26 @@ const resendOTP = async () => {
             /> */}
             <Image
               source={
-                booking.ProfileImage
-                  ? { uri: `${API_BASE_URL_IMAGE}${booking.ProfileImage}` }
+                profileImage
+                  ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
                   : defaultAvatar
               }
               style={{ width: 46, height: 46, borderRadius: 10 }}
             />
             <View style={[globalStyles.ml3, { flex: 1 }]}>
               <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                {booking.CustomerName}
+                {customerName || "N/A"}
               </CustomText>
               <CustomText
                 style={[globalStyles.f12Medium, globalStyles.neutral500]}
               >
-                Mobile: {booking.PhoneNumber}
+                Mobile: {phoneNumber || "N/A"}
               </CustomText>
             </View>
             <TouchableOpacity
               onPress={() => {
                 Vibration.vibrate([0, 200, 100, 300]);
 
-                const phoneNumber = booking.PhoneNumber;
                 if (phoneNumber) {
                   Linking.openURL(`tel:${phoneNumber}`);
                 } else {
@@ -779,22 +813,47 @@ const resendOTP = async () => {
     maxLength={6}
   />
 
-  <TouchableOpacity
-    disabled={cooldown > 0 || isLoading}
-    onPress={resendOTP}
-    style={{
-      marginLeft: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 8,
-      backgroundColor:
-        cooldown > 0 ? "#ccc" : color.primary,
-    }}
-  >
-    <CustomText style={[globalStyles.textWhite, globalStyles.f12Bold]}>
-      {cooldown > 0 ? `Resend (${cooldown}s)` : "Resend OTP"}
-    </CustomText>
-  </TouchableOpacity>
+  {otpCooldown === 0 ? (
+    <TouchableOpacity
+      onPress={resendOTP}
+      disabled={isLoading}
+      style={[
+        {
+          marginLeft: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 8,
+          backgroundColor: color.yellow,
+          opacity: isLoading ? 0.6 : 1,
+        },
+      ]}
+    >
+      <CustomText
+        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+      >
+        {isLoading ? "Sending OTP" : "Resend OTP"}  
+      </CustomText>
+    </TouchableOpacity>
+  ) : (
+    <View
+      style={[
+        {
+          marginLeft: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          borderRadius: 8,
+          backgroundColor: color.neutral[300],
+          opacity: 0.6,
+        },
+      ]}
+    >
+      <CustomText
+        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+      >
+        Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
+      </CustomText>
+    </View>
+  )}
 </View>
 
 {error ? (
@@ -803,13 +862,7 @@ const resendOTP = async () => {
   </CustomText>
 ) : null}
 
-             
-
-                {error ? (
-                  <CustomText style={{ color: "red", marginTop: 5 }}>
-                    {error}
-                  </CustomText>
-                ) : null}
+   
 
                 <TouchableOpacity
                   style={[

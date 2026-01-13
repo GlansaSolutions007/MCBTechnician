@@ -156,7 +156,6 @@ export default function ServiceEnd() {
       const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         {
-          // loginId: booking.PhoneNumber,
           bookingID: Number(bookingId),
           actionType: "SendOTP",
         }

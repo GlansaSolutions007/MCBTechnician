@@ -372,12 +372,12 @@ export default function LeaveRequestList() {
                         </CustomText>
                       </View>
 
-                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                      {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
                         <Ionicons name="time" size={16} color={color.neutral[500]} style={globalStyles.mr2} />
                         <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                           Requested at {moment(item.FromDate).format("hh:mm A")}
                         </CustomText>
-                      </View>
+                      </View> */}
                     </View>
                     
                     <View style={[styles.statusBadge, statusStyle.container]}>
