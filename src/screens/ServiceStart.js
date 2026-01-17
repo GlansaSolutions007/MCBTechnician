@@ -879,11 +879,13 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     },
                   ]}
                   onPress={async () => {
+                    // Validation: Check OTP
                     if (!otp || otp.length !== 6) {
                       setError("Please enter a valid 6-digit OTP");
                       return;
                     }
 
+                    // Validation: Verify OTP and start service
                     const isValid = await updateTechnicianTracking(
                       "ServiceStarted"
                     );
@@ -891,42 +893,96 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    handleUpload();
-                    const totalSeconds = booking.TotalEstimatedDurationMinutes
+                    // Upload images if any (wait for completion before navigating)
+                    if (images.length > 0) {
+                      try {
+                        setIsUploading(true);
+                        for (let i = 0; i < images.length; i++) {
+                          const formData = new FormData();
+                          formData.append("BookingID", booking.BookingID);
+                          formData.append("UploadedBy", 1);
+                          formData.append("TechID", booking.TechID);
+                          formData.append("ImageUploadType", "before");
+                          formData.append("ImagesType", "tech");
+
+                          formData.append("ImageURL1", {
+                            uri: images[i],
+                            type: "image/jpeg",
+                            name: `upload_${i + 1}.jpg`,
+                          });
+
+                          const response = await fetch(
+                            `${API_BASE_URL}/ServiceImages/InsertServiceImages`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Accept: "application/json",
+                                "Content-Type": "multipart/form-data",
+                              },
+                              body: formData,
+                            }
+                          );
+
+                          const text = await response.text();
+                          let data;
+                          try {
+                            data = JSON.parse(text);
+                          } catch {
+                            data = text;
+                          }
+
+                          console.log(`Image ${i + 1} uploaded:`, data);
+                        }
+                        setIsUploading(false);
+                        setUploadDone(true);
+                        setImages([]);
+                      } catch (error) {
+                        setIsUploading(false);
+                        console.error("Upload error:", error);
+                        // Continue navigation even if upload fails
+                      }
+                    }
+
+                    // Calculate estimated and actual time
+                    const estimatedTime = booking.TotalEstimatedDurationMinutes
                       ? booking.TotalEstimatedDurationMinutes * 60
                       : 0;
-                    setMaxTime(totalSeconds);
+                    
+                    // Calculate actual time (service just started, so it's 0 or from API if already started)
+                    let actualTime = 0;
+                    const serviceStartTime = booking.ServiceStartedAt 
+                      ? new Date(booking.ServiceStartedAt)
+                      : new Date();
+                    actualTime = Math.floor((new Date() - serviceStartTime) / 1000);
 
-                    const elapsedFromAPI = booking.ServiceStartedAt
-                      ? calculateElapsedFromAPI(booking.ServiceStartedAt)
-                      : 0;
+                    // Update booking with ServiceStartedAt if not already set
+                    const updatedBooking = {
+                      ...booking,
+                      ServiceStartedAt: booking.ServiceStartedAt || new Date().toISOString(),
+                    };
 
-                    setElapsedTime(elapsedFromAPI);
-                    setTimerStarted(true);
-                    setTimerCompleted(false);
-
+                    // Store timer state
                     await AsyncStorage.setItem(
                       `serviceStarted_${booking.BookingID}`,
                       "true"
                     );
 
-                    // Store timer state for this specific booking
                     await AsyncStorage.setItem(
                       `timerState_${booking.BookingID}`,
                       JSON.stringify({
                         timerStarted: true,
-                        elapsedTime: elapsedFromAPI,
-                        maxTime: totalSeconds,
+                        elapsedTime: actualTime,
+                        maxTime: estimatedTime,
                         timerCompleted: false,
                       })
                     );
 
-                    // Reload this screen with updated booking so timer starts immediately
-                    const updatedBooking = {
-                      ...booking,
-                      ServiceStartedAt: new Date().toISOString(),
-                    };
-                    navigation.replace(route.name, { booking: updatedBooking });
+                    // Navigate to ServiceEnd page
+                    navigation.navigate("ServiceEnd", {
+                      booking: updatedBooking,
+                      estimatedTime: estimatedTime,
+                      actualTime: actualTime,
+                    });
                   }}
                 >
                   <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
