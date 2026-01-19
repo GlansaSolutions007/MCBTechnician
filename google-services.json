@@ -8,6 +8,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:98137449003:android:6daef66958ad33ebf8806e",
+        "android_client_info": {
+          "package_name": "com.itglansa.mcbc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYeo1amFnv6eiPnz8NhwIBupnDrr9hcA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:98137449003:android:fc9253cd573ed1c1f8806e",
         "android_client_info": {
           "package_name": "com.itglansa.mcbt"
@@ -17,9 +36,25 @@
       "api_key": [
         {
           "current_key": "AIzaSyCYeo1amFnv6eiPnz8NhwIBupnDrr9hcA8"
-        },
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98137449003:android:207ebca301b40873f8806e",
+        "android_client_info": {
+          "package_name": "com.itglansa.mycarbuddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
         {
-          "current_key": "AIzaSyDpXPFHs_GvT5FkTvdaTxwXKUg70GWsY5I"
+          "current_key": "AIzaSyCYeo1amFnv6eiPnz8NhwIBupnDrr9hcA8"
         }
       ],
       "services": {

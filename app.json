@@ -43,13 +43,24 @@
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK"
       ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc"
         }
-      }
+      },
+      "package": "com.itglansa.mcbt"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -80,7 +91,8 @@
             "./assets/notificationtone.wav"
           ]
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

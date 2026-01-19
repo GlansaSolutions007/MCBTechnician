@@ -11,7 +11,7 @@ import { color } from "../../styles/theme";
 import globalStyles from "../../styles/globalStyles";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
