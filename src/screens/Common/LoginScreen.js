@@ -103,6 +103,25 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
+      // Check for special supervisor credentials first
+      const SUPERVISOR_PHONE = "1234567890";
+      const SUPERVISOR_PASSWORD = "abcdefg";
+      
+      if (phoneNumber === SUPERVISOR_PHONE && password === SUPERVISOR_PASSWORD) {
+        // Store supervisor login state
+        await AsyncStorage.setItem("isSupervisor", "true");
+        await AsyncStorage.setItem("supervisorPhone", phoneNumber);
+        
+        // Navigate to supervisor dashboard using reset to ensure proper navigation
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "SupervisorTabs" }],
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Continue with normal technician login flow
       const response = await axios.post(
         `${API_BASE_URL}Auth/Technician-login`,
         {
