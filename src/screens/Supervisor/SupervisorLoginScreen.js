@@ -40,7 +40,7 @@ export default function SupervisorLoginScreen() {
 
   // Special credentials
   const SUPERVISOR_PHONE = "1234567890";
-  const SUPERVISOR_PASSWORD = "abcdefg";
+  const SUPERVISOR_PASSWORD = "Abcdefg";
 
   // Validation functions
   const validatePhoneNumber = (phone) => {

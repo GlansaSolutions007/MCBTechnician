@@ -105,7 +105,7 @@ export default function LoginScreen() {
     try {
       // Check for special supervisor credentials first
       const SUPERVISOR_PHONE = "1234567890";
-      const SUPERVISOR_PASSWORD = "abcdefg";
+      const SUPERVISOR_PASSWORD = "Abcdefg";
       
       if (phoneNumber === SUPERVISOR_PHONE && password === SUPERVISOR_PASSWORD) {
         // Store supervisor login state
