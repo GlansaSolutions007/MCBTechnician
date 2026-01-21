@@ -259,18 +259,35 @@ export default function ServiceEnd() {
       return;
     }
 
-    // After OTP verification, update technician tracking status
-    const statusUpdated = await updateTechnicianTracking("Completed");
-    if (!statusUpdated) {
+    // Get PaymentStatus from booking (check Payments array first, then direct property)
+    const paymentStatus = booking.Payments?.[0]?.PaymentStatus || booking.PaymentStatus;
+
+    // If PaymentStatus is null or payment is null, navigate to CollectPayment without updating status
+    if (paymentStatus === null || paymentStatus === undefined) {
+      navigation.navigate("CollectPayment", { booking });
       return;
     }
 
-    // Check payment mode and navigate accordingly
-    if (booking.PaymentMode === "Razorpay" || booking.PaymentMode === "razorpay") {
-      setShowPaymentModal(true);
-    } else {
-      navigation.navigate("CollectPayment", { booking });
+    // If PaymentStatus is "Success", update technician tracking and navigate to dashboard
+    if (paymentStatus === "Success") {
+      const statusUpdated = await updateTechnicianTracking("Completed");
+      if (!statusUpdated) {
+        return;
+      }
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: "CustomerTabNavigator",
+            params: { screen: "Dashboard" },
+          },
+        ],
+      });
+      return;
     }
+
+    // For any other PaymentStatus (like "Pending"), navigate to CollectPayment without updating status
+    navigation.navigate("CollectPayment", { booking });
   };
   useEffect(() => {
     const fetchLeads = async () => {

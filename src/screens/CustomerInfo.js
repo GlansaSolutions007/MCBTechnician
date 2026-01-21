@@ -1581,8 +1581,7 @@ export default function CustomerInfo() {
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
               {/* <View style={styles.startreach}> */}
-              {booking.BookingStatus !== "Completed" &&
-                booking.BookingDate === today && (
+              {booking.BookingStatus !== "Completed" && (
                   <>
                     {booking.BookingStatus === "Confirmed" && (
                       <TouchableOpacity

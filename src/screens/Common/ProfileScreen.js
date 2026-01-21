@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { color } from "../../styles/theme";
 import locationicon from "../../../assets/icons/Navigation/LocationsPin.png";
 import person from "../../../assets/icons/Navigation/techProfile.png";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
 // import AvailabilityHeader from "../../components/AvailabilityHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -164,9 +164,37 @@ export default function ProfileScreen() {
   const confirmLogout = () => {
     setShowLogoutModal(true);
   };
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowLogoutModal(false);
-    logout();
+    try {
+      await logout();
+      // Navigate to login screen - try to get root navigator
+      let rootNav = navigation;
+      // Traverse up to find root navigator
+      while (rootNav.getParent()) {
+        rootNav = rootNav.getParent();
+      }
+      // Reset navigation to Login screen
+      rootNav.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        })
+      );
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if logout fails, try to navigate to login
+      let rootNav = navigation;
+      while (rootNav.getParent()) {
+        rootNav = rootNav.getParent();
+      }
+      rootNav.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        })
+      );
+    }
   };
 
   useEffect(() => {
