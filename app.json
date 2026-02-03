@@ -17,6 +17,9 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to track your current position on the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to provide real-time tracking to customers even when the app is in the background.",
+        "NSCameraUsageDescription": "This app needs access to your camera to take photos of service work and vehicle conditions.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and upload images of service work and vehicle conditions.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library after capturing service images.",
         "UIBackgroundModes": [
           "location",
           "background-processing",
@@ -29,38 +32,28 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
+      "package": "com.itglansa.mcbt",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
-        "WAKE_LOCK",
-        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
         "VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.WAKE_LOCK",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE",
-        "WAKE_LOCK",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.WAKE_LOCK"
+        "RECEIVE_BOOT_COMPLETED"
       ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyB1e_nM-v-G5EYZSrXjElyHo61I4qb5rNc"
         }
-      },
-      "package": "com.itglansa.mcbt"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -93,7 +86,15 @@
         }
       ],
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you select and upload service images.",
+          "cameraPermission": "The app accesses your camera to let you take photos of service work and vehicle conditions."
+        }
+      ],
       "./plugins/withAndroidManifestFix"
-    ]
+    ],
+    "privacy": "public"
   }
 }

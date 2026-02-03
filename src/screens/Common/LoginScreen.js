@@ -103,24 +103,6 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      // Check for special supervisor credentials first
-      const SUPERVISOR_PHONE = "1234567890";
-      const SUPERVISOR_PASSWORD = "Abcdefg";
-      
-      if (phoneNumber === SUPERVISOR_PHONE && password === SUPERVISOR_PASSWORD) {
-        // Store supervisor login state
-        await AsyncStorage.setItem("isSupervisor", "true");
-        await AsyncStorage.setItem("supervisorPhone", phoneNumber);
-        
-        // Navigate to supervisor dashboard using reset to ensure proper navigation
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "SupervisorTabs" }],
-        });
-        setLoading(false);
-        return;
-      }
-
       // Continue with normal technician login flow
       const response = await axios.post(
         `${API_BASE_URL}Auth/Technician-login`,
@@ -319,6 +301,20 @@ export default function LoginScreen() {
                 },
               ]}
             >
+              {/* Supervisor Login Button - Above Logo */}
+              <View style={styles.supervisorButtonContainer}>
+                <TouchableOpacity
+                  style={styles.supervisorButton}
+                  onPress={() => navigation.replace("SupervisorLogin")}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="person-outline" size={16} color={color.white} />
+                  <CustomText style={[globalStyles.f12Medium, { color: color.white, marginLeft: 6 }]}>
+                    Supervisor Login
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.logoContainer}>
                 <Image
                   source={require("../../../assets/Logo/mycarbuddy.png")}
@@ -401,17 +397,19 @@ export default function LoginScreen() {
                   </View>
                 </View>
               )}
-              {/* Simple title */}
+              {/* Simple title - Only show when keyboard is open */}
+              {keyboardVisible && (
               <CustomText
                 style={[
-                  globalStyles.f20Bold,
-                  globalStyles.black,
+                    globalStyles.f24Bold,
+                    { color: color.primary },
                   globalStyles.mb4,
                   globalStyles.textac,
                 ]}
               >
-                Login
+                  Technician Login
               </CustomText>
+              )}
 
               {/* Phone Number Input */}
               <View style={styles.inputContainer}>
@@ -572,7 +570,7 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     backgroundColor: color.primary,
-    paddingTop: 60,
+    paddingTop: 30,
     paddingBottom: 40,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
@@ -584,7 +582,6 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 30,
   },
   logo: {
     width: 260,
@@ -752,5 +749,29 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     alignSelf: "center",
+  },
+  supervisorButtonContainer: {
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    alignItems: "flex-end",
+    width: "100%",
+  },
+  supervisorButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    minWidth: 140,
   },
 });

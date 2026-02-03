@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  BackHandler,
 } from "react-native";
 import globalStyles from "../../styles/globalStyles";
 import CustomAlert from "../../components/CustomAlert";
@@ -18,13 +19,18 @@ import { color } from "../../styles/theme";
 import CustomText from "../../components/CustomText";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 export default function SupervisorLoginScreen() {
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [headerAnim] = useState(new Animated.Value(1));
+  const [welcomeTextAnim] = useState(new Animated.Value(1));
+  const [logoAnim] = useState(new Animated.Value(1));
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [status, setStatus] = useState("info");
@@ -35,21 +41,17 @@ export default function SupervisorLoginScreen() {
   const [inputsDisabled, setInputsDisabled] = useState(false);
 
   // Validation states
-  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Special credentials
-  const SUPERVISOR_PHONE = "1234567890";
-  const SUPERVISOR_PASSWORD = "Abcdefg";
-
   // Validation functions
-  const validatePhoneNumber = (phone) => {
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phone) {
-      return "Phone number is required";
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      return "Email is required";
     }
-    if (!phoneRegex.test(phone)) {
-      return "Please enter a valid 10-digit phone number";
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
     }
     return "";
   };
@@ -64,10 +66,10 @@ export default function SupervisorLoginScreen() {
     return "";
   };
 
-  const handlePhoneNumberChange = (text) => {
-    setPhoneNumber(text);
-    if (phoneError) {
-      setPhoneError("");
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    if (emailError) {
+      setEmailError("");
     }
   };
 
@@ -79,13 +81,13 @@ export default function SupervisorLoginScreen() {
   };
 
   const validateForm = () => {
-    const phoneValidation = validatePhoneNumber(phoneNumber);
+    const emailValidation = validateEmail(email);
     const passwordValidation = validatePassword(password);
     
-    setPhoneError(phoneValidation);
+    setEmailError(emailValidation);
     setPasswordError(passwordValidation);
     
-    return !phoneValidation && !passwordValidation;
+    return !emailValidation && !passwordValidation;
   };
 
   const handleLogin = async () => {
@@ -98,11 +100,35 @@ export default function SupervisorLoginScreen() {
     setInputsDisabled(true);
 
     try {
-      // Check for special supervisor credentials
-      if (phoneNumber === SUPERVISOR_PHONE && password === SUPERVISOR_PASSWORD) {
+      const response = await axios.post(
+        `${API_BASE_URL}Auth/Admin-login`,
+        {
+          email: email,
+          password: password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Supervisor login response:", response.data);
+
+      if (response.data?.success) {
+        const adminId = response.data?.adminId || response.data?.id;
+        const token = response.data?.token || "";
+        const adminEmail = response.data?.email || email;
+
         // Store supervisor login state
         await AsyncStorage.setItem("isSupervisor", "true");
-        await AsyncStorage.setItem("supervisorPhone", phoneNumber);
+        await AsyncStorage.setItem("supervisorEmail", adminEmail);
+        if (adminId) {
+          await AsyncStorage.setItem("supervisorId", adminId.toString());
+        }
+        if (token) {
+          await AsyncStorage.setItem("supervisorToken", token);
+        }
         
         // Navigate to supervisor dashboard using reset to ensure proper navigation
         navigation.reset({
@@ -110,12 +136,12 @@ export default function SupervisorLoginScreen() {
           routes: [{ name: "SupervisorTabs" }],
         });
       } else {
-        throw new Error("Invalid credentials. Please check your phone number and password.");
+        throw new Error(response.data?.message || "Login failed.");
       }
     } catch (error) {
-      console.error("Login error:", error.message);
+      console.error("Supervisor login error:", error?.response?.data || error.message);
       setTitle("Login Failed");
-      setMessage(error.message || "Invalid credentials");
+      setMessage(error?.response?.data?.message || error.message || "Invalid credentials. Please check your email and password.");
       setStatus("error");
       setShowAlert(true);
     } finally {
@@ -136,6 +162,24 @@ export default function SupervisorLoginScreen() {
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       () => {
         setKeyboardVisible(true);
+        // Smooth animations when keyboard opens
+        Animated.parallel([
+          Animated.timing(headerAnim, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(welcomeTextAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(logoAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
     );
 
@@ -143,6 +187,24 @@ export default function SupervisorLoginScreen() {
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setKeyboardVisible(false);
+        // Smooth animations when keyboard closes
+        Animated.parallel([
+          Animated.timing(headerAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(welcomeTextAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(logoAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
     );
 
@@ -150,130 +212,220 @@ export default function SupervisorLoginScreen() {
       showSub.remove();
       hideSub.remove();
     };
+  }, [fadeAnim, headerAnim, welcomeTextAnim, logoAnim]);
+
+  // Prevent back navigation to technician login
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+      // Prevent going back to technician login
+      return true; // Return true to prevent default back behavior
+    });
+
+    return () => backHandler.remove();
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={[globalStyles.flex1, { backgroundColor: color.white }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor={color.white} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <View style={[globalStyles.bgcontainer, { flex: 1 }]}>
+      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <Animated.View
-          style={[
-            styles.container,
-            {
-              opacity: fadeAnim,
-            },
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            { flexGrow: 1 },
+            keyboardVisible && { flex: 1, justifyContent: "flex-start" },
           ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <View style={styles.logoContainer}>
-              <CustomText
-                style={[
-                  globalStyles.f28Bold,
-                  globalStyles.textWhite,
-                  { marginBottom: 10 },
-                ]}
-              >
-                Supervisor Portal
-              </CustomText>
-            </View>
-            <View style={styles.welcomeContainer}>
-              <CustomText
-                style={[globalStyles.f20Bold, globalStyles.textWhite]}
-              >
-                Welcome Back
-              </CustomText>
-              <CustomText
-                style={[
-                  globalStyles.f14Regular,
-                  globalStyles.textWhite,
-                  { marginTop: 8, opacity: 0.9 },
-                ]}
-              >
-                Sign in to continue
-              </CustomText>
-            </View>
-          </View>
+          {/* Header Section with smooth hide animation */}
+          {!keyboardVisible && (
+            <Animated.View
+              style={[
+                styles.headerSection,
+                {
+                  opacity: headerAnim,
+                  transform: [
+                    {
+                      translateY: headerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-150, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              {/* Technician Login Button - Above Logo */}
+              <View style={styles.technicianButtonContainer}>
+                <TouchableOpacity
+                  style={styles.technicianButton}
+                  onPress={() => navigation.navigate("Login")}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="person-outline" size={16} color={color.white} />
+                  <CustomText style={[globalStyles.f12Medium, { color: color.white, marginLeft: 6 }]}>
+                    Technician Login
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
 
-          {/* Form Section */}
-          <View style={styles.formSection}>
-            <View style={styles.formCard}>
-              {/* Phone Number Input */}
-              <View style={styles.inputContainer}>
-                <View
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require("../../../assets/Logo/mycarbuddy.png")}
+                  style={styles.logo}
+                />
+              </View>
+
+              <Animated.View
+                style={[
+                  styles.welcomeContainer,
+                  {
+                    opacity: welcomeTextAnim,
+                    transform: [
+                      {
+                        translateY: welcomeTextAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <CustomText
                   style={[
-                    styles.inputWrapper,
-                    phoneError && styles.inputWrapperError,
+                    globalStyles.f28Bold,
+                    globalStyles.textWhite,
+                    globalStyles.textac,
                   ]}
                 >
+                  Welcome Back
+                </CustomText>
+                <CustomText
+                  style={[
+                    globalStyles.f16Regular,
+                    globalStyles.textWhite,
+                    globalStyles.textac,
+                    globalStyles.mt1,
+                  ]}
+                >
+                  Sign in to continue
+                </CustomText>
+              </Animated.View>
+            </Animated.View>
+          )}
+
+          {/* Login Form Section */}
+          <Animated.View
+            style={[
+              styles.formSection,
+              { opacity: fadeAnim },
+              keyboardVisible && {
+                flex: 1,
+                justifyContent: "flex-start",
+                alignItems: "center",
+                marginTop: 0,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.formCard,
+                keyboardVisible && styles.keyboardOpenFormCard,
+              ]}
+            >
+              {keyboardVisible && (
+                <View>
+                  <View style={globalStyles.alineItemscenter}>
+                    <Image
+                      source={require("../../../assets/Logo/mycarbuddy.png")}
+                      style={styles.logo2}
+                    />
+                  </View>
+                </View>
+              )}
+              {/* Simple title - Only show when keyboard is open */}
+              {keyboardVisible && (
+                <CustomText
+                  style={[
+                    globalStyles.f24Bold,
+                    { color: color.primary },
+                    globalStyles.mb4,
+                    globalStyles.textac,
+                  ]}
+                >
+                  Supervisor Login
+                </CustomText>
+              )}
+              {/* Email Input */}
+              <View style={styles.inputContainer}>
+                <View style={[
+                  styles.inputWrapper,
+                  emailError && styles.inputWrapperError
+                ]}>
                   <Ionicons
-                    name="call-outline"
+                    name="mail-outline"
                     size={20}
-                    color={phoneError ? color.error : color.neutral[400]}
+                    color={color.neutral[500]}
                     style={styles.inputIcon}
                   />
                   <TextInput
+                    placeholder="Email"
+                    placeholderTextColor={color.neutral[400]}
+                    value={email}
+                    onChangeText={handleEmailChange}
                     style={[
                       styles.modernInput,
-                      phoneError && styles.inputError,
+                      emailError && styles.inputError
                     ]}
-                    placeholder="Phone Number"
-                    placeholderTextColor={color.neutral[400]}
-                    value={phoneNumber}
-                    onChangeText={handlePhoneNumberChange}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    editable={!inputsDisabled}
+                    keyboardType="email-address"
                     autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!inputsDisabled}
                   />
                 </View>
-                {phoneError ? (
-                  <CustomText style={styles.errorText}>{phoneError}</CustomText>
+                {emailError ? (
+                  <CustomText style={styles.errorText}>
+                    {emailError}
+                  </CustomText>
                 ) : null}
               </View>
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <View
-                  style={[
-                    styles.inputWrapper,
-                    passwordError && styles.inputWrapperError,
-                  ]}
-                >
+                <View style={[
+                  styles.inputWrapper,
+                  passwordError && styles.inputWrapperError
+                ]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
-                    color={passwordError ? color.error : color.neutral[400]}
+                    color={color.neutral[500]}
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[
-                      styles.modernInput,
-                      passwordError && styles.inputError,
-                    ]}
                     placeholder="Password"
                     placeholderTextColor={color.neutral[400]}
                     value={password}
                     onChangeText={handlePasswordChange}
                     secureTextEntry={!showPassword}
+                    style={[
+                      styles.modernInput,
+                      passwordError && styles.inputError
+                    ]}
                     editable={!inputsDisabled}
-                    autoCapitalize="none"
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.eyeIcon}
                   >
                     <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      name={showPassword ? "eye-outline" : "eye-off-outline"}
                       size={20}
-                      color={color.neutral[400]}
+                      color={color.neutral[500]}
                     />
                   </TouchableOpacity>
                 </View>
@@ -286,53 +438,89 @@ export default function SupervisorLoginScreen() {
 
               {/* Login Button */}
               <TouchableOpacity
-                style={[
-                  styles.modernButton,
-                  (loading || inputsDisabled) && styles.buttonDisabled,
-                ]}
+                style={[styles.modernButton, loading && styles.buttonDisabled]}
                 onPress={handleLogin}
-                disabled={loading || inputsDisabled}
+                disabled={loading}
+                activeOpacity={0.8}
               >
                 {loading ? (
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                  >
-                    Signing in...
-                  </CustomText>
+                  <View style={styles.loadingContainer}>
+                    <MaterialCommunityIcons
+                      name="loading"
+                      size={20}
+                      color={color.white}
+                      style={styles.loadingIcon}
+                    />
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                    >
+                      Signing In...
+                    </CustomText>
+                  </View>
                 ) : (
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                  >
-                    Sign In
-                  </CustomText>
+                  <View style={styles.buttonContent}>
+                    <CustomText
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                    >
+                      Sign In
+                    </CustomText>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={color.white}
+                    />
+                  </View>
                 )}
               </TouchableOpacity>
+
+              {/* Additional Info - Hidden when keyboard is open */}
+              {!keyboardVisible && (
+                <View style={styles.infoContainer}>
+                  <CustomText
+                    style={[
+                      globalStyles.f12Regular,
+                      globalStyles.neutral500,
+                      globalStyles.textac,
+                    ]}
+                  >
+                    Secure login for MCB Supervisors
+                  </CustomText>
+                </View>
+              )}
             </View>
-          </View>
-        </Animated.View>
-      </ScrollView>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Powered by Glansa Solutions */}
+      <View style={styles.poweredBySection}>
+        <CustomText
+          style={[
+            globalStyles.f12Regular,
+            globalStyles.neutral500,
+            globalStyles.textac,
+          ]}
+        >
+          Powered by Glansa Solutions PVT LTD
+        </CustomText>
+      </View>
 
       <CustomAlert
         visible={showAlert}
+        status={status}
         title={title}
         message={message}
-        status={status}
         onClose={() => setShowAlert(false)}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-  },
-  container: {
-    flex: 1,
-  },
+  // Header Section
   headerSection: {
     backgroundColor: color.primary,
-    paddingTop: 60,
+    paddingTop: 30,
     paddingBottom: 40,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
@@ -344,11 +532,27 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 30,
+  },
+  logo2: {
+    width: 200,
+    height: 100,
+    resizeMode: "contain",
+  },
+  logo: {
+    width: 260,
+    height: 140,
+    resizeMode: "contain",
+  },
+  logo2: {
+    width: 200,
+    height: 100,
+    resizeMode: "contain",
   },
   welcomeContainer: {
     alignItems: "center",
   },
+
+  // Form Section
   formSection: {
     flex: 1,
     paddingHorizontal: 20,
@@ -401,6 +605,8 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: 4,
   },
+
+  // Button Styles
   modernButton: {
     backgroundColor: color.primary,
     borderRadius: 12,
@@ -416,6 +622,75 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[300],
     shadowOpacity: 0,
     elevation: 0,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  loadingIcon: {
+    transform: [{ rotate: "0deg" }],
+  },
+
+  // Info Section
+  infoContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: color.neutral[200],
+  },
+
+  // Powered By Section
+  poweredBySection: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    backgroundColor: color.neutral[50],
+  },
+
+  // Keyboard Open States
+  keyboardOpenFormCard: {
+    padding: 25,
+    marginHorizontal: 0,
+    marginTop: 80,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: color.primary,
+    backgroundColor: color.white,
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+  },
+  technicianButtonContainer: {
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    alignItems: "flex-end",
+    width: "100%",
+  },
+  technicianButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    minWidth: 140,
   },
 });
 

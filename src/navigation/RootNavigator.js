@@ -10,6 +10,8 @@ import { useAuth } from "../contexts/AuthContext";
 import CustomerStackNavigator from "./CustomerStackNavigator";
 import SupervisorTabNavigator from "./SupervisorTabNavigator";
 import SupervisorLoginScreen from "../screens/Supervisor/SupervisorLoginScreen";
+import SupervisorBookingDetails from "../screens/Supervisor/SupervisorBookingDetails";
+import SupervisorLeads from "../screens/Supervisor/SupervisorLeads";
 // import LiveTrackingMap from "../components/LiveTrackingMap";
 import { View, ActivityIndicator } from "react-native";
 
@@ -61,6 +63,16 @@ export default function RootNavigator() {
         <Stack.Screen
           name="SupervisorTabs"
           component={SupervisorTabNavigator}
+        />
+        <Stack.Screen
+          name="SupervisorBookingDetails"
+          component={SupervisorBookingDetails}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SupervisorLeads"
+          component={SupervisorLeads}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="CustomerTabs"
