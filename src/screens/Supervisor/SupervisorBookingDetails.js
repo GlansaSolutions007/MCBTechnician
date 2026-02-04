@@ -27,62 +27,16 @@ export default function SupervisorBookingDetails() {
     );
   }
 
-  // Function to extract LeadId from booking data dynamically
   const extractLeadId = () => {
-    console.log("Extracting LeadId from booking:", booking);
-    
-    // First, check if LeadId is directly available in booking
-    if (booking.LeadId) {
-      console.log("Found LeadId in booking.LeadId:", booking.LeadId);
-      return booking.LeadId;
-    }
-    
-    // Check if it's in nested Leads object
-    if (booking.Leads?.Id) {
-      console.log("Found LeadId in booking.Leads.Id:", booking.Leads.Id);
-      return booking.Leads.Id;
-    }
-    
-    // Check if BookingTrackID itself is a LeadId (starts with MCBI)
-    if (booking.BookingTrackID && booking.BookingTrackID.startsWith("MCBI")) {
-      console.log("BookingTrackID is LeadId:", booking.BookingTrackID);
-      return booking.BookingTrackID;
-    }
-    
-    // Try to extract LeadId pattern from BookingTrackID
-    // Pattern: MCBI followed by digits (e.g., MCBI00010)
+    if (booking.LeadId) return booking.LeadId;
+    if (booking.Leads?.Id) return booking.Leads.Id;
+    if (booking.BookingTrackID && booking.BookingTrackID.startsWith("MCBI")) return booking.BookingTrackID;
     if (booking.BookingTrackID) {
       const leadIdMatch = booking.BookingTrackID.match(/MCBI\d+/i);
-      if (leadIdMatch) {
-        console.log("Extracted LeadId from BookingTrackID:", leadIdMatch[0]);
-        return leadIdMatch[0];
-      }
+      if (leadIdMatch) return leadIdMatch[0];
     }
-    
-    // Try to extract from BookingID - sometimes LeadId can be derived from BookingID
-    // Check if there's a relationship between BookingID and LeadId
-    if (booking.BookingID) {
-      // Some systems might have LeadId = MCBI + BookingID pattern
-      const leadIdFromBooking = `MCBI${String(booking.BookingID).padStart(5, '0')}`;
-      console.log("Constructed LeadId from BookingID:", leadIdFromBooking);
-      // Note: This is a fallback, might need adjustment based on actual data structure
-    }
-    
-    // Fallback: construct from CustID (most reliable if available)
-    if (booking.CustID) {
-      const leadIdFromCust = `MCBI${String(booking.CustID).padStart(5, '0')}`;
-      console.log("Constructed LeadId from CustID:", leadIdFromCust);
-      return leadIdFromCust;
-    }
-    
-    // Last resort: use BookingID
-    if (booking.BookingID) {
-      const leadIdFromBooking = `MCBI${String(booking.BookingID).padStart(5, '0')}`;
-      console.log("Using BookingID as fallback:", leadIdFromBooking);
-      return leadIdFromBooking;
-    }
-    
-    console.warn("Could not extract LeadId from booking data");
+    if (booking.CustID) return `MCBI${String(booking.CustID).padStart(5, "0")}`;
+    if (booking.BookingID) return `MCBI${String(booking.BookingID).padStart(5, "0")}`;
     return null;
   };
 
@@ -231,7 +185,7 @@ export default function SupervisorBookingDetails() {
               icon="time"
               iconName="time-outline"
               label="Time Slot"
-              value={formatTimeSlot(booking.TimeSlot)}
+              value={formatTimeSlot(booking.TimeSlot ?? booking.timeSlot)}
             />
             <InfoRow
               icon="calendar"

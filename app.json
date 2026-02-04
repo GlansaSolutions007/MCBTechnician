@@ -15,11 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to track your current position on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to provide real-time tracking to customers even when the app is in the background.",
-        "NSCameraUsageDescription": "This app needs access to your camera to take photos of service work and vehicle conditions.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select and upload images of service work and vehicle conditions.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library after capturing service images.",
+        "NSLocationWhenInUseUsageDescription": "My Car Buddy Technician uses your location to show your live position to the customer during the service visit and to navigate you to the job site. This is core to the technician service experience.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "My Car Buddy Technician uses your location to show your live position to the customer during the service visit, including when the app is in the background, so the customer can track your arrival. This is core to the technician service experience.",
+        "NSCameraUsageDescription": "My Car Buddy Technician uses your camera only to capture photos of the vehicle and service work for your job records. No other use is made of your camera.",
+        "NSPhotoLibraryUsageDescription": "My Car Buddy Technician uses your photo library only to select and upload images of the vehicle and service work for your job records. No other use is made of your photos.",
+        "NSPhotoLibraryAddUsageDescription": "My Car Buddy Technician saves photos of service work to your library only when you choose to save captured job images.",
         "UIBackgroundModes": [
           "location",
           "background-processing",
@@ -33,6 +33,7 @@
     },
     "android": {
       "package": "com.itglansa.mcbt",
+      "versionCode": 1,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -89,8 +90,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you select and upload service images.",
-          "cameraPermission": "The app accesses your camera to let you take photos of service work and vehicle conditions."
+          "photosPermission": "My Car Buddy Technician uses your photo library only to select and upload images of the vehicle and service work for your job records. No other use is made of your photos.",
+          "cameraPermission": "My Car Buddy Technician uses your camera only to capture photos of the vehicle and service work for your job records. No other use is made of your camera."
         }
       ],
       "./plugins/withAndroidManifestFix"

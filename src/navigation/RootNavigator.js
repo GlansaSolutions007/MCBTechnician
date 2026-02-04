@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import LoginScreen from "../screens/Common/LoginScreen";
 import RegisterScreen from "../screens/Common/RegisterScreen";
+import PermissionsDisclosureScreen, { DISCLOSURE_KEY } from "../screens/Common/PermissionsDisclosureScreen";
 import CustomerTabNavigator from "./CustomerTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
 import CustomerStackNavigator from "./CustomerStackNavigator";
@@ -21,6 +22,7 @@ export default function RootNavigator() {
   const { user, loading } = useAuth();
   const [isSupervisor, setIsSupervisor] = useState(false);
   const [checkingSupervisor, setCheckingSupervisor] = useState(true);
+  const [disclosureAccepted, setDisclosureAccepted] = useState(null);
 
   useEffect(() => {
     const checkSupervisorStatus = async () => {
@@ -36,11 +38,55 @@ export default function RootNavigator() {
     checkSupervisorStatus();
   }, []);
 
+  useEffect(() => {
+    if (!user && !isSupervisor) {
+      setDisclosureAccepted(true);
+      return;
+    }
+    let cancelled = false;
+    AsyncStorage.getItem(DISCLOSURE_KEY)
+      .then((val) => {
+        if (!cancelled) setDisclosureAccepted(val === "true");
+      })
+      .catch(() => {
+        if (!cancelled) setDisclosureAccepted(false);
+      });
+    return () => { cancelled = true; };
+  }, [user, isSupervisor]);
+
+  const handleDisclosureAccept = async () => {
+    try {
+      await AsyncStorage.setItem(DISCLOSURE_KEY, "true");
+    } catch (_) {}
+    setDisclosureAccepted(true);
+  };
+
+  const handleDisclosureDecline = () => {
+    setDisclosureAccepted(true);
+  };
+
   if (loading || checkingSupervisor) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
       </View>
+    );
+  }
+
+  if ((user || isSupervisor) && disclosureAccepted === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if ((user || isSupervisor) && disclosureAccepted === false) {
+    return (
+      <PermissionsDisclosureScreen
+        onAccept={handleDisclosureAccept}
+        onDecline={handleDisclosureDecline}
+      />
     );
   }
 
