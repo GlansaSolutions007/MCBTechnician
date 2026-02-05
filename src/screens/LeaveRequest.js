@@ -208,7 +208,7 @@ export default function LeaveRequest() {
                 style={[styles.dateInput, errors.fromDate && styles.inputError]}
               >
                 <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
-                <CustomText style={[globalStyles.f14Regular, fromDate ? globalStyles.black : globalStyles.neutral500]}>
+                <CustomText style={[globalStyles.f12Regular, fromDate ? globalStyles.black : globalStyles.neutral500]}>
                   {fromDate ? formatDate(fromDate) : "Select date"}
                 </CustomText>
               </TouchableOpacity>
@@ -234,7 +234,7 @@ export default function LeaveRequest() {
                 style={[styles.dateInput, errors.toDate && styles.inputError]}
               >
                 <Ionicons name="calendar-outline" size={20} color={color.primary} style={globalStyles.mr2} />
-                <CustomText style={[globalStyles.f14Regular, toDate ? globalStyles.black : globalStyles.neutral500]}>
+                <CustomText style={[globalStyles.f12Regular, toDate ? globalStyles.black : globalStyles.neutral500]}>
                   {toDate ? formatDate(toDate) : "Select date"}
                 </CustomText>
               </TouchableOpacity>
@@ -379,7 +379,7 @@ export default function LeaveRequest() {
             <CustomText style={[globalStyles.f18SemiBold, globalStyles.textac, globalStyles.mb2]}>
               {modalMessage.includes("successfully") ? "Success!" : "Notice"}
             </CustomText>
-            <CustomText style={[globalStyles.f14Regular, globalStyles.textac, globalStyles.neutral500, globalStyles.mb4]}>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.textac, globalStyles.neutral500, globalStyles.mb4]}>
               {modalMessage}
             </CustomText>
             <TouchableOpacity

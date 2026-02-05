@@ -761,7 +761,7 @@ export default function ServiceEnd() {
               </CustomText>
               <CustomText
                 style={[
-                  globalStyles.f14Regular,
+                  globalStyles.f12Regular,
                   globalStyles.textac,
                   globalStyles.neutral500,
                   { marginBottom: 24, textAlign: "center" },

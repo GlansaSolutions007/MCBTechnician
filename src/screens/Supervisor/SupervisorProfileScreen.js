@@ -110,7 +110,7 @@ export default function SupervisorProfileScreen() {
       <View style={[globalStyles.container, globalStyles.justifycenter, globalStyles.alineItemscenter, { flex: 1 }]}>
         <StatusBar style="dark" />
         <ActivityIndicator size="large" color={color.primary} />
-        <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500, { marginTop: 12 }]}>
+        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500, { marginTop: 12 }]}>
           Loading profile...
         </CustomText>
       </View>
