@@ -407,6 +407,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     marginBottom: 20,
+    marginTop: 50,
   },
   backButton: {
     width: 40,

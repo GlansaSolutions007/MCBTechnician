@@ -7,6 +7,8 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import globalStyles from "../../styles/globalStyles";
@@ -26,6 +28,7 @@ export default function SupervisorProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchProfile = async (isRefresh = false) => {
     try {
@@ -83,6 +86,7 @@ export default function SupervisorProfileScreen() {
   );
 
   const handleLogout = async () => {
+    setShowLogoutModal(false);
     try {
       await AsyncStorage.multiRemove([
         "isSupervisor",
@@ -96,8 +100,8 @@ export default function SupervisorProfileScreen() {
         index: 0,
         routes: [{ name: "SupervisorLogin" }],
       });
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (err) {
+      console.error("Logout error:", err);
     }
   };
 
@@ -186,13 +190,57 @@ export default function SupervisorProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={() => setShowLogoutModal(true)}
+        activeOpacity={0.8}
+      >
         <Ionicons name="log-out-outline" size={22} color={color.alertError} />
         <CustomText style={styles.logoutText}>Logout</CustomText>
       </TouchableOpacity>
 
         <CustomText style={styles.version}>Supervisor Portal v1.0</CustomText>
       </ScrollView>
+
+      {/* Logout confirmation modal */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={showLogoutModal}
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackground}
+          onPress={() => setShowLogoutModal(false)}
+        >
+          <Pressable
+            style={styles.modalContainer}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <CustomText style={styles.modalTitle}>
+              Are you sure you want to log out?
+            </CustomText>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <CustomText style={[globalStyles.f14Bold, globalStyles.error]}>
+                  Cancel
+                </CustomText>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalConfirmLogoutButton]}
+                onPress={handleLogout}
+              >
+                <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                  Log Out
+                </CustomText>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -363,5 +411,43 @@ const styles = StyleSheet.create({
     ...globalStyles.f12Regular,
     color: color.neutral[400],
     textAlign: "center",
+  },
+  // Logout modal
+  modalBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContainer: {
+    backgroundColor: color.white,
+    padding: 24,
+    borderRadius: 16,
+    width: "85%",
+    alignItems: "center",
+  },
+  modalTitle: {
+   ...globalStyles.f14Bold,
+    color: color.black,
+    textAlign: "center",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 24,
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalCancelButton: {
+    backgroundColor: color.neutral[100],
+  },
+  modalConfirmLogoutButton: {
+    backgroundColor: color.alertError,
   },
 });

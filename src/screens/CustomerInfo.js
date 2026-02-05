@@ -32,13 +32,18 @@ import {
   stopBackgroundTracking,
 } from "../utils/locationTracker";
 import { RefreshControl } from "react-native";
+import { StatusBar } from "expo-status-bar";
+
 export default function CustomerInfo() {
   const navigation = useNavigation();
   const route = useRoute();
   const bookingParam = route?.params?.booking;
   if (!bookingParam) {
     return (
-      <ScrollView style={[globalStyles.bgcontainer]}>
+      <ScrollView style={[globalStyles.bgcontainer]} refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+        <StatusBar style="dark" />
         <View style={[globalStyles.container, globalStyles.justifycenter]}>
           <CustomText style={[globalStyles.f16Bold]}>
             No booking data.

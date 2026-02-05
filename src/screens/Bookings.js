@@ -23,6 +23,7 @@ import defaultAvatar from "../../assets/images/buddy.png";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
 
 export default function Bookings() {
   const navigation = useNavigation();
@@ -264,6 +265,7 @@ const onRefresh = async () => {
           : { paddingBottom: 30 }
       }
     >
+      <StatusBar style="dark" />
       <View style={globalStyles.container}>
         {/* Filter Section */}
         {todaysBookings.length > 0 && (
