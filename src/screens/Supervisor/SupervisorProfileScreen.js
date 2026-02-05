@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import globalStyles from "../../styles/globalStyles";
 import { color } from "../../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,9 +17,11 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import axios from "axios";
+import { StatusBar } from "expo-status-bar";
 
 export default function SupervisorProfileScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,7 +77,7 @@ export default function SupervisorProfileScreen() {
       </View>
       <View style={styles.infoTextWrap}>
         <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>{label}</CustomText>
-        <CustomText style={[globalStyles.f14Regular, globalStyles.black]} numberOfLines={2}>{value || "—"}</CustomText>
+        <CustomText style={[globalStyles.f12Regular, globalStyles.black]} numberOfLines={2}>{value || "—"}</CustomText>
       </View>
     </View>
   );
@@ -101,6 +104,7 @@ export default function SupervisorProfileScreen() {
   if (loading && !profile) {
     return (
       <View style={[globalStyles.container, globalStyles.justifycenter, globalStyles.alineItemscenter, { flex: 1 }]}>
+        <StatusBar style="dark" />
         <ActivityIndicator size="large" color={color.primary} />
         <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500, { marginTop: 12 }]}>
           Loading profile...
@@ -110,37 +114,41 @@ export default function SupervisorProfileScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => fetchProfile(true)} colors={[color.primary]} />
-      }
-    >
-      {error ? (
-        <View style={styles.errorBanner}>
-          <Ionicons name="warning-outline" size={20} color={color.alertError} />
-          <CustomText style={styles.errorText}>{error}</CustomText>
+    <View style={styles.screen}>
+      <StatusBar style="light" />
+      {/* Top header: primary from top, curved bottom (same as CustomHeader) */}
+      <View style={[styles.headerWrapper, { paddingTop: insets.top + 24, paddingBottom: 28 }]}>
+        <View style={styles.hero}>
+          <View style={styles.avatarWrap}>
+            {profile?.ProfileImage ? (
+              <Image source={{ uri: profile.ProfileImage }} style={styles.avatar} />
+            ) : (
+              <Ionicons name="person" size={48} color={color.primary} />
+            )}
+          </View>
+          <CustomText style={styles.heroName}>{profile?.Name?.trim() || "Supervisor"}</CustomText>
+          {profile?.RoleName ? (
+            <View style={styles.roleBadge}>
+              <CustomText style={styles.roleBadgeText}>{profile.RoleName}</CustomText>
+            </View>
+          ) : null}
         </View>
-      ) : null}
+      </View>
 
-      {/* Profile Hero */}
-      <View style={styles.hero}>
-        <View style={styles.avatarWrap}>
-          {profile?.ProfileImage ? (
-            <Image source={{ uri: profile.ProfileImage }} style={styles.avatar} />
-          ) : (
-            <Ionicons name="person" size={48} color={color.primary} />
-          )}
-        </View>
-        <CustomText style={styles.heroName}>{profile?.Name?.trim() || "Supervisor"}</CustomText>
-        {profile?.RoleName ? (
-          <View style={styles.roleBadge}>
-            <CustomText style={styles.roleBadgeText}>{profile.RoleName}</CustomText>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => fetchProfile(true)} colors={[color.primary]} />
+        }
+      >
+        {error ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="warning-outline" size={20} color={color.alertError} />
+            <CustomText style={styles.errorText}>{error}</CustomText>
           </View>
         ) : null}
-      </View>
 
       {/* Profile Details Card */}
       {profile && (
@@ -183,12 +191,29 @@ export default function SupervisorProfileScreen() {
         <CustomText style={styles.logoutText}>Logout</CustomText>
       </TouchableOpacity>
 
-      <CustomText style={styles.version}>Supervisor Portal v1.0</CustomText>
-    </ScrollView>
+        <CustomText style={styles.version}>Supervisor Portal v1.0</CustomText>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: color.neutral[50],
+  },
+  headerWrapper: {
+    backgroundColor: color.primary,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    paddingHorizontal: 20,
+    shadowColor: color.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: "hidden",
+  },
   scroll: {
     flex: 1,
     backgroundColor: color.neutral[50],
@@ -214,16 +239,8 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: "center",
-    backgroundColor: color.primary,
-    paddingVertical: 32,
+    paddingVertical: 8,
     paddingHorizontal: 24,
-    borderRadius: 20,
-    marginBottom: 24,
-    shadowColor: color.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
   },
   avatarWrap: {
     width: 88,
@@ -241,8 +258,7 @@ const styles = StyleSheet.create({
     borderRadius: 44,
   },
   heroName: {
-    fontSize: 22,
-    fontWeight: "700",
+    ...globalStyles.f20Bold,
     color: color.white,
     textAlign: "center",
   },
@@ -254,8 +270,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   roleBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...globalStyles.f12Bold,
     color: color.white,
   },
   card: {

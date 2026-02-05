@@ -387,7 +387,7 @@ export default function SupervisorLeads() {
           onPress={() => toggleSection(sectionKey)}
           activeOpacity={0.7}
         >
-          <CustomText style={[globalStyles.f15Bold, globalStyles.black]}>
+          <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
             {title}{count !== undefined ? ` (${count})` : ''}
           </CustomText>
           <Animated.View
@@ -659,7 +659,7 @@ export default function SupervisorLeads() {
             <Ionicons name="arrow-back" size={24} color={color.white} />
           </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 16 }}>
-            <CustomText style={[globalStyles.f22Bold, globalStyles.textWhite]}>
+            <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite]}>
               Lead Details
             </CustomText>
             <CustomText
@@ -1369,7 +1369,7 @@ export default function SupervisorLeads() {
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: color.primary,
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 20,
@@ -1389,7 +1389,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
-    marginRight: 8,
+    marginRight: 2,
   },
   leadCard: {
     backgroundColor: color.white,

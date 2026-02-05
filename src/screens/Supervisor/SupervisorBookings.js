@@ -593,7 +593,7 @@ export default function SupervisorBookings() {
                             style={styles.bookingIcon}
                           />
                           <CustomText
-                            style={[globalStyles.f15Bold, { color: color.primary }]}
+                            style={[globalStyles.f14Bold, { color: color.primary }]}
                             numberOfLines={1}
                           >
                             {customer.customerName}
@@ -602,7 +602,7 @@ export default function SupervisorBookings() {
                         <View style={styles.statusRow}>
                           {customer.phoneNumber ? (
                             <CustomText
-                              style={[globalStyles.f13Regular, globalStyles.black]}
+                              style={[globalStyles.f12Regular, globalStyles.black]}
                               numberOfLines={1}
                             >
                               {customer.phoneNumber}
@@ -680,7 +680,7 @@ export default function SupervisorBookings() {
                             ]}
                           />
                           <CustomText
-                            style={[globalStyles.f13Regular, globalStyles.black]}
+                            style={[globalStyles.f12Regular, globalStyles.black]}
                           >
                             {item.BookingStatus || "Pending"}
                           </CustomText>
@@ -1008,7 +1008,7 @@ export default function SupervisorBookings() {
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: color.primary,
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 20,

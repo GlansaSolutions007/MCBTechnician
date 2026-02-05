@@ -16,6 +16,7 @@ import NotificationBadge from "./NotificationBadge";
 
 export default function CustomHeader({ screenName }) {
   const [name, setName] = useState("");
+  const [nameFallback, setNameFallback] = useState("Buddy"); // "Buddy" | "Supervisor" for initial/fallback
   const navigation = useNavigation();
   const Notifications = () => {
     navigation.navigate("Notifications");
@@ -23,35 +24,76 @@ export default function CustomHeader({ screenName }) {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    const fetchTechnicianDetails = async () => {
+    AsyncStorage.getItem("isSupervisor").then((v) => {
+      setNameFallback(v === "true" ? "Supervisor" : "Buddy");
+    });
+  }, []);
+
+  useEffect(() => {
+    const fetchName = async () => {
       try {
-        const techId = await AsyncStorage.getItem("techID");
-        const token = await AsyncStorage.getItem("token");
+        const isSupervisor = await AsyncStorage.getItem("isSupervisor");
 
-        if (!techId) {
-          console.warn("No technicianId found");
-          return;
-        }
+        if (isSupervisor === "true") {
+          // Supervisor: fetch from Employee/Id
+          const supervisorId = await AsyncStorage.getItem("supervisorId");
+          const supervisorToken = await AsyncStorage.getItem("supervisorToken");
 
-        const res = await axios.get(
-          `${API_BASE_URL}TechniciansDetails/technicianid?technicianid=${techId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+          if (!supervisorId) {
+            setName("Supervisor");
+            return;
           }
-        );
 
-        // ✅ Set technician name OR fallback to Buddy
-        const fetchedName = res.data.data?.[0]?.TechnicianName;
-        setName(fetchedName && fetchedName.trim() !== "" ? fetchedName : "Buddy");
+          const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+          const res = await axios.get(
+            `${baseUrl}Employee/Id?Id=${supervisorId}`,
+            {
+              headers: supervisorToken
+                ? { Authorization: `Bearer ${supervisorToken}` }
+                : {},
+            }
+          );
+
+          const data = res?.data;
+          let profile = null;
+          if (Array.isArray(data) && data.length > 0) {
+            profile = data[0];
+          } else if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+            profile = data.data[0];
+          } else if (data && typeof data === "object" && (data.Id != null || data.Name != null)) {
+            profile = data;
+          }
+
+          const fetchedName = profile?.Name?.trim();
+          setName(fetchedName && fetchedName !== "" ? fetchedName : "Supervisor");
+        } else {
+          // Technician: fetch from TechniciansDetails
+          const techId = await AsyncStorage.getItem("techID");
+          const token = await AsyncStorage.getItem("token");
+
+          if (!techId) {
+            setName("Buddy");
+            return;
+          }
+
+          const res = await axios.get(
+            `${API_BASE_URL}TechniciansDetails/technicianid?technicianid=${techId}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+
+          const fetchedName = res.data.data?.[0]?.TechnicianName?.trim();
+          setName(fetchedName && fetchedName !== "" ? fetchedName : "Buddy");
+        }
       } catch (err) {
-        console.error("Fetch error", err);
-        setName("Buddy"); // fallback on error too
+        console.error("CustomHeader fetch error", err);
+        const isSupervisor = await AsyncStorage.getItem("isSupervisor").catch(() => null);
+        setName(isSupervisor === "true" ? "Supervisor" : "Buddy");
       }
     };
 
-    fetchTechnicianDetails();
+    fetchName();
   }, []);
 
   return (
@@ -59,13 +101,13 @@ export default function CustomHeader({ screenName }) {
       <View
         style={[
           styles.headerContainer,
-          { paddingTop: insets.top + 30 },
+          { paddingTop: insets.top + 10 },
         ]}
       >
         <View style={styles.headerContent}>
           <View style={styles.greetingSection}>
             <CustomText style={[globalStyles.f20Bold, globalStyles.textWhite]}>
-              Hello, {name || "Buddy"}
+              Hello, {name || nameFallback}
             </CustomText>
             <CustomText style={[globalStyles.f12Regular, globalStyles.textWhite, { opacity: 0.9 }]}>
             Welcome back! Here's your {screenName || "Dashboard"}

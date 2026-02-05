@@ -11,7 +11,9 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  Easing,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import globalStyles from "../../styles/globalStyles";
 import CustomAlert from "../../components/CustomAlert";
 import { useAuth } from "../../contexts/AuthContext";
@@ -216,21 +218,23 @@ export default function LoginScreen() {
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       () => {
         setKeyboardVisible(true);
-        // Smooth animations when keyboard opens
         Animated.parallel([
           Animated.timing(headerAnim, {
             toValue: 0,
-            duration: 400,
+            duration: 350,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }),
           Animated.timing(welcomeTextAnim, {
             toValue: 0,
-            duration: 300,
+            duration: 250,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }),
           Animated.timing(logoAnim, {
             toValue: 1,
-            duration: 500,
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }),
         ]).start();
@@ -240,21 +244,23 @@ export default function LoginScreen() {
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setKeyboardVisible(false);
-        // Smooth animations when keyboard closes
         Animated.parallel([
           Animated.timing(headerAnim, {
             toValue: 1,
-            duration: 400,
+            duration: 350,
+            easing: Easing.inOut(Easing.cubic),
             useNativeDriver: true,
           }),
           Animated.timing(welcomeTextAnim, {
             toValue: 1,
-            duration: 300,
+            duration: 250,
+            easing: Easing.inOut(Easing.cubic),
             useNativeDriver: true,
           }),
           Animated.timing(logoAnim, {
             toValue: 0,
-            duration: 500,
+            duration: 300,
+            easing: Easing.inOut(Easing.cubic),
             useNativeDriver: true,
           }),
         ]).start();
@@ -269,7 +275,10 @@ export default function LoginScreen() {
 
   return (
     <View style={[globalStyles.bgcontainer, { flex: 1 }]}>
-      <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      <StatusBar
+        backgroundColor={keyboardVisible ? color.background : color.primary}
+        barStyle={keyboardVisible ? "dark-content" : "light-content"}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -283,83 +292,39 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Section with smooth hide animation */}
-          {!keyboardVisible && (
-            <Animated.View
-              style={[
-                styles.headerSection,
-                {
-                  opacity: headerAnim,
-                  transform: [
-                    {
-                      translateY: headerAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-150, 0],
-                      }),
-                    },
-                  ],
-                },
-              ]}
+          {/* Header Section - always rendered, animated out when keyboard opens */}
+          <Animated.View
+            pointerEvents={keyboardVisible ? "none" : "auto"}
+            style={[
+              styles.headerSectionWrapper,
+              keyboardVisible && styles.headerSectionAbsolute,
+              {
+                opacity: headerAnim,
+                transform: [
+                  {
+                    translateY: headerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-120, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={[color.primary,  color.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.headerSection}
             >
-              {/* Supervisor Login Button - Above Logo */}
-              <View style={styles.supervisorButtonContainer}>
-                <TouchableOpacity
-                  style={styles.supervisorButton}
-                  onPress={() => navigation.replace("SupervisorLogin")}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="person-outline" size={16} color={color.white} />
-                  <CustomText style={[globalStyles.f12Medium, { color: color.white, marginLeft: 6 }]}>
-                    Supervisor Login
-                  </CustomText>
-                </TouchableOpacity>
-              </View>
-
               <View style={styles.logoContainer}>
                 <Image
-                  source={require("../../../assets/Logo/mycarbuddy.png")}
+                  source={require("../../../assets/Logo/logoWhite.png")}
                   style={styles.logo}
                 />
               </View>
-
-              <Animated.View
-                style={[
-                  styles.welcomeContainer,
-                  {
-                    opacity: welcomeTextAnim,
-                    transform: [
-                      {
-                        translateY: welcomeTextAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-20, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.f28Bold,
-                    globalStyles.textWhite,
-                    globalStyles.textac,
-                  ]}
-                >
-                  Welcome Back
-                </CustomText>
-                <CustomText
-                  style={[
-                    globalStyles.f16Regular,
-                    globalStyles.textWhite,
-                    globalStyles.textac,
-                    globalStyles.mt1,
-                  ]}
-                >
-                  Sign in to continue
-                </CustomText>
-              </Animated.View>
-            </Animated.View>
-          )}
+            </LinearGradient>
+          </Animated.View>
 
           {/* Login Form Section */}
           {/* <Animated.View
@@ -391,26 +356,13 @@ export default function LoginScreen() {
                 <View>
                   <View style={globalStyles.alineItemscenter}>
                     <Image
-                      source={require("../../../assets/Logo/mycarbuddy.png")}
+                      source={require("../../../assets/Logo/logoWhite.png")}
                       style={styles.logo2}
                     />
                   </View>
                 </View>
               )}
-              {/* Simple title - Only show when keyboard is open */}
-              {keyboardVisible && (
-              <CustomText
-                style={[
-                    globalStyles.f24Bold,
-                    { color: color.primary },
-                  globalStyles.mb4,
-                  globalStyles.textac,
-                ]}
-              >
-                  Technician Login
-              </CustomText>
-              )}
-
+              <CustomText style={styles.formTitle}>Technician Login</CustomText>
               {/* Phone Number Input */}
               <View style={styles.inputContainer}>
                 <View style={[
@@ -523,20 +475,24 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Additional Info - Hidden when keyboard is open */}
-              {!keyboardVisible && (
-                <View style={styles.infoContainer}>
-                  <CustomText
-                    style={[
-                      globalStyles.f12Regular,
-                      globalStyles.neutral500,
-                      globalStyles.textac,
-                    ]}
-                  >
-                    Secure login for MCB Technicians
-                  </CustomText>
+              {/* Role switcher - after form */}
+              <View style={styles.roleSwitcherContainer}>
+                <View style={styles.roleSwitcherDivider}>
+                  <View style={styles.roleSwitcherLine} />
+                  <CustomText style={styles.roleSwitcherLabel}>or</CustomText>
+                  <View style={styles.roleSwitcherLine} />
                 </View>
-              )}
+                <TouchableOpacity
+                  style={styles.roleSwitcherButton}
+                  onPress={() => navigation.replace("SupervisorLogin")}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="person-outline" size={18} color={color.primary} />
+                  <CustomText style={styles.roleSwitcherButtonText}>
+Login as Supervisor
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
             </View>
           </Animated.View>
         </ScrollView>
@@ -568,33 +524,38 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   // Header Section
+  headerSectionWrapper: {
+    width: "100%",
+    marginHorizontal: 0,
+  },
+  headerSectionAbsolute: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
+  },
   headerSection: {
-    backgroundColor: color.primary,
-    paddingTop: 30,
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
     paddingBottom: 40,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    marginHorizontal: 0,
-    marginLeft: 0,
-    marginRight: 0,
     width: "100%",
   },
   logoContainer: {
     alignItems: "center",
+    marginTop: 40,
   },
   logo: {
-    width: 260,
-    height: 140,
+    width: 220,
+    height: 130,
     resizeMode: "contain",
   },
   logo2: {
     width: 200,
     height: 100,
     resizeMode: "contain",
-  },
-  welcomeContainer: {
-    alignItems: "center",
   },
 
   // Form Section
@@ -611,6 +572,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     marginBottom: 20,
     marginTop: 40,
+  },
+  formTitle: {
+   ...globalStyles.f14Bold,
+    color: color.primary,
+    textAlign: "center",
+    marginBottom: 20,
   },
 
   // Input Styles
@@ -686,12 +653,47 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "0deg" }],
   },
 
-  // Info Section
-  infoContainer: {
-    marginTop: 20,
+  // Role switcher (after form)
+  roleSwitcherContainer: {
+    marginTop: 24,
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: color.neutral[200],
+    alignItems: "center",
+  },
+  roleSwitcherDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    width: "100%",
+  },
+  roleSwitcherLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: color.neutral[200],
+  },
+  roleSwitcherLabel: {
+    ...globalStyles.f12Regular,
+    color: color.neutral[500],
+    marginHorizontal: 12,
+  },
+  roleSwitcherButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: color.primary,
+    backgroundColor: "transparent",
+    minWidth: 180,
+  },
+  roleSwitcherButtonText: {
+    ...globalStyles.f12Bold,
+    fontWeight: "600",
+    color: color.primary,
+    marginLeft: 8,
   },
 
   // Powered By Section
@@ -749,29 +751,5 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     alignSelf: "center",
-  },
-  supervisorButtonContainer: {
-    paddingTop: Platform.OS === "ios" ? 50 : 30,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-    alignItems: "flex-end",
-    width: "100%",
-  },
-  supervisorButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.6)",
-    shadowColor: color.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-    minWidth: 140,
   },
 });
