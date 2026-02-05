@@ -29,7 +29,7 @@ export default function PermissionsDisclosureScreen({ onAccept, onDecline }) {
         <CustomText style={[globalStyles.f20Bold, globalStyles.black, styles.title]}>
           Data & Permissions Disclosure
         </CustomText>
-        <CustomText style={[globalStyles.f14Regular, styles.subtitle]}>
+        <CustomText style={[globalStyles.f12Regular, styles.subtitle]}>
           My Car Buddy Technician uses the following data only for the purposes described below. By continuing, you consent to these uses.
         </CustomText>
 

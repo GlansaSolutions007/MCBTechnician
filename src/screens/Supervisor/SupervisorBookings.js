@@ -442,7 +442,7 @@ export default function SupervisorBookings() {
                 Supervisor Bookings
               </CustomText>
               <CustomText
-                style={[globalStyles.f14Regular, globalStyles.textWhite, { marginTop: 4, opacity: 0.9 }]}
+                style={[globalStyles.f12Regular, globalStyles.textWhite, { marginTop: 4, opacity: 0.9 }]}
               >
                 Loading bookings...
               </CustomText>
@@ -781,7 +781,7 @@ export default function SupervisorBookings() {
                 </View>
                 <CustomText
                   style={[
-                    globalStyles.f14Regular,
+                    globalStyles.f12Regular,
                     assignType === "Field Advisor" ? globalStyles.f14Bold : globalStyles.f12Regular,
                   ]}
                 >
@@ -812,7 +812,7 @@ export default function SupervisorBookings() {
                 </View>
                 <CustomText
                   style={[
-                    globalStyles.f14Regular,
+                    globalStyles.f12Regular,
                     assignType === "Technician" ? globalStyles.f14Bold : globalStyles.f12Regular,
                   ]}
                 >

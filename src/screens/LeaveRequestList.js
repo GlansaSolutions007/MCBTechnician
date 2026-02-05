@@ -367,7 +367,7 @@ export default function LeaveRequestList() {
                       
                       <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
                         <Ionicons name="calendar" size={16} color={color.neutral[500]} style={globalStyles.mr2} />
-                        <CustomText style={[globalStyles.f14Regular, globalStyles.neutral600]}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral600]}>
                           {moment(item.FromDate).format("MMM DD")} - {moment(item.ToDate).format("MMM DD, YYYY")}
                         </CustomText>
                       </View>
