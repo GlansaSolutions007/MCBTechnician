@@ -782,7 +782,7 @@ export default function SupervisorBookings() {
                 <CustomText
                   style={[
                     globalStyles.f14Regular,
-                    assignType === "Field Advisor" ? globalStyles.f14Bold : globalStyles.neutral600,
+                    assignType === "Field Advisor" ? globalStyles.f14Bold : globalStyles.f12Regular,
                   ]}
                 >
                   Field Advisor
@@ -813,7 +813,7 @@ export default function SupervisorBookings() {
                 <CustomText
                   style={[
                     globalStyles.f14Regular,
-                    assignType === "Technician" ? globalStyles.f14Bold : globalStyles.neutral600,
+                    assignType === "Technician" ? globalStyles.f14Bold : globalStyles.f12Regular,
                   ]}
                 >
                   Technician
@@ -824,7 +824,7 @@ export default function SupervisorBookings() {
             {/* Time Slot – only for Technician, dropdown with no data */}
             {assignType === "Technician" && (
               <View style={styles.assignField}>
-                <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.assignLabel]}>
+                <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.assignLabel]}>
                   Time Slot
                 </CustomText>
                 <Pressable
@@ -835,7 +835,7 @@ export default function SupervisorBookings() {
                     setShowTimeSlotPicker(!showTimeSlotPicker);
                   }}
                 >
-                  <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                  <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                     Select time slot
                   </CustomText>
                   <Ionicons name="chevron-down" size={20} color={color.neutral[500]} />
@@ -843,7 +843,7 @@ export default function SupervisorBookings() {
                 {showTimeSlotPicker && (
                   <View style={styles.dropdownList}>
                     <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                         No time slots
                       </CustomText>
                     </View>
@@ -854,7 +854,7 @@ export default function SupervisorBookings() {
 
             {/* Select Technician or Field Advisor */}
             <View style={styles.assignField}>
-              <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.assignLabel]}>
+              <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.assignLabel]}>
                 {assignType === "Technician" ? "Select Technician" : "Select Field Advisor"}
               </CustomText>
               <Pressable
@@ -872,7 +872,7 @@ export default function SupervisorBookings() {
               >
                 <CustomText
                   style={[
-                    globalStyles.f14Regular,
+                    globalStyles.f12Regular,
                     (assignType === "Technician" ? selectedTechnician != null : selectedFieldAdvisor != null)
                       ? globalStyles.neutral700
                       : globalStyles.neutral500,
@@ -892,13 +892,13 @@ export default function SupervisorBookings() {
                 <View style={styles.dropdownList}>
                   {techniciansLoading ? (
                     <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                         Loading...
                       </CustomText>
                     </View>
                   ) : techniciansList.length === 0 ? (
                     <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                      <CustomText style={[globalStyles.f12Regular, globalStyles.black]}>
                         No technicians found
                       </CustomText>
                     </View>
@@ -913,7 +913,7 @@ export default function SupervisorBookings() {
                           setAssignError(null);
                         }}
                       >
-                        <CustomText style={[globalStyles.f14Regular, globalStyles.neutral700]}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.black]}>
                           {t.TechnicianName}
                         </CustomText>
                       </Pressable>
@@ -925,13 +925,13 @@ export default function SupervisorBookings() {
                 <View style={styles.dropdownList}>
                   {employeesLoading ? (
                     <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                         Loading...
                       </CustomText>
                     </View>
                   ) : fieldAdvisorsList.length === 0 ? (
                     <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>
+                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                         No Field Advisors found
                       </CustomText>
                     </View>
@@ -946,7 +946,7 @@ export default function SupervisorBookings() {
                           setAssignError(null);
                         }}
                       >
-                        <CustomText style={[globalStyles.f14Regular, globalStyles.neutral700]}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                           {e.Name}
                         </CustomText>
                       </Pressable>
@@ -963,7 +963,7 @@ export default function SupervisorBookings() {
             ) : null}
             </ScrollView>
 
-            {/* Cancel & Assign */}
+            {/* Cancel & Assign field advisor or technician*/}
             <View style={styles.assignModalActions}>
               <TouchableOpacity
                 style={styles.assignCancelButton}
@@ -990,8 +990,8 @@ export default function SupervisorBookings() {
                   style={[
                     globalStyles.f14Bold,
                     (assignType === "Technician" ? selectedTechnician : selectedFieldAdvisor) && !assigningInProgress
-                      ? globalStyles.neutral700
-                      : globalStyles.neutral400,
+                      ? globalStyles.neutral500
+                      : globalStyles.neutral300,
                   ]}
                 >
                   {assigningInProgress ? "Assigning..." : "Assign"}

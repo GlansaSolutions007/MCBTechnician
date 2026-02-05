@@ -309,7 +309,7 @@ export default function SupervisorDashboard() {
             globalStyles.mt4,
           ]}
         >
-          <CustomText style={[globalStyles.f18Bold, globalStyles.black]}>
+          <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
             Quick Actions
           </CustomText>
 
@@ -402,7 +402,7 @@ export default function SupervisorDashboard() {
             globalStyles.mt3,
           ]}
         >
-          <CustomText style={[globalStyles.f18Bold, globalStyles.black]}>
+          <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
             Supervisor Information
           </CustomText>
           <CustomText

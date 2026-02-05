@@ -285,8 +285,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    ...globalStyles.f14Bold,
     color: color.black,
     marginBottom: 16,
   },
@@ -335,9 +334,9 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
+    ...globalStyles.f14Bold,
     color: color.black,
+    marginBottom: 4,
   },
   logoutButton: {
     flexDirection: "row",
@@ -357,12 +356,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   logoutText: {
-    fontSize: 16,
-    fontWeight: "700",
+    ...globalStyles.f14Bold,
     color: color.alertError,
   },
   version: {
-    fontSize: 12,
+    ...globalStyles.f12Regular,
     color: color.neutral[400],
     textAlign: "center",
   },
