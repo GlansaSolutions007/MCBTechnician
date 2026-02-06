@@ -99,7 +99,7 @@ export default function SupervisorBookingDetails() {
           )}
           <CustomText style={[
             globalStyles.f12Bold, 
-            globalStyles.neutral600
+            globalStyles.neutral500
           ]}>
             {label}:
           </CustomText>
@@ -138,7 +138,7 @@ export default function SupervisorBookingDetails() {
               {booking.BookingTrackID || "N/A"}
             </CustomText>
           </View>
-          {extractLeadId() && (
+          {extractLeadId() ? (
             <TouchableOpacity
               style={styles.leadsButton}
               onPress={() => {
@@ -153,7 +153,7 @@ export default function SupervisorBookingDetails() {
                 Leads
               </CustomText>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </View>
 
@@ -219,7 +219,7 @@ export default function SupervisorBookingDetails() {
               label="Phone Number"
               value={booking.PhoneNumber || "N/A"}
             />
-            {booking.FullAddress && (
+            {booking.FullAddress ? (
               <View style={styles.fullWidthRow}>
                 <View style={styles.fullWidthLabelContainer}>
                   <Ionicons
@@ -236,15 +236,15 @@ export default function SupervisorBookingDetails() {
                   {booking.FullAddress}
                 </CustomText>
               </View>
-            )}
-            {booking.Pincode && (
+            ) : null}
+            {booking.Pincode ? (
               <InfoRow
                 icon="pin"
                 iconName="pin-outline"
                 label="Pincode"
                 value={booking.Pincode}
               />
-            )}
+            ) : null}
           </View>
 
           {/* <View style={globalStyles.divider} /> */}
@@ -273,14 +273,14 @@ export default function SupervisorBookingDetails() {
                   label="Field Advisor"
                   value={booking.FieldAdvisorName}
                 />
-                {booking.FieldAdvisorPhoneNumber && (
+                {booking.FieldAdvisorPhoneNumber ? (
                   <InfoRow
                     icon="call"
                     iconName="call-outline"
                     label="Field Advisor Phone"
                     value={booking.FieldAdvisorPhoneNumber}
                   />
-                )}
+                ) : null}
               </>
             ) : (
               <InfoRow
@@ -298,22 +298,22 @@ export default function SupervisorBookingDetails() {
                   label="Technician"
                   value={booking.TechFullName}
                 />
-                {booking.TechPhoneNumber && (
+                {booking.TechPhoneNumber ? (
                   <InfoRow
                     icon="call"
                     iconName="call-outline"
                     label="Technician Phone"
                     value={booking.TechPhoneNumber}
                   />
-                )}
-                {booking.TechAssignDate && (
+                ) : null}
+                {booking.TechAssignDate ? (
                   <InfoRow
                     icon="calendar"
                     iconName="calendar-outline"
                     label="Technician Assigned Date"
                     value={formatDate(booking.TechAssignDate)}
                   />
-                )}
+                ) : null}
               </>
             ) : (
               <InfoRow
@@ -343,37 +343,37 @@ export default function SupervisorBookingDetails() {
               label="Total Amount"
               value={formatAmount(booking.TotalPrice)}
             />
-            {booking.LabourCharges && (
+            {booking.LabourCharges != null && booking.LabourCharges !== "" ? (
               <InfoRow
                 icon="cash"
                 iconName="cash-outline"
                 label="Labour Charges"
                 value={formatAmount(booking.LabourCharges)}
               />
-            )}
+            ) : null}
             <InfoRow
               icon="receipt"
               iconName="receipt"
               label="GST Amount"
               value={booking.GSTAmount ? formatAmount(booking.GSTAmount) : "N/A"}
             />
-            {booking.GSTNumber && (
+            {booking.GSTNumber ? (
               <InfoRow
                 icon="document"
                 iconName="document-text"
                 label="GST Number"
                 value={booking.GSTNumber}
               />
-            )}
-            {booking.CouponAmount && (
+            ) : null}
+            {booking.CouponAmount != null && booking.CouponAmount !== "" ? (
               <InfoRow
                 icon="pricetag"
                 iconName="pricetag-outline"
                 label="Coupon Amount"
                 value={formatAmount(booking.CouponAmount)}
               />
-            )}
-            {booking.Payments && Array.isArray(booking.Payments) && booking.Payments.length > 0 && (
+            ) : null}
+            {booking.Payments && Array.isArray(booking.Payments) && booking.Payments.length > 0 ? (
               <>
                 {booking.Payments.map((payment, index) => (
                   <View key={index} style={styles.paymentCard}>
@@ -399,7 +399,7 @@ export default function SupervisorBookingDetails() {
                       isPaymentCard={true}
                     /> */}
                    
-                    {payment.InvoiceNumber && (
+                    {payment.InvoiceNumber ? (
                       <InfoRow
                         icon="document"
                         iconName="document-text-outline"
@@ -407,11 +407,11 @@ export default function SupervisorBookingDetails() {
                         value={payment.InvoiceNumber}
                         isPaymentCard={true}
                       />
-                    )}
+                    ) : null}
                   </View>
                 ))}
               </>
-            )}
+            ) : null}
           </View>
 
           {/* Service & Parts Details */}
@@ -424,38 +424,38 @@ export default function SupervisorBookingDetails() {
                 Service & Parts Details
               </CustomText>
             </View>
-            {booking.Type && (
+            {booking.Type ? (
               <InfoRow
                 icon="list"
                 iconName="list-outline"
                 label="Type"
                 value={booking.Type}
               />
-            )}
-            {booking.ServiceName && (
+            ) : null}
+            {booking.ServiceName ? (
               <InfoRow
                 icon="build"
                 iconName="build-outline"
                 label="Service Name"
                 value={booking.ServiceName}
               />
-            )}
-            {booking.ServiceDate && (
+            ) : null}
+            {booking.ServiceDate ? (
               <InfoRow
                 icon="calendar"
                 iconName="calendar-outline"
                 label="Date"
                 value={formatDate(booking.ServiceDate)}
               />
-            )}
-            {booking.PartPrice !== null && booking.PartPrice !== undefined && (
+            ) : null}
+            {booking.PartPrice !== null && booking.PartPrice !== undefined ? (
               <InfoRow
                 icon="cash"
                 iconName="cash-outline"
                 label="Part Price"
                 value={formatAmount(booking.PartPrice)}
               />
-            )}
+            ) : null}
             {booking.DLRPartPrice !== null && booking.DLRPartPrice !== undefined && (
               <InfoRow
                 icon="cash"
@@ -544,26 +544,26 @@ export default function SupervisorBookingDetails() {
                 value={formatAmount(booking.OurAmount)}
               />
             )}
-            {booking.SelectedDealer && (
+            {booking.SelectedDealer ? (
               <InfoRow
                 icon="storefront"
                 iconName="storefront-outline"
                 label="Selected Dealer"
                 value={booking.SelectedDealer}
               />
-            )}
-            {booking.TotalAmount !== null && booking.TotalAmount !== undefined && (
+            ) : null}
+            {booking.TotalAmount !== null && booking.TotalAmount !== undefined ? (
               <InfoRow
                 icon="wallet"
                 iconName="wallet-outline"
                 label="Total Amt"
                 value={formatAmount(booking.TotalAmount)}
               />
-            )}
+            ) : null}
           </View>
 
           {/* Reschedules */}
-          {booking.Reschedules && Array.isArray(booking.Reschedules) && booking.Reschedules.length > 0 && (
+          {booking.Reschedules && Array.isArray(booking.Reschedules) && booking.Reschedules.length > 0 ? (
             <>
               <View style={globalStyles.divider} />
               <View style={styles.section}>
@@ -589,22 +589,22 @@ export default function SupervisorBookingDetails() {
                       label="New Schedule"
                       value={formatDate(reschedule.NewSchedule)}
                     />
-                    {reschedule.Reason && (
+                    {reschedule.Reason ? (
                       <InfoRow
                         icon="document"
                         iconName="document-text-outline"
                         label="Reason"
                         value={reschedule.Reason}
                       />
-                    )}
+                    ) : null}
                   </View>
                 ))}
               </View>
             </>
-          )}
+          ) : null}
 
           {/* Notes */}
-          {booking.Notes && (
+          {booking.Notes ? (
             <>
               <View style={globalStyles.divider} />
               <View style={styles.section}>
@@ -621,7 +621,7 @@ export default function SupervisorBookingDetails() {
                 </CustomText>
               </View>
             </>
-          )}
+          ) : null}
           </View>
         </View>
       </ScrollView>

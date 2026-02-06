@@ -46,6 +46,7 @@ export default function SupervisorBookings() {
   const [assigningInProgress, setAssigningInProgress] = useState(false);
 
   const [assignError, setAssignError] = useState(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
 
   useEffect(() => {
     fetchBookings();
@@ -267,10 +268,13 @@ export default function SupervisorBookings() {
       if (isTechnician) {
         // PUT api/Bookings/assign-technician
         // Payload: { bookingID, role: "Technician", techID, assignedTimeSlot }
-        const bookingTs = bookingForAssign?.TimeSlot ?? bookingForAssign?.timeSlot ?? "";
-        const assignedTimeSlot = typeof bookingTs === "string"
-          ? (bookingTs.split(",").map((s) => s.trim()).find((s) => /^\d{1,2}:\d{2}:\d{2}\s*-\s*\d{1,2}:\d{2}:\d{2}$/.test(s)) || "")
-          : "";
+        const timeSlots = parseTimeSlots(bookingForAssign);
+        const assignedTimeSlot =
+          timeSlots.length > 0
+            ? (selectedTimeSlot != null && selectedTimeSlot !== ""
+              ? selectedTimeSlot
+              : timeSlots[0])
+            : "";
         const url = `${baseUrl}Bookings/assign-technician`;
         const payload = {
           bookingID: Number(bookingForAssign.BookingID),
@@ -296,6 +300,7 @@ export default function SupervisorBookings() {
       setBookingForAssign(null);
       setSelectedTechnician(null);
       setSelectedFieldAdvisor(null);
+      setSelectedTimeSlot(null);
       fetchBookings();
     } catch (err) {
       console.error("Assign error:", err?.response?.data ?? err);
@@ -338,7 +343,30 @@ export default function SupervisorBookings() {
     }
   };
 
+  /** Parse booking TimeSlot string into array. Single: "10:00:00 - 11:00:00", multiple: "10:00 - 11:00,14:00 - 16:00" */
+  const parseTimeSlots = (booking) => {
+    const raw = booking?.TimeSlot ?? booking?.timeSlot ?? "";
+    if (!raw || typeof raw !== "string") return [];
+    return raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  };
+
   const statusLower = (s) => (s ? String(s).toLowerCase().trim() : "");
+
+  /** Assign button enabled only when all validations pass */
+  const canAssign = React.useMemo(() => {
+    if (!bookingForAssign || bookingForAssign.BookingID == null) return false;
+    if (assignType === "Technician") {
+      if (selectedTechnician == null || selectedTechnician === "") return false;
+      const slots = parseTimeSlots(bookingForAssign);
+      if (slots.length > 0 && (!selectedTimeSlot || selectedTimeSlot === "")) return false;
+      return true;
+    }
+    return selectedFieldAdvisor != null && selectedFieldAdvisor !== "";
+  }, [bookingForAssign, assignType, selectedTechnician, selectedFieldAdvisor, selectedTimeSlot]);
+
   const filteredBookings = React.useMemo(() => {
     if (!filterFromDashboard || !Array.isArray(bookings)) return bookings;
     switch (filterFromDashboard) {
@@ -695,6 +723,16 @@ export default function SupervisorBookings() {
                             setSelectedTechnician(null);
                             setSelectedFieldAdvisor(null);
                             setAssignError(null);
+                            setShowTimeSlotPicker(false);
+                            setShowTechnicianPicker(false);
+                            setShowFieldAdvisorPicker(false);
+                            const slots = (item?.TimeSlot ?? item?.timeSlot ?? "")
+                              ? String(item?.TimeSlot ?? item?.timeSlot ?? "")
+                                  .split(",")
+                                  .map((s) => s.trim())
+                                  .filter((s) => s.length > 0)
+                              : [];
+                            setSelectedTimeSlot(slots.length > 0 ? slots[0] : null);
                             setAssignModalVisible(true);
                           }}
                         >
@@ -729,11 +767,17 @@ export default function SupervisorBookings() {
         visible={assignModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setAssignModalVisible(false)}
+        onRequestClose={() => {
+          setAssignModalVisible(false);
+          setSelectedTimeSlot(null);
+        }}
       >
         <Pressable
           style={styles.modalOverlay}
-          onPress={() => setAssignModalVisible(false)}
+          onPress={() => {
+            setAssignModalVisible(false);
+            setSelectedTimeSlot(null);
+          }}
         >
           <Pressable style={styles.assignModalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.assignModalHeader}>
@@ -741,7 +785,10 @@ export default function SupervisorBookings() {
                 Assign
               </CustomText>
               <Pressable
-                onPress={() => setAssignModalVisible(false)}
+                onPress={() => {
+                  setAssignModalVisible(false);
+                  setSelectedTimeSlot(null);
+                }}
                 hitSlop={12}
                 style={styles.modalCloseButton}
               >
@@ -821,34 +868,80 @@ export default function SupervisorBookings() {
               </Pressable>
             </View>
 
-            {/* Time Slot – only for Technician, dropdown with no data */}
+            {/* Time Slot – only for Technician: from booking; single = selected by default, multiple = dropdown */}
             {assignType === "Technician" && (
               <View style={styles.assignField}>
                 <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.assignLabel]}>
                   Time Slot
                 </CustomText>
-                <Pressable
-                  style={styles.dropdownField}
-                  onPress={() => {
-                    setShowTechnicianPicker(false);
-                    setShowFieldAdvisorPicker(false);
-                    setShowTimeSlotPicker(!showTimeSlotPicker);
-                  }}
-                >
-                  <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                    Select time slot
-                  </CustomText>
-                  <Ionicons name="chevron-down" size={20} color={color.neutral[500]} />
-                </Pressable>
-                {showTimeSlotPicker && (
-                  <View style={styles.dropdownList}>
-                    <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                        No time slots
-                      </CustomText>
-                    </View>
-                  </View>
-                )}
+                {(() => {
+                  const timeSlots = parseTimeSlots(bookingForAssign);
+                  if (timeSlots.length === 0) {
+                    return (
+                      <View style={[styles.dropdownField, { opacity: 0.8 }]}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
+                          No time slots
+                        </CustomText>
+                      </View>
+                    );
+                  }
+                  if (timeSlots.length === 1) {
+                    return (
+                      <View style={styles.dropdownField}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral700]}>
+                          {timeSlots[0]}
+                        </CustomText>
+                      </View>
+                    );
+                  }
+                  return (
+                    <>
+                      <Pressable
+                        style={styles.dropdownField}
+                        onPress={() => {
+                          setShowTechnicianPicker(false);
+                          setShowFieldAdvisorPicker(false);
+                          setShowTimeSlotPicker(!showTimeSlotPicker);
+                        }}
+                      >
+                        <CustomText
+                          style={[
+                            globalStyles.f12Regular,
+                            selectedTimeSlot ? globalStyles.neutral700 : globalStyles.neutral500,
+                          ]}
+                        >
+                          {selectedTimeSlot ?? "Select time slot"}
+                        </CustomText>
+                        <Ionicons name="chevron-down" size={20} color={color.neutral[500]} />
+                      </Pressable>
+                      {showTimeSlotPicker && (
+                        <View style={styles.dropdownList}>
+                          {timeSlots.map((slot) => (
+                            <Pressable
+                              key={slot}
+                              style={styles.dropdownItem}
+                              onPress={() => {
+                                setSelectedTimeSlot(slot);
+                                setShowTimeSlotPicker(false);
+                                setAssignError(null);
+                              }}
+                            >
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Regular,
+                                  selectedTimeSlot === slot ? globalStyles.f14Bold : globalStyles.black,
+                                  selectedTimeSlot === slot && { color: color.primary },
+                                ]}
+                              >
+                                {slot}
+                              </CustomText>
+                            </Pressable>
+                          ))}
+                        </View>
+                      )}
+                    </>
+                  );
+                })()}
               </View>
             )}
 
@@ -967,7 +1060,10 @@ export default function SupervisorBookings() {
             <View style={styles.assignModalActions}>
               <TouchableOpacity
                 style={styles.assignCancelButton}
-                onPress={() => setAssignModalVisible(false)}
+                onPress={() => {
+                  setAssignModalVisible(false);
+                  setSelectedTimeSlot(null);
+                }}
                 disabled={assigningInProgress}
               >
                 <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
@@ -977,21 +1073,15 @@ export default function SupervisorBookings() {
               <TouchableOpacity
                 style={[
                   styles.assignSubmitButton,
-                  (assignType === "Technician" ? !selectedTechnician : !selectedFieldAdvisor) || assigningInProgress
-                    ? styles.assignSubmitButtonDisabled
-                    : null,
+                  (!canAssign || assigningInProgress) && styles.assignSubmitButtonDisabled,
                 ]}
                 onPress={handleAssignTechnician}
-                disabled={
-                  (assignType === "Technician" ? !selectedTechnician : !selectedFieldAdvisor) || assigningInProgress
-                }
+                disabled={!canAssign || assigningInProgress}
               >
                 <CustomText
                   style={[
                     globalStyles.f14Bold,
-                    (assignType === "Technician" ? selectedTechnician : selectedFieldAdvisor) && !assigningInProgress
-                      ? globalStyles.neutral500
-                      : globalStyles.neutral300,
+                    canAssign && !assigningInProgress ? globalStyles.textWhite : { color: color.neutral[400] },
                   ]}
                 >
                   {assigningInProgress ? "Assigning..." : "Assign"}
@@ -1221,13 +1311,13 @@ const styles = StyleSheet.create({
   },
   assignSubmitButton: {
     flex: 1,
-    backgroundColor: color.neutral[200],
+    backgroundColor: color.primary,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
   },
   assignSubmitButtonDisabled: {
-    backgroundColor: color.neutral[100],
+    backgroundColor: color.neutral[200],
   },
   avatar: {
     width: 60,
