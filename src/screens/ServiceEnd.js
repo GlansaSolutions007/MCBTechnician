@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   cardTitle: {
-    fontSize: 18,
+    ...globalStyles.f12Regular,
     fontWeight: "bold",
     color: color.primary,
     flex: 1,
@@ -905,14 +905,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   metricLabel: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     fontWeight: "600",
     color: "#666",
     marginBottom: 4,
     textAlign: "center",
   },
   metricValue: {
-    fontSize: 16,
+    ...globalStyles.f12Regular,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 8,
@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8F5E8",
   },
   badgeText: {
-    fontSize: 10,
+    ...globalStyles.f10Regular,
     fontWeight: "600",
     color: "#4CAF50",
   },
@@ -963,13 +963,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   totalTimeLabel: {
-    fontSize: 16,
+    ...globalStyles.f12Regular,
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 2,
   },
   totalTimeSubLabel: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     color: "rgba(255,255,255,0.8)",
   },
   totalTimeValueContainer: {
@@ -977,7 +977,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   totalTimeValue: {
-    fontSize: 28,
+    ...globalStyles.f16Regular,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   overtimeText: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     color: "#fff",
     marginLeft: 4,
     fontWeight: "600",
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    fontSize: 11,
+    ...globalStyles.f10Regular,
     color: "rgba(255,255,255,0.9)",
     textAlign: "center",
     fontWeight: "500",

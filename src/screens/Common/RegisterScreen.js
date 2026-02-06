@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderColor: color.white,
     paddingVertical: 10,
     color: color.white,
-    fontSize: 16,
+    ...globalStyles.f12Regular,
     marginBottom: 20,
   },
   uploadBox: {
@@ -157,6 +157,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: color.textDark,
-    fontSize: 16,
+    ...globalStyles.f12Regular,
   },
 });

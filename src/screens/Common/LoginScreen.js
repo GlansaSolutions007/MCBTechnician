@@ -91,10 +91,10 @@ export default function LoginScreen() {
   const validateForm = () => {
     const phoneValidation = validatePhoneNumber(phoneNumber);
     const passwordValidation = validatePassword(password);
-    
+
     setPhoneError(phoneValidation);
     setPasswordError(passwordValidation);
-    
+
     return !phoneValidation && !passwordValidation;
   };
 
@@ -139,7 +139,7 @@ export default function LoginScreen() {
           if (techID) {
             startTechnicianLocationTracking(techID);
           }
-        } catch (e) {}
+        } catch (e) { }
         try {
           const tokens = await registerForPushNotificationsAsync();
           console.log("Tokens Vishal:", tokens);
@@ -176,7 +176,7 @@ export default function LoginScreen() {
                 "pushTokenType",
                 fcmToken ? "fcm" : expoPushToken ? "expo" : "unknown"
               );
-            } catch (_) {}
+            } catch (_) { }
             try {
               await axios.post(`${API_BASE_URL}Push/register`, {
                 userRole: "technician",
@@ -185,9 +185,9 @@ export default function LoginScreen() {
                 expoToken: expoPushToken || null,
                 platform: Platform.OS,
               });
-            } catch (_) {}
+            } catch (_) { }
           }
-        } catch (_) {}
+        } catch (_) { }
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
@@ -312,7 +312,7 @@ export default function LoginScreen() {
             ]}
           >
             <LinearGradient
-              colors={[color.primary,  color.secondary]}
+              colors={[color.primary, color.secondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.headerSection}
@@ -356,7 +356,7 @@ export default function LoginScreen() {
                 <View>
                   <View style={globalStyles.alineItemscenter}>
                     <Image
-                      source={require("../../../assets/Logo/logoWhite.png")}
+                      source={require("../../../assets/Logo/mycarbuddy.png")}
                       style={styles.logo2}
                     />
                   </View>
@@ -489,7 +489,7 @@ export default function LoginScreen() {
                 >
                   <Ionicons name="person-outline" size={18} color={color.primary} />
                   <CustomText style={styles.roleSwitcherButtonText}>
-Login as Supervisor
+                    Login as Supervisor
                   </CustomText>
                 </TouchableOpacity>
               </View>
@@ -553,8 +553,8 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   logo2: {
-    width: 200,
-    height: 100,
+    width: 220,
+    height: 120,
     resizeMode: "contain",
   },
 
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   formTitle: {
-   ...globalStyles.f14Bold,
+    ...globalStyles.f14Bold,
     color: color.primary,
     textAlign: "center",
     marginBottom: 20,
@@ -603,18 +603,18 @@ const styles = StyleSheet.create({
   },
   modernInput: {
     flex: 1,
-    fontSize: 16,
     color: color.black,
     paddingVertical: 16,
+    ...globalStyles.f12Regular
   },
   inputError: {
     color: color.error || "#FF4444",
   },
   errorText: {
     color: color.error || "#FF4444",
-    fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+    ...globalStyles.f10Medium
   },
   eyeIcon: {
     padding: 4,
@@ -655,9 +655,9 @@ const styles = StyleSheet.create({
 
   // Role switcher (after form)
   roleSwitcherContainer: {
-    marginTop: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
+    marginTop: 18,
+    // paddingTop: 10,
+    // borderTopWidth: 1,
     borderTopColor: color.neutral[200],
     alignItems: "center",
   },
@@ -734,9 +734,9 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   keyboardOpenFormSection: {
-    flexGrow: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
 

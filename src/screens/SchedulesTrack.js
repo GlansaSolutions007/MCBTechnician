@@ -48,12 +48,12 @@ export default function SchedulesTrack() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: "center" },
-  label: { fontSize: 18, marginBottom: 10 },
+  label: { ...globalStyles.f12Regular, marginBottom: 10 },
   pickerContainer: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 6,
     overflow: "hidden",
   },
-  resultText: { marginTop: 20, fontSize: 16, color: "blue" },
+  resultText: { marginTop: 20, ...globalStyles.f12Regular, color: "blue" },
 });

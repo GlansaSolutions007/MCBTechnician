@@ -4,6 +4,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { color } from "../styles/theme";
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from "./CustomText";
+import globalStyles from "../styles/globalStyles";
 
 export default function CustomAlert({
   visible,
@@ -79,13 +80,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   alertTitle: {
-    fontSize: 18,
+    ...globalStyles.f12Regular,
     fontWeight: "600",
     marginBottom: 12,
     textAlign: "center",
   },
   alertMessage: {
-    fontSize: 14,
+    ...globalStyles.f10Regular,
     color: "#333",
     textAlign: "center",
     marginBottom: 20,
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   alertButtonText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 16,
+    ...globalStyles.f12Regular,
   },
   closeIcon: {
     position: 'absolute',

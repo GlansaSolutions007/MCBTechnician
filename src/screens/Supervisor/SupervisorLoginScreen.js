@@ -306,7 +306,7 @@ export default function SupervisorLoginScreen() {
                 <View>
                   <View style={globalStyles.alineItemscenter}>
                     <Image
-                      source={require("../../../assets/Logo/logoWhite.png")}
+                      source={require("../../../assets/Logo/mycarbuddy.png")}
                       style={styles.logo2}
                     />
                   </View>
@@ -504,8 +504,8 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   logo2: {
-    width: 200,
-    height: 100,
+    width: 220,
+    height: 120,
     resizeMode: "contain",
   },
 
@@ -552,16 +552,16 @@ const styles = StyleSheet.create({
   },
   modernInput: {
     flex: 1,
-    fontSize: 16,
     color: color.black,
     paddingVertical: 16,
+    ...globalStyles.f12Regular
   },
   inputError: {
     color: color.error || "#FF4444",
   },
   errorText: {
     color: color.error || "#FF4444",
-    fontSize: 12,
+    ...globalStyles.f10Medium,
     marginTop: 4,
     marginLeft: 4,
   },
@@ -604,9 +604,9 @@ const styles = StyleSheet.create({
 
   // Role switcher (after form)
   roleSwitcherContainer: {
-    marginTop: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
+    marginTop: 18,
+    // paddingTop: 10,
+    // borderTopWidth: 1,
     borderTopColor: color.neutral[200],
     alignItems: "center",
   },

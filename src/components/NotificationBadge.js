@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from './CustomText';
 import { color } from '../styles/theme';
 import notificationService from '../utils/notificationService';
+import globalStyles from '../styles/globalStyles';
 
 export default function NotificationBadge({ onPress, size = 24, color: iconColor = color.black, showBadge = true }) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -67,8 +68,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: color.white,
-    fontSize: 10,
-    fontWeight: '600',
+    ...globalStyles.f10Medium,
     textAlign: 'center',
   },
 });

@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    fontSize: 14,
+    ...globalStyles.f10Regular,
     color: color.alertError,
   },
   hero: {

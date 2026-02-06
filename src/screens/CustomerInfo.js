@@ -1323,7 +1323,7 @@ export default function CustomerInfo() {
           </View>
 
           <View>
-            <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black,globalStyles.mt3]}>
               Service Details
             </CustomText>
 

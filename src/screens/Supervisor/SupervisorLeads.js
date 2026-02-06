@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 14,
+    ...globalStyles.f10Regular,
     backgroundColor: color.white,
     color: color.black,
   },

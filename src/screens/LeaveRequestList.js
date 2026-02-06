@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusText: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     fontWeight: "600",
   },
   approved: {

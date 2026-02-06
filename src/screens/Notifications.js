@@ -305,8 +305,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.lightGray || "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    ...globalStyles.f12Regular,
     color: color.textDark,
   },
   clearButton: {
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.lightRed || "#ffebee",
   },
   clearButtonText: {
-    fontSize: 14,
+    ...globalStyles.f10Medium,
     fontWeight: "500",
     color: color.error || "#F44336",
     marginLeft: 4,
@@ -357,7 +356,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   notificationTitle: {
-    fontSize: 16,
+    ...globalStyles.f12Regular,
     fontWeight: "600",
     color: color.textDark,
     marginBottom: 4,
@@ -366,13 +365,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   notificationBody: {
-    fontSize: 14,
+    ...globalStyles.f10Regular,
     color: color.textLight || "#666",
     lineHeight: 20,
     marginBottom: 4,
   },
   bookingId: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     color: color.primary,
     fontWeight: "500",
   },
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   timestamp: {
-    fontSize: 12,
+    ...globalStyles.f10Regular,
     color: color.gray || "#999",
     marginBottom: 8,
   },
@@ -401,14 +400,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyTitle: {
-    fontSize: 20,
+    ...globalStyles.f12Regular,
     fontWeight: "600",
     color: color.textDark,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    ...globalStyles.f10Regular,
     color: color.textLight || "#666",
     textAlign: "center",
     lineHeight: 20,
