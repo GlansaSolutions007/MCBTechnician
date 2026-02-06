@@ -10,20 +10,74 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import CustomText from "../../components/CustomText";
 import globalStyles from "../../styles/globalStyles";
 import { color } from "../../styles/theme";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL, GOOGLE_MAPS_APIKEY } from "@env";
 
 // Use dev API for supervisor endpoints
-const API_URL = API_BASE_URL?.includes('dev-api') 
-  ? API_BASE_URL 
+const API_URL = API_BASE_URL?.includes('dev-api')
+  ? API_BASE_URL
   : "https://dev-api.mycarsbuddy.com/api/";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+
+// Defined outside SupervisorLeads so it keeps a stable reference and form inputs don't remount on every keystroke
+function CollapsibleSection({
+  sectionKey,
+  title,
+  count,
+  children,
+  isExpanded,
+  sectionHeight,
+  iconRotation,
+  onToggle,
+  sectionStyles,
+}) {
+  const rotateAnim = iconRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "45deg"],
+  });
+  const heightAnim = sectionHeight.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 600],
+  });
+  const opacityAnim = sectionHeight.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.5, 1],
+  });
+  return (
+    <View style={sectionStyles.dropdownCard}>
+      <TouchableOpacity
+        style={sectionStyles.dropdownHeader}
+        onPress={() => onToggle(sectionKey)}
+        activeOpacity={0.7}
+      >
+        <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
+          {title}
+          {count !== undefined ? ` (${count})` : ""}
+        </CustomText>
+        <Animated.View style={{ transform: [{ rotate: rotateAnim }] }}>
+          <View style={sectionStyles.plusIconContainer}>
+            <Ionicons name="add" size={20} color={color.primary} />
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+      <Animated.View
+        style={[
+          sectionStyles.dropdownContent,
+          { maxHeight: heightAnim, opacity: opacityAnim },
+        ]}
+      >
+        {isExpanded && children}
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function SupervisorLeads() {
   const navigation = useNavigation();
@@ -71,12 +125,15 @@ export default function SupervisorLeads() {
     searchAddress: "",
   });
 
-  // Form state for Car Details
+  // Form state for Car Details (IDs for save; names for display)
   const [carDetails, setCarDetails] = useState({
     registrationNumber: "",
     brandID: "",
     modelID: "",
     fuelTypeID: "",
+    brandName: "",
+    modelName: "",
+    fuelTypeName: "",
     kmDriven: "",
     yearOfPurchase: "",
   });
@@ -84,16 +141,43 @@ export default function SupervisorLeads() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Extract car/vehicle from lead – supports Vehicle, vehicle, CarDetails, VehicleDetails, Vehicles[0], and top-level fields
+  // Google address autocomplete
+  const [addressPredictions, setAddressPredictions] = useState([]);
+  const [isLoadingAddressPredictions, setIsLoadingAddressPredictions] = useState(false);
+  const defaultAutocompleteLocation = { latitude: 17.4389998, longitude: 78.3873419 };
+
+  // Extract car/vehicle from lead – supports Vehicle, vehicle, CarDetails, VehicleDetails, Vehicles[0], VehiclesDetails[0], and top-level fields. Returns IDs (for save) and names (for display).
   const getCarDetailsFromLead = (lead) => {
-    if (!lead) return { registrationNumber: "", brandID: "", modelID: "", fuelTypeID: "", kmDriven: "", yearOfPurchase: "" };
-    const v = lead.Vehicle ?? lead.vehicle ?? lead.CarDetails ?? lead.VehicleDetails ?? (Array.isArray(lead.Vehicles) ? lead.Vehicles[0] : null) ?? (Array.isArray(lead.vehicles) ? lead.vehicles[0] : null);
+    if (!lead)
+      return {
+        registrationNumber: "",
+        brandID: "",
+        modelID: "",
+        fuelTypeID: "",
+        brandName: "",
+        modelName: "",
+        fuelTypeName: "",
+        kmDriven: "",
+        yearOfPurchase: "",
+      };
+    const v =
+      lead.Vehicle ??
+      lead.vehicle ??
+      lead.CarDetails ??
+      lead.VehicleDetails ??
+      (Array.isArray(lead.Vehicles) ? lead.Vehicles[0] : null) ??
+      (Array.isArray(lead.vehicles) ? lead.vehicles[0] : null) ??
+      (Array.isArray(lead.VehiclesDetails) ? lead.VehiclesDetails[0] : null) ??
+      (Array.isArray(lead.vehiclesDetails) ? lead.vehiclesDetails[0] : null);
     const str = (x) => (x != null && x !== "" ? String(x) : "");
     return {
       registrationNumber: str(lead.VehicleNumber ?? lead.RegistrationNumber ?? lead.RegistrationNo ?? lead.RegNo ?? lead.registrationNumber ?? v?.VehicleNumber ?? v?.RegistrationNumber ?? v?.RegistrationNo ?? v?.registrationNumber),
       brandID: str(lead.BrandID ?? lead.BrandId ?? lead.brandID ?? v?.BrandID ?? v?.BrandId ?? v?.brandID),
       modelID: str(lead.ModelID ?? lead.ModelId ?? lead.modelID ?? v?.ModelID ?? v?.ModelId ?? v?.modelID),
       fuelTypeID: str(lead.FuelTypeID ?? lead.FuelTypeId ?? lead.fuelTypeID ?? v?.FuelTypeID ?? v?.FuelTypeId ?? v?.fuelTypeID),
+      brandName: str(lead.BrandName ?? lead.brandName ?? v?.BrandName ?? v?.brandName ?? ""),
+      modelName: str(lead.ModelName ?? lead.modelName ?? v?.ModelName ?? v?.modelName ?? ""),
+      fuelTypeName: str(lead.FuelTypeName ?? lead.fuelTypeName ?? v?.FuelTypeName ?? v?.fuelTypeName ?? ""),
       kmDriven: str(lead.KmDriven ?? lead.KMDriven ?? lead.kmDriven ?? v?.KmDriven ?? v?.KMDriven ?? v?.kmDriven),
       yearOfPurchase: str(lead.YearOfPurchase ?? lead.YearOfBuy ?? lead.yearOfPurchase ?? v?.YearOfPurchase ?? v?.YearOfBuy ?? v?.yearOfPurchase),
     };
@@ -110,7 +194,7 @@ export default function SupervisorLeads() {
     if (leads.length === 0) return;
     const lead = leads[0];
     setPersonalInfo({
-      fullName: lead.FullName ?? lead.fullName ?? "",
+      fullName: lead.CustomerName ?? lead.FullName ?? lead.fullName ?? "",
       phoneNumber: lead.PhoneNumber ?? lead.phoneNumber ?? "",
       email: lead.Email ?? lead.email ?? "",
       gstName: lead.GstName ?? lead.gstName ?? lead.GSTName ?? "",
@@ -120,6 +204,58 @@ export default function SupervisorLeads() {
     });
     setCarDetails(getCarDetailsFromLead(lead));
   }, [leads]);
+
+  // Google Places autocomplete: debounce search and fetch predictions
+  useEffect(() => {
+    const searchQuery = (personalInfo.searchAddress || "").trim();
+    if (searchQuery.length < 3) {
+      setAddressPredictions([]);
+      setIsLoadingAddressPredictions(false);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsLoadingAddressPredictions(true);
+      const apiKey = GOOGLE_MAPS_APIKEY;
+      const { latitude, longitude } = defaultAutocompleteLocation;
+      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+        searchQuery
+      )}&key=${apiKey}&location=${latitude},${longitude}&radius=50000`;
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.status === "OK") {
+          setAddressPredictions(json.predictions || []);
+        } else {
+          setAddressPredictions([]);
+        }
+      } catch (err) {
+        console.error("Address autocomplete failed:", err);
+        setAddressPredictions([]);
+      } finally {
+        setIsLoadingAddressPredictions(false);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [personalInfo.searchAddress]);
+
+  const handleSelectAddressPrediction = async (prediction) => {
+    if (!prediction?.place_id) return;
+    const apiKey = GOOGLE_MAPS_APIKEY;
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${prediction.place_id}&key=${apiKey}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const formattedAddress = data?.result?.formatted_address || prediction.description || "";
+      setPersonalInfo((prev) => ({
+        ...prev,
+        fullAddress: formattedAddress,
+        searchAddress: "",
+      }));
+      setAddressPredictions([]);
+    } catch (err) {
+      console.error("Place details failed:", err);
+    }
+  };
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -355,68 +491,6 @@ export default function SupervisorLeads() {
       duration: 300,
       useNativeDriver: true,
     }).start();
-  };
-
-  const CollapsibleSection = ({ 
-    sectionKey, 
-    title, 
-    count, 
-    children 
-  }) => {
-    const rotateAnim = iconRotations[sectionKey].interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0deg', '45deg'],
-    });
-
-    const heightAnim = sectionHeights[sectionKey].interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 500], // Max height for content
-    });
-
-    const opacityAnim = sectionHeights[sectionKey].interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0, 0.5, 1],
-    });
-
-    const isExpanded = expandedSections[sectionKey];
-
-    return (
-      <View style={styles.dropdownCard}>
-        <TouchableOpacity
-          style={styles.dropdownHeader}
-          onPress={() => toggleSection(sectionKey)}
-          activeOpacity={0.7}
-        >
-          <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
-            {title}{count !== undefined ? ` (${count})` : ''}
-          </CustomText>
-          <Animated.View
-            style={{
-              transform: [{ rotate: rotateAnim }],
-            }}
-          >
-            <View style={styles.plusIconContainer}>
-              <Ionicons
-                name="add"
-                size={20}
-                color={color.primary}
-              />
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-        <Animated.View
-          style={[
-            styles.dropdownContent,
-            {
-              maxHeight: heightAnim,
-              opacity: opacityAnim,
-            },
-          ]}
-        >
-          {isExpanded && children}
-        </Animated.View>
-      </View>
-    );
   };
 
   const formatDate = (dateString) => {
@@ -682,6 +756,7 @@ export default function SupervisorLeads() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ paddingHorizontal: 12 }}>
           {/* Dropdown Sections */}
@@ -693,6 +768,11 @@ export default function SupervisorLeads() {
                 <CollapsibleSection
                   sectionKey="personalInfo"
                   title="Personal Information"
+                  isExpanded={expandedSections.personalInfo}
+                  sectionHeight={sectionHeights.personalInfo}
+                  iconRotation={iconRotations.personalInfo}
+                  onToggle={toggleSection}
+                  sectionStyles={styles}
                 >
                   <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -702,19 +782,19 @@ export default function SupervisorLeads() {
                       {/* Full Name and Mobile No - Side by Side */}
                       <View style={styles.rowContainer}>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                             Full Name
                           </CustomText>
                           <TextInput
                             style={styles.input}
                             placeholder="Enter full name"
                             placeholderTextColor={color.neutral[400]}
-                            value={personalInfo.fullName || lead?.FullName || lead?.fullName || ""}
+                            value={personalInfo.fullName || lead?.CustomerName || lead?.FullName || lead?.fullName || ""}
                             onChangeText={(text) => setPersonalInfo({ ...personalInfo, fullName: text })}
                           />
                         </View>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                             Mobile No
                           </CustomText>
                           <TextInput
@@ -730,7 +810,7 @@ export default function SupervisorLeads() {
 
                       {/* Email Address - Full Width */}
                       <View style={styles.fullWidth}>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                           Email Address
                         </CustomText>
                         <TextInput
@@ -747,7 +827,7 @@ export default function SupervisorLeads() {
                       {/* GST Name and GST Number - Side by Side */}
                       <View style={styles.rowContainer}>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                             GST Name
                           </CustomText>
                           <TextInput
@@ -759,7 +839,7 @@ export default function SupervisorLeads() {
                           />
                         </View>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                             GST Number
                           </CustomText>
                           <TextInput
@@ -772,45 +852,90 @@ export default function SupervisorLeads() {
                         </View>
                       </View>
 
-                      {/* Full Address - Full Width */}
+                      {/* Full Address - Full Width with Google search predictions */}
                       <View style={styles.fullWidth}>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                           Full Address
                         </CustomText>
                         <TextInput
+                          key="searchAddressInput"
                           style={styles.input}
                           placeholder="Search address from Google"
                           placeholderTextColor={color.neutral[400]}
                           value={personalInfo.searchAddress || lead?.City || lead?.city || ""}
-                          onChangeText={(text) => setPersonalInfo({ ...personalInfo, searchAddress: text })}
+                          onChangeText={(text) => setPersonalInfo((prev) => ({ ...prev, searchAddress: text }))}
                         />
+                        {(addressPredictions.length > 0 || isLoadingAddressPredictions) && (
+                          <View style={styles.predictionsContainer}>
+                            {isLoadingAddressPredictions ? (
+                              <View style={styles.predictionsLoading}>
+                                <ActivityIndicator size="small" color={color.primary} />
+                                <CustomText style={[globalStyles.f12Regular, { color: color.neutral[500], marginLeft: 8 }]}>
+                                  Searching...
+                                </CustomText>
+                              </View>
+                            ) : (
+                              <ScrollView
+                                style={styles.predictionsList}
+                                keyboardShouldPersistTaps="handled"
+                                nestedScrollEnabled
+                                showsVerticalScrollIndicator={true}
+                              >
+                                {addressPredictions.map((item) => (
+                                  <TouchableOpacity
+                                    key={item.place_id}
+                                    style={styles.predictionItem}
+                                    onPress={() => handleSelectAddressPrediction(item)}
+                                    activeOpacity={0.7}
+                                  >
+                                    <MaterialCommunityIcons name="map-marker" size={20} color={color.primary} style={{ marginRight: 8 }} />
+                                    <View style={{ flex: 1 }}>
+                                      <CustomText style={[globalStyles.f12Bold, { color: color.neutral[800] }]} numberOfLines={1}>
+                                        {item.structured_formatting?.main_text || (item.description || "").split(",")[0]}
+                                      </CustomText>
+                                      <CustomText style={[globalStyles.f10Regular, { color: color.neutral[500], marginTop: 2 }]} numberOfLines={2}>
+                                        {item.structured_formatting?.secondary_text || item.description}
+                                      </CustomText>
+                                    </View>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+                            )}
+                          </View>
+                        )}
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label, { marginTop: 12 }]}>
+                          Enter full address
+                        </CustomText>
                         <TextInput
+                          key="fullAddressInput"
                           style={[styles.input, styles.textArea]}
-                          placeholder="Enter full address"
+                          placeholder="Enter full address (or select from search above)"
                           placeholderTextColor={color.neutral[400]}
                           value={personalInfo.fullAddress || lead?.FullAddress || lead?.fullAddress || lead?.City || lead?.city || ""}
-                          onChangeText={(text) => setPersonalInfo({ ...personalInfo, fullAddress: text })}
+                          onChangeText={(text) => setPersonalInfo((prev) => ({ ...prev, fullAddress: text }))}
                           multiline
                           numberOfLines={3}
+                          blurOnSubmit={false}
                         />
                       </View>
 
                       {/* Save Button */}
-                      <TouchableOpacity
-                        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-                        onPress={() => handleSavePersonalInfo(lead)}
-                        disabled={saving}
-                      >
-                        <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-                          {saving ? "Saving..." : "Save Information"}
-                        </CustomText>
-                      </TouchableOpacity>
-
-                      {saveSuccess && (
-                        <CustomText style={[globalStyles.f12Regular, { color: color.alertSuccess, marginTop: 8, textAlign: "center" }]}>
-                          Information saved successfully!
-                        </CustomText>
-                      )}
+                      <View style={styles.fullWidth}>
+                        <TouchableOpacity
+                          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                          onPress={() => handleSavePersonalInfo(lead)}
+                          disabled={saving}
+                        >
+                          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                            {saving ? "Saving..." : "Save Information"}
+                          </CustomText>
+                        </TouchableOpacity>
+                        {saveSuccess && (
+                          <CustomText style={[globalStyles.f12Regular, { color: color.alertSuccess, marginTop: 8, textAlign: "center" }]}>
+                            Information saved successfully!
+                          </CustomText>
+                        )}
+                      </View>
                     </View>
                   </KeyboardAvoidingView>
                 </CollapsibleSection>
@@ -818,6 +943,11 @@ export default function SupervisorLeads() {
                 <CollapsibleSection
                   sectionKey="carDetails"
                   title="Enter Car Details"
+                  isExpanded={expandedSections.carDetails}
+                  sectionHeight={sectionHeights.carDetails}
+                  iconRotation={iconRotations.carDetails}
+                  onToggle={toggleSection}
+                  sectionStyles={styles}
                 >
                   <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -826,7 +956,7 @@ export default function SupervisorLeads() {
                     <View style={styles.dropdownInnerContent}>
                       {/* Registration Number */}
                       <View style={styles.fullWidth}>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                           Registration Number
                         </CustomText>
                         <TextInput
@@ -839,53 +969,50 @@ export default function SupervisorLeads() {
                         />
                       </View>
 
-                      {/* Brand ID and Model ID - Side by Side */}
+                      {/* Brand and Model - Side by Side (display names) */}
                       <View style={styles.rowContainer}>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
-                            Brand ID
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
+                            Brand
                           </CustomText>
                           <TextInput
                             style={styles.input}
-                            placeholder="Enter brand ID"
+                            placeholder="Brand"
                             placeholderTextColor={color.neutral[400]}
-                            value={carDetails.brandID || carFromLead.brandID || ""}
-                            onChangeText={(text) => setCarDetails({ ...carDetails, brandID: text })}
-                            keyboardType="numeric"
+                            value={carDetails.brandName || carFromLead.brandName || ""}
+                            editable={false}
                           />
                         </View>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
-                            Model ID
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
+                            Model
                           </CustomText>
                           <TextInput
                             style={styles.input}
-                            placeholder="Enter model ID"
+                            placeholder="Model"
                             placeholderTextColor={color.neutral[400]}
-                            value={carDetails.modelID || carFromLead.modelID || ""}
-                            onChangeText={(text) => setCarDetails({ ...carDetails, modelID: text })}
-                            keyboardType="numeric"
+                            value={carDetails.modelName || carFromLead.modelName || ""}
+                            editable={false}
                           />
                         </View>
                       </View>
 
-                      {/* Fuel Type ID and KM Driven - Side by Side */}
+                      {/* Fuel Type and KM Driven - Side by Side (display name) */}
                       <View style={styles.rowContainer}>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
-                            Fuel Type ID
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
+                            Fuel Type
                           </CustomText>
                           <TextInput
                             style={styles.input}
-                            placeholder="Enter fuel type ID"
+                            placeholder="Fuel type"
                             placeholderTextColor={color.neutral[400]}
-                            value={carDetails.fuelTypeID || carFromLead.fuelTypeID || ""}
-                            onChangeText={(text) => setCarDetails({ ...carDetails, fuelTypeID: text })}
-                            keyboardType="numeric"
+                            value={carDetails.fuelTypeName || carFromLead.fuelTypeName || ""}
+                            editable={false}
                           />
                         </View>
                         <View style={styles.halfWidth}>
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                             KM Driven
                           </CustomText>
                           <TextInput
@@ -901,7 +1028,7 @@ export default function SupervisorLeads() {
 
                       {/* Year of Purchase */}
                       <View style={styles.fullWidth}>
-                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral700, styles.label]}>
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.label]}>
                           Year of Purchase
                         </CustomText>
                         <TextInput
@@ -914,21 +1041,22 @@ export default function SupervisorLeads() {
                       </View>
 
                       {/* Save Button */}
-                      <TouchableOpacity
-                        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-                        onPress={() => handleSaveCarDetails(lead)}
-                        disabled={saving}
-                      >
-                        <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-                          {saving ? "Saving..." : "Save Information"}
-                        </CustomText>
-                      </TouchableOpacity>
-
-                      {saveSuccess && (
-                        <CustomText style={[globalStyles.f12Regular, { color: color.alertSuccess, marginTop: 8, textAlign: "center" }]}>
-                          Car details saved successfully!
-                        </CustomText>
-                      )}
+                      <View style={styles.fullWidth}>
+                        <TouchableOpacity
+                          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                          onPress={() => handleSaveCarDetails(lead)}
+                          disabled={saving}
+                        >
+                          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                            {saving ? "Saving..." : "Save Information"}
+                          </CustomText>
+                        </TouchableOpacity>
+                        {saveSuccess && (
+                          <CustomText style={[globalStyles.f12Regular, { color: color.alertSuccess, marginTop: 8, textAlign: "center" }]}>
+                            Car details saved successfully!
+                          </CustomText>
+                        )}
+                      </View>
                     </View>
                   </KeyboardAvoidingView>
                 </CollapsibleSection>
@@ -948,6 +1076,11 @@ export default function SupervisorLeads() {
                   sectionKey="currentBookings"
                   title="Current Bookings"
                   count={currentBookings.length}
+                  isExpanded={expandedSections.currentBookings}
+                  sectionHeight={sectionHeights.currentBookings}
+                  iconRotation={iconRotations.currentBookings}
+                  onToggle={toggleSection}
+                  sectionStyles={styles}
                 >
                   <View style={styles.dropdownInnerContent}>
                     {currentBookings.length === 0 ? (
@@ -989,6 +1122,11 @@ export default function SupervisorLeads() {
                   sectionKey="previousBookings"
                   title="Previous Bookings"
                   count={previousBookings.length}
+                  isExpanded={expandedSections.previousBookings}
+                  sectionHeight={sectionHeights.previousBookings}
+                  iconRotation={iconRotations.previousBookings}
+                  onToggle={toggleSection}
+                  sectionStyles={styles}
                 >
                   <View style={styles.dropdownInnerContent}>
                     {previousBookings.length === 0 ? (
@@ -1569,6 +1707,32 @@ const styles = StyleSheet.create({
     backgroundColor: color.white,
     color: color.black,
   },
+  predictionsContainer: {
+    marginTop: 8,
+    maxHeight: 200,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: color.neutral[200],
+    backgroundColor: color.white,
+  },
+  predictionsList: {
+    maxHeight: 200,
+  },
+  predictionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: color.neutral[100],
+  },
+  predictionsLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
   textArea: {
     minHeight: 80,
     textAlignVertical: "top",
@@ -1580,7 +1744,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
+    alignSelf: "stretch",
+    width: "100%",
+    marginTop: 16,
   },
   saveButtonDisabled: {
     opacity: 0.6,

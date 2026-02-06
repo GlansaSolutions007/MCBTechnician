@@ -888,7 +888,7 @@ export default function SupervisorBookings() {
                   if (timeSlots.length === 1) {
                     return (
                       <View style={styles.dropdownField}>
-                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral700]}>
+                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
                           {timeSlots[0]}
                         </CustomText>
                       </View>
@@ -907,7 +907,7 @@ export default function SupervisorBookings() {
                         <CustomText
                           style={[
                             globalStyles.f12Regular,
-                            selectedTimeSlot ? globalStyles.neutral700 : globalStyles.neutral500,
+                            selectedTimeSlot ? globalStyles.neutral500 : globalStyles.neutral300,
                           ]}
                         >
                           {selectedTimeSlot ?? "Select time slot"}
@@ -967,8 +967,8 @@ export default function SupervisorBookings() {
                   style={[
                     globalStyles.f12Regular,
                     (assignType === "Technician" ? selectedTechnician != null : selectedFieldAdvisor != null)
-                      ? globalStyles.neutral700
-                      : globalStyles.neutral500,
+                      ? globalStyles.neutral500
+                      : globalStyles.neutral300,
                   ]}
                 >
                   {assignType === "Technician"
