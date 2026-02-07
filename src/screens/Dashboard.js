@@ -30,12 +30,19 @@ export default function Dashboard() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [pulse] = useState(new Animated.Value(0));
 
+  const getLastPaymentStatus = (item) => {
+    const payments = item?.Payments || [];
+    const lastPayment = payments.length ? payments[payments.length - 1] : null;
+    return lastPayment?.PaymentStatus;
+  };
+
   const isActiveService = (item) => {
+    const lastPaymentStatus = getLastPaymentStatus(item);
     return (
       item.BookingStatus === "ServiceStarted" ||
       item.BookingStatus === "Reached" ||
       item.BookingStatus === "StartJourney" ||
-      item.Payments?.[0]?.PaymentStatus === "Pending"
+      lastPaymentStatus === "Pending"
     );
   };
 
@@ -60,6 +67,7 @@ export default function Dashboard() {
 
   const [bookings, setBookings] = useState([]);
   const [activeServices, setActiveServices] = useState([]);
+  console.log("activeServices===================",activeServices);
   const [bookingCounts, setBookingCounts] = useState({
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,
@@ -757,8 +765,26 @@ export default function Dashboard() {
 
 
 
-              {activeServices.map((item, index) => (
+              {activeServices.map((item, index) => {
+                  const lastPaymentStatus = getLastPaymentStatus(item);
+                  const totalPaidAmount = (item?.Payments || []).reduce(
+                    (sum, payment) =>
+                      payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid"
+                        ? sum + Number(payment.AmountPaid || 0)
+                        : sum,
+                    0
+                  );
+                  const totalPrice =
+                    item.TotalPrice ||
+                    (item.BookingAddOns &&
+                      item.BookingAddOns.reduce(
+                        (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
+                        0
+                      )) ||
+                    0;
+                  const amountPending = totalPrice - totalPaidAmount;
 
+                  return (
                   <Pressable
                     onPress={() => CustomerInfo(item)}
                     key={index}
@@ -781,7 +807,7 @@ export default function Dashboard() {
                             item.BookingStatus === "ServiceStarted" ? color.alertSuccess :
                             item.BookingStatus === "StartJourney" ? color.alertInfo :
                             item.BookingStatus === "Reached" ? color.primary :
-                            item.Payments?.[0]?.PaymentStatus === "Pending" ? color.alertWarning :
+                            lastPaymentStatus === "Pending" ? color.alertWarning :
                             color.neutral[300]
                         }
                       ]}>
@@ -789,7 +815,7 @@ export default function Dashboard() {
                           {item.BookingStatus === "ServiceStarted" ? "In Progress" :
                            item.BookingStatus === "StartJourney" ? "On Journey" :
                            item.BookingStatus === "Reached" ? "Reached" :
-                           item.Payments?.[0]?.PaymentStatus === "Pending" ? "Payment Pending" :
+                           lastPaymentStatus === "Pending" ? "Payment Pending" :
                            item.BookingStatus}
                         </CustomText>
                       </View>
@@ -877,9 +903,8 @@ export default function Dashboard() {
                     <View style={[globalStyles.divider, globalStyles.mt3]} />
 
                     {/* Payment Section - Show if payment is not completed */}
-                    {(item.Payments?.[0]?.PaymentStatus !== "Pending" ||
-                      item.PaymentStatus === "Pending" ||
-                      (item.PaymentStatus !== "Success" && item.PaymentStatus !== null)) && (
+                    {(lastPaymentStatus !== "Success" && lastPaymentStatus !== "Partialpaid") &&
+                      amountPending > 0 && (
                       <View
                         style={[
                           globalStyles.flexrow,
@@ -917,15 +942,7 @@ export default function Dashboard() {
                                 globalStyles.mt1,
                               ]}
                             >
-                              ₹
-                              {item.TotalPrice ||
-                                (item.BookingAddOns &&
-                                  item.BookingAddOns.reduce(
-                                    (sum, addOn) =>
-                                      sum + (Number(addOn.TotalPrice) || 0),
-                                    0
-                                  )) ||
-                                0}
+                              ₹{amountPending}
                             </CustomText>
                           </View>
                         </View>
@@ -972,7 +989,8 @@ export default function Dashboard() {
 
                  
                   </Pressable>
-                ))}
+                  );
+                })}
             </View>
           ) : (
             <View>
