@@ -18,13 +18,13 @@ import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
 import {
   API_BASE_URL,
   API_BASE_URL_IMAGE,
   GOOGLE_MAPS_APIKEY,
-} from "../config/env";
+} from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultAvatar from "../../assets/images/buddy.png";
 import {
@@ -53,7 +53,7 @@ export default function CustomerInfo() {
     );
   }
   const booking = bookingParam;
-  
+
   // Merge booking data with Leads data for missing fields
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
   const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
@@ -105,6 +105,11 @@ export default function CustomerInfo() {
   const [totalDuration, setTotalDuration] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedBookings, setUpdatedBookings] = useState(booking);
+  // Prefer refreshed/updated booking so "go back and open again" shows latest status
+  const displayBooking =
+    updatedBookings?.BookingID === booking?.BookingID && updatedBookings
+      ? updatedBookings
+      : booking;
   const [expandedPackages, setExpandedPackages] = useState({});
   const [expandedAddOns, setExpandedAddOns] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
@@ -141,6 +146,7 @@ export default function CustomerInfo() {
     navigation.navigate("CollectPayment", { booking: booking });
   };
   const onRefresh = async () => {
+    if (!booking?.BookingID || !booking?.TechID) return;
     setRefreshing(true);
     setLoading(true);
 
@@ -150,13 +156,23 @@ export default function CustomerInfo() {
       );
 
       if (response.data && response.data.length > 0) {
-        const updatedBooking = response.data.find(
+        const fromApi = response.data.find(
           (b) => b.BookingID === booking.BookingID
         );
-        setUpdatedBookings(updatedBooking);
-        if (updatedBooking) {
-          navigation.setParams({ booking: updatedBooking });
-        }
+        setUpdatedBookings((prev) => {
+          if (!fromApi) return prev;
+          // Don't overwrite optimistic StartJourney/Reached with stale status from API
+          const statusOrder = { Confirmed: 1, StartJourney: 2, Reached: 3, ServiceStarted: 4, Completed: 5 };
+          const prevOrder = statusOrder[prev?.BookingStatus] || 0;
+          const apiOrder = statusOrder[fromApi.BookingStatus] || 0;
+          if (apiOrder < prevOrder) {
+            const merged = { ...fromApi, BookingStatus: prev.BookingStatus };
+            navigation.setParams({ booking: merged });
+            return merged;
+          }
+          navigation.setParams({ booking: fromApi });
+          return fromApi;
+        });
       }
     } catch (error) {
       console.error("Error refreshing booking:", error);
@@ -165,9 +181,12 @@ export default function CustomerInfo() {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    onRefresh();
-  }, []);
+  // Refetch when screen is focused (initial open + go back and open again)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (booking?.BookingID) onRefresh();
+    }, [booking?.BookingID])
+  );
 
   useEffect(() => {
     if (loading) {
@@ -554,14 +573,32 @@ export default function CustomerInfo() {
         bookingID: Number(bookingId),
         actionType: actionType,
       };
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        payload
+        
+        payload,
+        { headers: { "Content-Type": "application/json" } }
       );
-      console.log(`${actionType} action sent successfully`);
+      console.log("response====================",response.data);
+      console.log("response====================",`${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`);
+      if (
+        response?.data?.status === false ||
+        response?.data?.isValid === false
+      ) {
+        Alert.alert(
+          "Error",
+          response?.data?.message || `Failed to update ${actionType}.`
+        );
+        return false;
+      }
+      return true;
     } catch (error) {
       console.error(`Error sending ${actionType} action:`, error.message);
-      Alert.alert("Error", `Failed to send ${actionType} action.`);
+      Alert.alert(
+        "Error",
+        error?.response?.data?.message || `Failed to send ${actionType} action.`
+      );
+      return false;
     }
   };
 
@@ -577,25 +614,32 @@ export default function CustomerInfo() {
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
-    await updateTechnicianTracking("StartJourney");
+    const success = await updateTechnicianTracking("StartJourney");
+    if (!success) return;
+    // Update UI immediately: status StartJourney → show Reached button (API may not return updated status yet)
+    const updatedBooking = { ...booking, BookingStatus: "StartJourney" };
+    navigation.setParams({ booking: updatedBooking });
+    setUpdatedBookings(updatedBooking);
     onRefresh();
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
     } catch (error) {
       console.error("Error saving start ride flag", error);
     }
-    // Background tracking should already be controlled by user via toggle
-    // No need to start it here automatically
     await openGoogleMaps();
   };
 
   const Reached = async () => {
-    await updateTechnicianTracking("Reached");
+    const success = await updateTechnicianTracking("Reached");
+    if (!success) return;
+    const updatedBooking = { ...booking, BookingStatus: "Reached" };
+    navigation.setParams({ booking: updatedBooking });
+    setUpdatedBookings(updatedBooking);
     onRefresh();
     try {
       await stopBackgroundTracking();
     } catch (_) {}
-    navigation.navigate("ServiceStart", { booking: booking });
+    navigation.navigate("ServiceStart", { booking: updatedBooking });
   };
 
   const isSameISTDate = (dateStr) => {
@@ -1586,9 +1630,9 @@ export default function CustomerInfo() {
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
               {/* <View style={styles.startreach}> */}
-              {booking.BookingStatus !== "Completed" && (
+              {displayBooking.BookingStatus !== "Completed" && (
                   <>
-                    {booking.BookingStatus === "Confirmed" && (
+                    {displayBooking.BookingStatus === "Confirmed" && (
                       <TouchableOpacity
                         style={styles.startButton}
                         onPress={handleStartRide}
@@ -1607,8 +1651,8 @@ export default function CustomerInfo() {
                       </TouchableOpacity>
                     )}
 
-                    {(booking.BookingStatus === "StartJourney" ||
-                      booking.BookingStatus === "ServiceStarted") && (
+                    {(displayBooking.BookingStatus === "StartJourney" ||
+                      displayBooking.BookingStatus === "ServiceStarted") && (
                       <View style={styles.startreach}>
                         <TouchableOpacity
                           style={[styles.startButton, { flex: 1 }]}
@@ -1627,7 +1671,7 @@ export default function CustomerInfo() {
                           </CustomText>
                         </TouchableOpacity>
 
-                        {booking.BookingStatus === "StartJourney" && (
+                        {displayBooking.BookingStatus === "StartJourney" && (
                           <TouchableOpacity
                             style={[styles.ReachedButton, { flex: 1 }]}
                             onPress={Reached}
@@ -1653,7 +1697,7 @@ export default function CustomerInfo() {
               {/* )} */}
             </View>
             {(() => {
-              const currentBooking = updatedBookings.BookingStatus ? updatedBookings : booking;
+              const currentBooking = displayBooking;
               const bookingStatus = currentBooking.BookingStatus;
               
               if (bookingStatus === "Reached") {
