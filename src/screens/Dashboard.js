@@ -67,7 +67,6 @@ export default function Dashboard() {
 
   const [bookings, setBookings] = useState([]);
   const [activeServices, setActiveServices] = useState([]);
-  console.log("activeServices===================",activeServices);
   const [bookingCounts, setBookingCounts] = useState({
     TodayAssignedBookingsCount: 0,
     ScheduledBookingsCount: 0,
@@ -774,6 +773,7 @@ export default function Dashboard() {
                         : sum,
                     0
                   );
+                  console.log("BookingStatus================>>>>>",item.BookingStatus)
                   const totalPrice =
                     item.TotalPrice ||
                     (item.BookingAddOns &&

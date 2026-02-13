@@ -42,7 +42,6 @@
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
         "CAMERA",
-        "READ_MEDIA_IMAGES",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED"
       ],

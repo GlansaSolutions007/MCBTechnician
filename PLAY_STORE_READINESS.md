@@ -11,7 +11,7 @@ Use this checklist before uploading to the Play Store. Items marked ✅ are alre
 - **Permission strings**: `app.json` has explicit descriptions for:
   - Location (iOS `infoPlist`): live position for customers, navigation to job site.
   - Camera / Photo (iOS + `expo-image-picker`): vehicle and service work photos for job records only.
-- **Android permissions**: Declared in `app.json` (location, camera, READ_MEDIA_IMAGES, foreground service, etc.). No extra sensitive permissions without justification.
+- **Android permissions**: Declared in `app.json` (location, camera, foreground service, etc.). No extra sensitive permissions without justification.
 
 ### Build & versioning
 - **Android package**: `com.itglansa.mcbt` in `app.json`.
@@ -71,7 +71,7 @@ eas submit --platform android --latest
 
 | Topic | What we did |
 |-------|-------------|
-| **Photo/Video permission policy** | Clear permission strings + prominent disclosure screen explaining use for job/service photos only. |
+| **Photo/Video permission policy** | No READ_MEDIA_IMAGES/READ_MEDIA_VIDEO (one-time picker only). Clear permission strings + prominent disclosure screen explaining use for job/service photos only. |
 | **Sensitive data / Permissions disclosure** | PermissionsDisclosureScreen before main app; no sensitive data in logs in production. |
 | **Unclear feature description** | Location and camera/photo usage described in app.json and disclosure screen. |
 | **versionCode** | Set in app.json; EAS autoIncrement bumps it for each production build. |
