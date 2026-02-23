@@ -773,7 +773,6 @@ export default function Dashboard() {
                         : sum,
                     0
                   );
-                  console.log("BookingStatus================>>>>>",item.BookingStatus)
                   const totalPrice =
                     item.TotalPrice ||
                     (item.BookingAddOns &&

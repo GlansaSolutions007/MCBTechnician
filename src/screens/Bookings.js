@@ -18,7 +18,7 @@ import {
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
-import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";``
 import defaultAvatar from "../../assets/images/buddy.png";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -69,6 +69,7 @@ const fetchBookings = async () => {
       : response?.data?.data || [];
 
     setTodaysBookings(bookingsData);
+    console.log("Bookings Data=> ServiceType ServiceAtGarage:", bookingsData);
   } catch (error) {
     console.error("Error fetching bookings:", error?.response || error.message);
     setTodaysBookings([]);
@@ -139,6 +140,13 @@ const fetchBookings = async () => {
 
   const customerInfo = (booking) => {
     navigation.navigate("customerInfo", { booking });
+  };
+  const openBooking = (item) => {
+    if (item.ServiceType === "ServiceAtGarage") {
+      navigation.navigate("ServiceAtGarageMap", { booking: item });
+    } else {
+      customerInfo(item);
+    }
   };
 
   // Helper function to check if a date is in the future
@@ -353,7 +361,7 @@ const onRefresh = async () => {
           }}>
             {filteredBookings.map((item, index) => (
             <Pressable
-              onPress={() => customerInfo(item)}
+              onPress={() => openBooking(item)}
               // key={item.BookingID?.toString() || `idx-${index}`}
               key={`${item.BookingID ?? "booking"}-${index}`}
 
@@ -369,7 +377,18 @@ const onRefresh = async () => {
                 styles.accent,
                 { backgroundColor: item.BookingStatus === 'Completed' ? color.alertError : color.primary }
               ]} />
-              <View style={globalStyles.flexrow}>
+              <View style={styles.cardContent}>
+                <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
+                  <View style={[styles.serviceTypeChip, { backgroundColor: color.primary }]}>
+                    <MaterialCommunityIcons name="wrench-outline" size={14} color={color.white} style={{ marginRight: 6 }} />
+                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                      {item.ServiceType
+                        ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                        : "N/A"}
+                    </CustomText>
+                  </View>
+                </View>
+                <View style={globalStyles.flexrow}>
                 <Image
                   source={
                     item.ProfileImage
@@ -412,81 +431,53 @@ const onRefresh = async () => {
                 </View>
               </View>
 
-              <View style={globalStyles.divider} />
+                <View style={globalStyles.divider} />
 
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.justifysb,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-                  <View style={globalStyles.mr3}>
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.mt2,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
+                <View style={styles.cardMetaRow}>
+                  <View style={styles.cardMetaCol}>
+                    <View style={styles.cardMetaItem}>
                       <MaterialCommunityIcons
                         name="card-account-details-outline"
                         size={16}
                         color={color.primary}
-                        style={{ marginRight: 6 }}
+                        style={styles.cardMetaIcon}
                       />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
                         {item.BookingTrackID}
                       </CustomText>
                     </View>
-
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.mt2,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
+                    <View style={styles.cardMetaItem}>
                       <FontAwesome5
                         name="car"
                         size={14}
                         color={color.primary}
-                        style={{ marginRight: 6 }}
+                        style={styles.cardMetaIcon}
                       />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
                         {item.VehicleNumber || item.Leads?.Vehicle?.ModelName || item.Leads?.Vehicle?.RegistrationNumber || "N/A"}
                       </CustomText>
                     </View>
                   </View>
-
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.mt2,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
+                  <View style={styles.cardMetaCol}>
+                    <View style={styles.cardMetaItem}>
                       <MaterialCommunityIcons
                         name="calendar"
                         size={16}
                         color={color.primary}
-                        style={{ marginRight: 6 }}
+                        style={styles.cardMetaIcon}
                       />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
                         {item.BookingDate?.slice(0, 10)}
                       </CustomText>
                     </View>
-
-                    <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
+                    <View style={styles.cardMetaItem}>
                       <Ionicons
                         name="time-outline"
                         size={16}
                         color={color.primary}
-                        style={{ marginRight: 6 }}
+                        style={styles.cardMetaIcon}
                       />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]} numberOfLines={1}>
                         {item.TimeSlot}
                       </CustomText>
                     </View>
@@ -549,12 +540,47 @@ const styles = StyleSheet.create({
     width: 4,
     backgroundColor: color.primary,
   },
+  cardContent: {
+    paddingLeft: 4,
+  },
+  cardMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginTop: 8,
+    gap: 12,
+  },
+  cardMetaCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardMetaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  cardMetaIcon: {
+    marginRight: 6,
+  },
   statusChip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  serviceTypeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   chipCompleted: { backgroundColor: "#4CAF50" },
   chipPending: { backgroundColor: color.primary },

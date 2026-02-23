@@ -50,6 +50,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [uploadDone, setUploadDone] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [carRegistrationNumber, setCarRegistrationNumber] = useState("");
+  const [registrationError, setRegistrationError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
@@ -726,7 +728,10 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 </View>
               )}
             </View>
-            {!booking.CarPickUpDate && !carPickedUp && (
+            {/* Car pickup step only for Service at Garage */}
+            {booking.ServiceType === "ServiceAtGarage" &&
+              !booking.CarPickUpDate &&
+              !carPickedUp && (
               <TouchableOpacity
                 style={[
                   globalStyles.mt3,
@@ -740,23 +745,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   const success = await updateTechnicianTracking("CarPickUp");
                   if (success) {
                     setCarPickedUp(true);
-                    // Store in AsyncStorage to persist across app restarts
                     try {
                       await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
                     } catch (error) {
                       console.error("Error storing car pickup state:", error);
                     }
-                    // Automatically send OTP when car is picked up
-                    // const otpSuccess = await updateTechnicianTracking("BookingStartOTP");
-                    // if (otpSuccess) {
-                    //   setOtpSent(true);
-                    //   // Store in AsyncStorage to persist across app restarts
-                    //   try {
-                    //     await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
-                    //   } catch (error) {
-                    //     console.error("Error storing OTP sent state:", error);
-                    //   }
-                    // }
                   }
                 }}
                 disabled={carPickedUp}
@@ -779,17 +772,51 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
               </TouchableOpacity>
             )}
 
-            {(booking.CarPickUpDate || carPickedUp) && (
+            {/* OTP + Submit: for Service at Garage show after car pickup; for Service at Home show directly */}
+            {((booking.ServiceType === "ServiceAtGarage" && (booking.CarPickUpDate || carPickedUp)) ||
+              booking.ServiceType !== "ServiceAtGarage") && (
               <>
                 <CustomText
-  style={[
-    globalStyles.f16Light,
-    globalStyles.mt3,
-    globalStyles.neutral500,
-  ]}
->
-  Enter OTP
-</CustomText>
+                  style={[
+                    globalStyles.f16Light,
+                    globalStyles.mt3,
+                    globalStyles.neutral500,
+                  ]}
+                >
+                  Car Registration Number <CustomText style={{ color: color.alertError }}>*</CustomText>
+                </CustomText>
+                <TextInput
+                  style={[
+                    globalStyles.inputBox,
+                    globalStyles.mt2,
+                    {
+                      borderColor: registrationError ? "red" : "#ccc",
+                      borderWidth: 1,
+                    },
+                  ]}
+                  placeholder="Enter car registration number (mandatory)"
+                  value={carRegistrationNumber}
+                  onChangeText={(text) => {
+                    setCarRegistrationNumber(text.trim().toUpperCase());
+                    setRegistrationError("");
+                  }}
+                  autoCapitalize="characters"
+                />
+                {registrationError ? (
+                  <CustomText style={{ color: "red", marginTop: 4 }}>
+                    {registrationError}
+                  </CustomText>
+                ) : null}
+
+                <CustomText
+                  style={[
+                    globalStyles.f16Light,
+                    globalStyles.mt3,
+                    globalStyles.neutral500,
+                  ]}
+                >
+                  Enter OTP
+                </CustomText>
 
 <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
   <TextInput
@@ -879,6 +906,14 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     },
                   ]}
                   onPress={async () => {
+                    // Validation: Car registration number is mandatory
+                    const regNo = carRegistrationNumber?.trim() || "";
+                    if (!regNo) {
+                      setRegistrationError("Car registration number is mandatory");
+                      return;
+                    }
+                    setRegistrationError("");
+
                     // Validation: Check OTP
                     if (!otp || otp.length !== 6) {
                       setError("Please enter a valid 6-digit OTP");
@@ -977,16 +1012,24 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       })
                     );
 
-                    // Navigate to ServiceEnd page
-                    navigation.navigate("ServiceEnd", {
-                      booking: updatedBooking,
-                      estimatedTime: estimatedTime,
-                      actualTime: actualTime,
-                    });
+                    // Service at Garage: show map to garage, then Drop Car → ServiceEnd
+                    if (booking.ServiceType === "ServiceAtGarage") {
+                      navigation.navigate("CustomerToGarageMap", {
+                        booking: updatedBooking,
+                        estimatedTime: estimatedTime,
+                        actualTime: actualTime,
+                      });
+                    } else {
+                      navigation.navigate("ServiceEnd", {
+                        booking: updatedBooking,
+                        estimatedTime: estimatedTime,
+                        actualTime: actualTime,
+                      });
+                    }
                   }}
                 >
                   <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
-                    Lets Start
+                    Submit
                   </CustomText>
                 </TouchableOpacity>
 

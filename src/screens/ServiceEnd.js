@@ -15,6 +15,7 @@ import {
   Vibration,
   Modal,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -109,6 +110,58 @@ export default function ServiceEnd() {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [images, setImages] = useState([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType,
+      allowsMultipleSelection: true,
+      quality: 0.5,
+    });
+    if (!result.canceled) {
+      const selected = result.assets.map((asset) => asset.uri);
+      setImages((prev) => [...prev, ...selected].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAfterServiceImages = async () => {
+    if (!images.length) return;
+    setIsUploadingImages(true);
+    try {
+      for (let i = 0; i < images.length; i++) {
+        const formData = new FormData();
+        formData.append("BookingID", booking.BookingID);
+        formData.append("UploadedBy", 1);
+        formData.append("TechID", booking.TechID);
+        formData.append("ImageUploadType", "after");
+        formData.append("ImagesType", "tech");
+        formData.append("ImageURL1", {
+          uri: images[i],
+          type: "image/jpeg",
+          name: `after_${i + 1}.jpg`,
+        });
+        await fetch(`${API_BASE_URL}/ServiceImages/InsertServiceImages`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
+          body: formData,
+        });
+      }
+      setImages([]);
+      setModalMessage("Images uploaded successfully.");
+      setModalVisible(true);
+    } catch (err) {
+      console.error("Upload after-service images error:", err);
+      setModalMessage("Failed to upload images. Please try again.");
+      setModalVisible(true);
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
@@ -251,6 +304,11 @@ export default function ServiceEnd() {
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
       return;
+    }
+
+    // Upload after-service images if any
+    if (images.length > 0) {
+      await uploadAfterServiceImages();
     }
 
     // First verify OTP with Auth API
@@ -470,10 +528,10 @@ export default function ServiceEnd() {
             </View>
           </View>
 
-          <View style={{ marginTop: 12 }}>
-            <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
+          <View >
+            {/* <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
               Please check completed services
-            </CustomText>
+            </CustomText> */}
 
             {Array.isArray(services) && services.map((service) => (
               <View
@@ -498,6 +556,71 @@ export default function ServiceEnd() {
                 </CustomText>
               </View>
             ))}
+          </View>
+
+          {/* After-service image upload */}
+          <View style={{ marginTop: 16 }}>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
+              Upload after-service images (optional)
+            </CustomText>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500, globalStyles.mb2]}>
+              Add up to 5 photos of completed work
+            </CustomText>
+            <TouchableOpacity
+              style={[globalStyles.inputBox, globalStyles.mt2, { borderWidth: 1, borderColor: "#ccc", paddingVertical: 12 }]}
+              onPress={pickImage}
+            >
+              <CustomText style={[globalStyles.f14Medium, globalStyles.neutral500]}>
+                Choose Files
+              </CustomText>
+            </TouchableOpacity>
+            {images.length > 0 && (
+              <>
+                <View style={[globalStyles.flexrow, { flexWrap: "wrap", marginTop: 12 }]}>
+                  {images.map((uri, index) => (
+                    <View key={index} style={{ width: "30%", marginBottom: 10, marginRight: "3%", position: "relative" }}>
+                      <Image source={{ uri }} style={{ width: "100%", aspectRatio: 1, borderRadius: 8 }} />
+                      <TouchableOpacity
+                        onPress={() => removeImage(index)}
+                        style={{
+                          position: "absolute",
+                          top: 4,
+                          right: 4,
+                          backgroundColor: "#000",
+                          borderRadius: 12,
+                          padding: 2,
+                          zIndex: 1,
+                        }}
+                      >
+                        <Ionicons name="close" color="#fff" size={14} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+                <TouchableOpacity
+                  onPress={uploadAfterServiceImages}
+                  disabled={isUploadingImages}
+                  style={[
+                    globalStyles.flexrow,
+                    globalStyles.alineItemscenter,
+                    globalStyles.justifycenter,
+                    {
+                      marginTop: 12,
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      borderRadius: 10,
+                      backgroundColor: color.primary,
+                      opacity: isUploadingImages ? 0.6 : 1,
+                    },
+                  ]}
+                >
+                  <Ionicons name="cloud-upload-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                    {isUploadingImages ? "Uploading..." : "Upload Images"}
+                  </CustomText>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           {/* Time Summary Card */}

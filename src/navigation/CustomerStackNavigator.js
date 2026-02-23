@@ -17,6 +17,8 @@ import ServiceEnd from "../screens/ServiceEnd";
 import CollectPayment from "../screens/CollectPayment";
 import Bookings from "../screens/Bookings";
 import Notifications from "../screens/Notifications";
+import ServiceAtGarageMap from "../screens/ServiceAtGarageMap";
+import CustomerToGarageMap from "../screens/CustomerToGarageMap";
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +47,11 @@ export default function CustomerStackNavigator() {
         name="customerInfo"
         component={CustomerInfo}
         options={{ title: "Customer Info" }}
+      />
+      <Stack.Screen
+        name="ServiceAtGarageMap"
+        component={ServiceAtGarageMap}
+        options={{ title: "Service at Garage" }}
       />
       <Stack.Screen
         name="reviews"
@@ -79,7 +86,12 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="ServiceStart"
         component={ServiceStart}
-        options={{ title: "Service Start" }}
+        options={{ title: "Pick Car From Customer" }}
+      />
+      <Stack.Screen
+        name="CustomerToGarageMap"
+        component={CustomerToGarageMap}
+        options={{ title: "Customer to Garage" }}
       />
       <Stack.Screen
         name="ServiceEnd"
