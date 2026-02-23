@@ -26,7 +26,7 @@ const DEFAULT_REGION = {
 export default function CustomerToGarageMap() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { booking, estimatedTime = 0, actualTime = 0 } = route.params || {};
+  const { booking, estimatedTime = 0, actualTime = 0, carRegistrationNumber = "" } = route.params || {};
   const [location, setLocation] = useState(null);
   const mapRef = useRef(null);
 
@@ -98,11 +98,13 @@ export default function CustomerToGarageMap() {
     const updatedBooking = {
       ...booking,
       ServiceStartedAt: booking?.ServiceStartedAt || new Date().toISOString(),
+      CarRegistrationNumber: carRegistrationNumber || booking?.CarRegistrationNumber || "",
     };
     navigation.navigate("ServiceEnd", {
       booking: updatedBooking,
       estimatedTime: estimatedTime || 0,
       actualTime: actualTime || 0,
+      carRegistrationNumber: carRegistrationNumber || booking?.CarRegistrationNumber || "",
     });
   };
 
@@ -133,6 +135,15 @@ export default function CustomerToGarageMap() {
         </MapView>
       </View>
 
+      {carRegistrationNumber ? (
+        <View style={styles.regNumberBar}>
+          <Ionicons name="car" size={18} color={color.primary} style={{ marginRight: 8 }} />
+          <CustomText style={[globalStyles.f14Bold, { color: color.primary }]}>
+            Car registration: {carRegistrationNumber}
+          </CustomText>
+        </View>
+      ) : null}
+
       <View style={styles.actionsContent}>
         <TouchableOpacity style={styles.primaryButton} onPress={handleStartToGarage}>
           <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -151,6 +162,19 @@ export default function CustomerToGarageMap() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: color.background },
   mapWrap: { flex: 1, minHeight: 280 },
+  regNumberBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: color.white,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: color.primary,
+  },
   actionsContent: { padding: 16, paddingBottom: 24 },
   primaryButton: {
     backgroundColor: color.primary,

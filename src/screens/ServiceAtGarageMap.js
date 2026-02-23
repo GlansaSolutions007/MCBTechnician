@@ -245,7 +245,7 @@ export default function ServiceAtGarageMap() {
     try {
       await stopBackgroundTracking();
     } catch (_) {}
-    navigation.navigate("ServiceStart", { booking: next });
+    navigation.navigate("CarPickUp", { booking: next });
   };
 
   if (!booking) {
@@ -340,7 +340,7 @@ export default function ServiceAtGarageMap() {
         {displayBooking.BookingStatus === "Reached" && (
           <TouchableOpacity
             style={styles.startButton}
-            onPress={() => navigation.navigate("ServiceStart", { booking: displayBooking })}
+            onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />

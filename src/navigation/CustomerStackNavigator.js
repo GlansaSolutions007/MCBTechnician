@@ -13,6 +13,7 @@ import LeaveRequest from "../screens/LeaveRequest";
 import LeaveRequestList from "../screens/LeaveRequestList";
 // import LiveTrackingMap from "../components/LiveTrackingMap";
 import ServiceStart from "../screens/ServiceStart";
+import CarPickUp from "../screens/CarPickUp";
 import ServiceEnd from "../screens/ServiceEnd";
 import CollectPayment from "../screens/CollectPayment";
 import Bookings from "../screens/Bookings";
@@ -86,7 +87,12 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="ServiceStart"
         component={ServiceStart}
-        options={{ title: "Pick Car From Customer" }}
+        options={{ title: "Service Start" }}
+      />
+      <Stack.Screen
+        name="CarPickUp"
+        component={CarPickUp}
+        options={{ title: "Car Pick Up" }}
       />
       <Stack.Screen
         name="CustomerToGarageMap"

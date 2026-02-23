@@ -80,7 +80,7 @@ export default function Dashboard() {
     navigation.navigate("customerInfo", { booking: item });
   };
   const ServiceStart = async (item) => {
-    navigation.navigate("ServiceStart", { booking: item });
+    navigation.navigate(item.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: item });
   };
   const Schedules = () => {
     navigation.navigate("Schedules");

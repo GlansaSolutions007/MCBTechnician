@@ -39,7 +39,7 @@ const formatReadableTime = (seconds) => {
 export default function ServiceEnd() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { estimatedTime = 0, actualTime = 0 } = route.params || {};
+  const { estimatedTime = 0, actualTime = 0, carRegistrationNumber: paramRegNo = "" } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
   console.log("booking=================", booking);
@@ -48,7 +48,8 @@ export default function ServiceEnd() {
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
   const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
   const profileImage = booking.ProfileImage || null;
-  const vehicleNumber = booking.VehicleNumber || booking.Leads?.Vehicle?.RegistrationNumber || "";
+  const carRegistrationNumber = paramRegNo || booking?.CarRegistrationNumber || "";
+  const vehicleNumber = booking.VehicleNumber || booking.Leads?.Vehicle?.RegistrationNumber || carRegistrationNumber || "";
   const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
@@ -499,7 +500,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {modelName || vehicleNumber || "N/A"}
+                  {carRegistrationNumber ? `Reg: ${carRegistrationNumber}` : (modelName || vehicleNumber || "N/A")}
                 </CustomText>
               </View>
               <View
@@ -833,30 +834,35 @@ export default function ServiceEnd() {
             visible={modalVisible}
             onRequestClose={() => setModalVisible(false)}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalBox}>
-                <CustomText
-                  style={[
-                    globalStyles.f16Bold,
-                    globalStyles.textac,
-                    { marginTop: 10 },
-                  ]}
-                >
+            <Pressable
+              style={styles.modalOverlay}
+              onPress={() => setModalVisible(false)}
+            >
+              <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
+                <View style={styles.modalIconContainer}>
+                  <Ionicons
+                    name={modalMessage.toLowerCase().includes("successfully") ? "checkmark-circle" : "alert-circle"}
+                    size={48}
+                    color={modalMessage.toLowerCase().includes("successfully") ? color.primary : color.alertError}
+                  />
+                </View>
+                <CustomText style={[globalStyles.f18SemiBold, globalStyles.textac, globalStyles.mb2]}>
+                  {modalMessage.toLowerCase().includes("successfully") ? "Success!" : "Notice"}
+                </CustomText>
+                <CustomText style={[globalStyles.f12Regular, globalStyles.textac, globalStyles.neutral500, globalStyles.mb4]}>
                   {modalMessage}
                 </CustomText>
                 <TouchableOpacity
                   style={styles.okButton}
                   onPress={() => setModalVisible(false)}
                 >
-                  <CustomText
-                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
-                  >
+                  <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
                     OK
                   </CustomText>
                 </TouchableOpacity>
-              </View>
-          </View>
-        </Modal>
+              </Pressable>
+            </Pressable>
+          </Modal>
 
         {/* Payment Completion Modal for Razorpay */}
         <Modal
@@ -930,16 +936,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalBox: {
-    width: "80%",
+    width: "85%",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 28,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 8,
+  },
+  modalIconContainer: {
+    marginBottom: 16,
   },
   okButton: {
     marginTop: 20,

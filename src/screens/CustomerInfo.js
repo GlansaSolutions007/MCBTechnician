@@ -120,7 +120,7 @@ export default function CustomerInfo() {
     timeZone: "Asia/Kolkata",
   });
   const ServiceStart = async (item) => {
-    navigation.navigate("ServiceStart", { booking: item });
+    navigation.navigate(item.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: item });
   };
   const ServiceEnd = async (item) => {
     // Calculate estimated time from booking if available
@@ -639,7 +639,7 @@ export default function CustomerInfo() {
     try {
       await stopBackgroundTracking();
     } catch (_) {}
-    navigation.navigate("ServiceStart", { booking: updatedBooking });
+    navigation.navigate(updatedBooking.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: updatedBooking });
   };
 
   const isSameISTDate = (dateStr) => {
