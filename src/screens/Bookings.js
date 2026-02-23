@@ -18,17 +18,19 @@ import {
 import globalStyles from "../styles/globalStyles";
 import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
-import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";``
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 
 export default function Bookings() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { bookings, techId } = route.params;
+  const { bookings, techId: techIdFromParams } = route.params || {};
 
   const [todaysBookings, setTodaysBookings] = useState([]);
 
@@ -48,7 +50,8 @@ const fetchBookings = async () => {
   try {
     setLoading(true);
 
-    const techID = await AsyncStorage.getItem("techID");
+    const techIDFromStorage = await AsyncStorage.getItem("techID");
+    const techID = techIdFromParams ?? techIDFromStorage;
 
     if (!techID) {
       console.log("Tech ID not found");
@@ -59,7 +62,7 @@ const fetchBookings = async () => {
     const response = await axios.get(
       `${API_BASE_URL}Bookings/GetAssignedBookings`,
       {
-        params: { Id: techID },
+        params: { Id: techID, techId: techID },
       }
     );
 
@@ -69,6 +72,7 @@ const fetchBookings = async () => {
       : response?.data?.data || [];
 
     setTodaysBookings(bookingsData);
+    console.log("Bookings Data==============>", bookingsData);
     console.log("Bookings Data=> ServiceType ServiceAtGarage:", bookingsData);
   } catch (error) {
     console.error("Error fetching bookings:", error?.response || error.message);
@@ -378,7 +382,7 @@ const onRefresh = async () => {
                 { backgroundColor: item.BookingStatus === 'Completed' ? color.alertError : color.primary }
               ]} />
               <View style={styles.cardContent}>
-                <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
+                <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3, { flexWrap: "wrap", gap: 8 }]}>
                   <View style={[styles.serviceTypeChip, { backgroundColor: color.primary }]}>
                     <MaterialCommunityIcons name="wrench-outline" size={14} color={color.white} style={{ marginRight: 6 }} />
                     <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
@@ -387,98 +391,76 @@ const onRefresh = async () => {
                         : "N/A"}
                     </CustomText>
                   </View>
+                  <View style={[
+                    styles.statusChip,
+                    { backgroundColor: item.BookingStatus === 'Completed' ? color.alertSuccess : item.BookingStatus === 'Reached' ? color.alertInfo : color.primary }
+                  ]}>
+                    <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
+                      {item.BookingStatus || "Pending"}
+                    </CustomText>
+                  </View>
+                  {item.TotalPrice != null && item.TotalPrice > 0 && (
+                    <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
+                      ₹{item.TotalPrice}
+                    </CustomText>
+                  )}
                 </View>
                 <View style={globalStyles.flexrow}>
-                <Image
-                  source={
-                    item.ProfileImage
-                      ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                      : defaultAvatar
-                  }
-                  style={styles.avatar}
-                />
-
-                <View style={[globalStyles.ml3, { flex: 1 }]}>
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.justifysb,
-                      globalStyles.alineItemscenter,
-                    ]}
-                  >
+                  <Image
+                    source={
+                      item.ProfileImage
+                        ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                        : defaultAvatar
+                    }
+                    style={styles.avatar}
+                  />
+                  <View style={[globalStyles.ml3, { flex: 1 }]}>
                     <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                    {item.CustomerName || item.Leads?.FullName || "N/A"}
-                  </CustomText>
-                    {/* <View style={[
-                      styles.statusChip,
-                      { backgroundColor: item.BookingStatus === 'Completed' ? color.alertSuccess : color.primary }
-                    ]}>
-                      <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
-                        {item.BookingStatus || 'Pending'}
-                      </CustomText>
-                    </View> */}
+                      {item.CustomerName || item.Leads?.FullName || "N/A"}
+                    </CustomText>
+                    <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}>
+                      Mobile: <CustomText style={globalStyles.black}>{item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}</CustomText>
+                    </CustomText>
+                    <CustomText
+                      style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}
+                      numberOfLines={2}
+                    >
+                      {item.FullAddress || item.Leads?.City || item.Leads?.FullAddress || "N/A"}
+                    </CustomText>
                   </View>
-
-                  <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}>
-                    Mobile: <CustomText style={globalStyles.black}>{item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}</CustomText>
-                  </CustomText>
-                  <CustomText
-                    style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}
-                    numberOfLines={2}
-                  >
-                    {item.FullAddress || item.Leads?.City || "N/A"}
-                  </CustomText>
                 </View>
-              </View>
+
+                <View style={globalStyles.divider} />
+                <BookingPickDropRow booking={item} />
 
                 <View style={globalStyles.divider} />
 
                 <View style={styles.cardMetaRow}>
                   <View style={styles.cardMetaCol}>
                     <View style={styles.cardMetaItem}>
-                      <MaterialCommunityIcons
-                        name="card-account-details-outline"
-                        size={16}
-                        color={color.primary}
-                        style={styles.cardMetaIcon}
-                      />
+                      <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={styles.cardMetaIcon} />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
-                        {item.BookingTrackID}
+                        {getBookingDisplayData(item).bookingTrackID}
                       </CustomText>
                     </View>
                     <View style={styles.cardMetaItem}>
-                      <FontAwesome5
-                        name="car"
-                        size={14}
-                        color={color.primary}
-                        style={styles.cardMetaIcon}
-                      />
+                      <FontAwesome5 name="car" size={14} color={color.primary} style={styles.cardMetaIcon} />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
-                        {item.VehicleNumber || item.Leads?.Vehicle?.ModelName || item.Leads?.Vehicle?.RegistrationNumber || "N/A"}
+                        {getBookingDisplayData(item).vehicleDisplay}
                       </CustomText>
                     </View>
                   </View>
                   <View style={styles.cardMetaCol}>
                     <View style={styles.cardMetaItem}>
-                      <MaterialCommunityIcons
-                        name="calendar"
-                        size={16}
-                        color={color.primary}
-                        style={styles.cardMetaIcon}
-                      />
+                      <MaterialCommunityIcons name="calendar" size={16} color={color.primary} style={styles.cardMetaIcon} />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                        {item.BookingDate?.slice(0, 10)}
+                        {getBookingDisplayData(item).bookingDate}
                       </CustomText>
                     </View>
                     <View style={styles.cardMetaItem}>
-                      <Ionicons
-                        name="time-outline"
-                        size={16}
-                        color={color.primary}
-                        style={styles.cardMetaIcon}
-                      />
+                      <Ionicons name="time-outline" size={16} color={color.primary} style={styles.cardMetaIcon} />
                       <CustomText style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]} numberOfLines={1}>
-                        {item.TimeSlot}
+                        {getBookingDisplayData(item).timeSlot}
                       </CustomText>
                     </View>
                   </View>
@@ -563,11 +545,11 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   serviceTypeChip: {
     flexDirection: "row",

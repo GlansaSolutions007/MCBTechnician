@@ -31,6 +31,8 @@ import {
   startBackgroundTracking,
   stopBackgroundTracking,
 } from "../utils/locationTracker";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 import { RefreshControl } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
@@ -978,94 +980,66 @@ export default function CustomerInfo() {
               </TouchableOpacity>
             </View>
             <View style={[globalStyles.divider, globalStyles.mt2]} />
-            <View style={[globalStyles.flexrow]}>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                  globalStyles.w40,
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="card-account-details-outline"
-                  size={16}
-                  color={color.primary}
-                  style={{ marginRight: 6 }}
-                />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.BookingTrackID}
-                </CustomText>
-              </View>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <Ionicons name="calendar" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.BookingDate}
-                </CustomText>
-              </View>
-            </View>
-            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                  globalStyles.w40,
-                ]}
-              >
-                <Ionicons name="car" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {modelName || vehicleNumber || "N/A"}
-                </CustomText>
-              </View>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <Ionicons name="time-outline" size={16} color={color.primary} />
-                <View style={{ flexDirection: "column" }}>
-                  {booking.TimeSlot && booking.TimeSlot.split(",").map((slot, index) => (
-                    <CustomText
-                      key={index}
+            {(() => {
+              const display = getBookingDisplayData(booking);
+              return (
+                <>
+                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2, { flexWrap: "wrap", gap: 8 }]}>
+                    <View
                       style={[
-                        globalStyles.f10Regular,
-                        globalStyles.black,
-                        globalStyles.ml1,
+                        globalStyles.p1,
+                        globalStyles.ph2,
+                        {
+                          borderRadius: 8,
+                          backgroundColor:
+                            booking.BookingStatus === "Completed" ? color.alertSuccess :
+                            booking.BookingStatus === "Reached" ? color.primary :
+                            color.alertInfo,
+                        },
                       ]}
                     >
-                      {slot.trim()}
-                    </CustomText>
-                  ))}
-                </View>
-              </View>
-            </View>
+                      <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
+                        {display.bookingStatus}
+                      </CustomText>
+                    </View>
+                    {display.totalPrice != null && (
+                      <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
+                        ₹{display.totalPrice}
+                      </CustomText>
+                    )}
+                  </View>
+                  <BookingPickDropRow booking={booking} style={globalStyles.mt2} />
+                  <View style={[globalStyles.flexrow, globalStyles.mt2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
+                      <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
+                        {display.bookingTrackID}
+                      </CustomText>
+                    </View>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                      <Ionicons name="calendar" size={16} color={color.primary} />
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
+                        {display.bookingDate}
+                      </CustomText>
+                    </View>
+                  </View>
+                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
+                      <Ionicons name="car" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
+                        {display.vehicleDisplay}
+                      </CustomText>
+                    </View>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                      <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
+                        {display.timeSlot}
+                      </CustomText>
+                    </View>
+                  </View>
+                </>
+              );
+            })()}
           </View>
 
           {(modelName || vehicleNumber || brandName || fuelTypeName) && (

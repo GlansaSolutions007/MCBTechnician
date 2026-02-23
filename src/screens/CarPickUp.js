@@ -28,6 +28,8 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 
 export default function CarPickUp() {
   const navigation = useNavigation();
@@ -99,51 +101,33 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   };
 
 
+  // carPickupDeliveryId from booking (PickupDelivery.Id) for ServiceImages OTP APIs
+  const carPickupDeliveryId = booking?.PickupDelivery?.Id ?? 0;
+
   const resendOTP = async () => {
     try {
       setIsLoading(true);
       const payload = {
-        bookingID: Number(bookingId),
-        // actionType: "SendOTP",
-        actionType: "BookingStartOTP",
+        carPickupDeliveryId: Number(carPickupDeliveryId),
+        otpType: "Pickup",
       };
-      
-      console.log("=== Resend OTP Request ===");
-      console.log("URL:", `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`);
-      console.log("Payload:", payload);
-      
       const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        payload
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
       );
-
-      console.log("=== Resend OTP Response ===");
-      console.log("Full Response:", response);
-      console.log("Response Data:", response?.data);
-      console.log("Response Status:", response?.status);
-      console.log("Response Status Text:", response?.statusText);
-
       if (response?.data?.status === true || response?.data?.success === true) {
-        console.log(" OTP Resent Successfully");
         setOtpSent(true);
-        setModalMessage("OTP resent successfully to customer!");
+        setModalMessage("OTP sent successfully to customer!");
         setModalVisible(true);
-        startCooldownTimer(); // Start 60-second cooldown
+        startCooldownTimer();
         await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
       } else {
-        console.log("❌ OTP Resend Failed - Invalid Response");
-        console.log("Response Data:", response?.data);
-        setModalMessage("Failed to resend OTP. Please try again.");
+        setModalMessage(response?.data?.message || "Failed to send OTP. Please try again.");
         setModalVisible(true);
       }
     } catch (error) {
-      console.log("=== Resend OTP Error ===");
-      console.log("Error:", error);
-      console.log("Error Message:", error?.message);
-      console.log("Error Response:", error?.response);
-      console.log("Error Response Data:", error?.response?.data);
-      console.log("Error Status:", error?.response?.status);
-      setModalMessage("Failed to resend OTP. Please try again.");
+      setModalMessage(error?.response?.data?.message || "Failed to send OTP. Please try again.");
       setModalVisible(true);
     } finally {
       setIsLoading(false);
@@ -180,60 +164,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const removeImage = (index) => {
     const filtered = images.filter((_, i) => i !== index);
     setImages(filtered);
-  };
-
-  const handleUpload = async () => {
-    try {
-      if (!images.length) return;
-      setIsUploading(true);
-
-      for (let i = 0; i < images.length; i++) {
-        const formData = new FormData();
-        formData.append("BookingID", booking.BookingID);
-        formData.append("UploadedBy", 1);
-        formData.append("TechID", booking.TechID);
-        formData.append("ImageUploadType", "before");
-        formData.append("ImagesType", "tech");
-
-        formData.append("ImageURL1", {
-          uri: images[i],
-          type: "image/jpeg",
-          name: `upload_${i + 1}.jpg`,
-        });
-
-        const response = await fetch(
-          `${API_BASE_URL}/ServiceImages/InsertServiceImages`,
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "multipart/form-data",
-            },
-            body: formData,
-          }
-        );
-
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = text;
-        }
-
-        console.log(`Image ${i + 1} uploaded:`, data);
-      }
-      setIsUploading(false);
-      setUploadDone(true);
-      setImages([]);
-      setModalMessage("Images uploaded successfully!");
-      setModalVisible(true);
-    } catch (error) {
-      setIsUploading(false);
-      setModalMessage("Failed to upload images. Please try again.");
-      setModalVisible(true);
-      console.error("Upload error:", error);
-    }
   };
 
   const calculateElapsedFromAPI = (serviceStartedAt) => {
@@ -423,24 +353,14 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         bookingID: Number(bookingId),
         actionType: actionType,
       };
-      console.log("updateTechnicianTracking123333333", updateTechnicianTracking);
-      console.log("actionType", actionType);
-      console.log("bookingId", bookingId);
-      // Only include OTP if it exists (for actions that require it)
-      if (otp) {
-        payload.bookingOTP = otp;
-      }
+      if (otp) payload.bookingOTP = otp;
 
       const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
         payload
       );
 
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        // Only show OTP error for actions that require OTP
+      if (response?.data?.status === false || response?.data?.isValid === false) {
         if (actionType === "ServiceStarted") {
           setOtpValid(false);
           setModalMessage("Invalid OTP. Please try again.");
@@ -451,14 +371,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         }
         return false;
       }
-      
-      // Only set OTP valid for ServiceStarted action
-      if (actionType === "ServiceStarted") {
-        setOtpValid(true);
-      }
+      if (actionType === "ServiceStarted") setOtpValid(true);
       return true;
     } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
       if (actionType === "ServiceStarted") {
         setOtpValid(false);
         setModalMessage("Invalid OTP. Please try again.");
@@ -544,6 +459,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
             </TouchableOpacity>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt2]} />
+          <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} />
           <View style={[globalStyles.flexrow]}>
             <View
               style={[
@@ -566,7 +482,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-                {bookingParam.BookingTrackID}
+                {getBookingDisplayData(bookingParam).bookingTrackID}
               </CustomText>
             </View>
             <View
@@ -584,7 +500,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-                {bookingParam.BookingDate}
+                {getBookingDisplayData(bookingParam).bookingDate}
               </CustomText>
             </View>
           </View>
@@ -605,7 +521,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-{modelName || vehicleNumber || "N/A"}
+                {getBookingDisplayData(bookingParam).vehicleDisplay}
               </CustomText>
             </View>
             <View
@@ -617,7 +533,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
             >
               <Ionicons name="time-outline" size={16} color={color.primary} />
               <View style={{ flexDirection: "column" }}>
-                {bookingParam.TimeSlot?.split(",").map((slot, index) => (
+                {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
                   <CustomText
                     key={index}
                     style={[
@@ -710,71 +626,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       </View>
                     ))}
                   </View>
-
-                  <TouchableOpacity
-                    onPress={handleUpload}
-                    style={styles.imageupload}
-                  >
-                    <Ionicons
-                      name="cloud-upload-outline"
-                      size={20}
-                      color="#fff"
-                      style={{ marginRight: 8 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                    >
-                      Upload Images
-                    </CustomText>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
-            {/* Car pickup step (Car Pick Up screen is garage flow only) */}
-            {!booking.CarPickUpDate && !carPickedUp && (
-              <TouchableOpacity
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                ]}
-                onPress={async () => {
-                  const success = await updateTechnicianTracking("CarPickUp");
-                  if (success) {
-                    setCarPickedUp(true);
-                    try {
-                      await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
-                    } catch (error) {
-                      console.error("Error storing car pickup state:", error);
-                    }
-                  }
-                }}
-                disabled={carPickedUp}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Ionicons
-                    name="car"
-                    size={20}
-                    color={color.white}
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                  >
-                    Pickup Car
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* OTP + Submit: show after car pickup */}
-            {(booking.CarPickUpDate || carPickedUp) && (
-              <>
+            {/* Images upload with Submit (after OTP success) — no separate Upload Images button */}
+            {/* Registration number + OTP: show directly when page opens (no Pickup Car button) */}
+            <>
                 <CustomText
                   style={[
                     globalStyles.f16Bold,
@@ -921,34 +778,65 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Validation: Verify OTP and start service
-                    const isValid = await updateTechnicianTracking(
-                      "ServiceStarted"
-                    );
-                    if (!isValid) {
+                    // Only on Submit: POST OTP and verify via api/ServiceImages/VerifyOTP
+                    try {
+                      const verifyPayload = {
+                        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
+                        otp: String(otp).trim(),
+                        otpType: "Pickup",
+                      };
+                      const verifyRes = await axios.post(
+                        `${API_BASE_URL}ServiceImages/VerifyOTP`,
+                        verifyPayload,
+                        { headers: { "Content-Type": "application/json" } }
+                      );
+                      if (verifyRes?.data?.status === false || verifyRes?.data?.isValid === false) {
+                        setOtpValid(false);
+                        setModalMessage(verifyRes?.data?.message || "Invalid OTP. Please try again.");
+                        setModalVisible(true);
+                        return;
+                      }
+                      setOtpValid(true);
+                    } catch (verifyErr) {
+                      setOtpValid(false);
+                      setModalMessage(verifyErr?.response?.data?.message || "Invalid OTP. Please try again.");
+                      setModalVisible(true);
                       return;
                     }
 
-                    // Upload images if any (wait for completion before navigating)
+                    // If car pickup not yet recorded, call CarPickUp first then ServiceStarted
+                    if (!booking.CarPickUpDate && !carPickedUp) {
+                      const carPickUpOk = await updateTechnicianTracking("CarPickUp");
+                      if (!carPickUpOk) return;
+                      setCarPickedUp(true);
+                      try {
+                        await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
+                      } catch (e) {}
+                    }
+                    const isValid = await updateTechnicianTracking("ServiceStarted");
+                    if (!isValid) return;
+
+                    // Upload pickup images via InsertPickupDeliveryImages (ImageUploadType=Pickup)
                     if (images.length > 0) {
                       try {
                         setIsUploading(true);
                         for (let i = 0; i < images.length; i++) {
                           const formData = new FormData();
+                          formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
+                          formData.append("VehicleNumber", carRegistrationNumber?.trim() || "");
                           formData.append("BookingID", booking.BookingID);
                           formData.append("UploadedBy", 1);
-                          formData.append("TechID", booking.TechID);
-                          formData.append("ImageUploadType", "before");
+                          formData.append("TechID", booking.TechID ?? "");
+                          formData.append("ImageUploadType", "Pickup");
                           formData.append("ImagesType", "tech");
-
                           formData.append("ImageURL1", {
                             uri: images[i],
                             type: "image/jpeg",
-                            name: `upload_${i + 1}.jpg`,
+                            name: `pickup_${i + 1}.jpg`,
                           });
 
                           const response = await fetch(
-                            `${API_BASE_URL}/ServiceImages/InsertServiceImages`,
+                            `${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`,
                             {
                               method: "POST",
                               headers: {
@@ -1026,10 +914,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     Submit
                   </CustomText>
                 </TouchableOpacity>
-
-                
-              </>
-            )}
+            </>
             
             <View>
               <TouchableOpacity
@@ -1178,14 +1063,19 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
             <TouchableOpacity
               onPress={async () => {
-                navigation.navigate("ServiceEnd", {
-                  estimatedTime: MAX_TIME,
-                  actualTime: elapsedTime,
-                  booking: booking,
-                });
                 setTimerCompleted(true);
                 setTimeTaken(elapsedTime);
                 await AsyncStorage.removeItem("serviceTimerState");
+                // Service at garage flow: no ServiceEnd — go to CustomerToGarageMap (drive to garage, then drop)
+                const estimatedTime = booking.TotalEstimatedDurationMinutes
+                  ? booking.TotalEstimatedDurationMinutes * 60
+                  : 0;
+                navigation.navigate("CustomerToGarageMap", {
+                  booking: booking,
+                  estimatedTime: estimatedTime,
+                  actualTime: elapsedTime,
+                  carRegistrationNumber: carRegistrationNumber?.trim() || "",
+                });
               }}
               style={[globalStyles.blackButton, globalStyles.mb3]}
             >

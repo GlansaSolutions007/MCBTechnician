@@ -53,10 +53,21 @@ function decodePolyline(t) {
 export default function ServiceAtGarageMap() {
   const navigation = useNavigation();
   const route = useRoute();
-  const bookingParam = route?.params?.booking;
+  const { booking: bookingParam, estimatedTime = 0, actualTime = 0, carRegistrationNumber = "" } = route?.params || {};
   const [booking, setBooking] = useState(bookingParam || null);
   const [updatedBooking, setUpdatedBooking] = useState(bookingParam || null);
   const displayBooking = updatedBooking?.BookingID === booking?.BookingID && updatedBooking ? updatedBooking : booking;
+  // Car pickup done = show "Drop Car at Garage" instead of "Pickup Car" when status is Reached
+  const carPickupDone = !!(
+    displayBooking?.CarPickUpDate ?? displayBooking?.CarPickupDate
+  );
+  const statusForButtons =
+    displayBooking?.BookingStatus === "StartJourney" ||
+    displayBooking?.BookingStatus === "ServiceStarted" ||
+    displayBooking?.BookingStatus === "Reached" ||
+    displayBooking?.BookingStatus === "Completed"
+      ? displayBooking.BookingStatus
+      : "Confirmed";
 
   const fullAddress = booking?.FullAddress || booking?.Leads?.FullAddress || booking?.Leads?.City || "";
   const rawLat = booking?.latitude ?? booking?.Latitude;
@@ -238,6 +249,17 @@ export default function ServiceAtGarageMap() {
   const handleReached = async () => {
     const ok = await updateTechnicianTracking("Reached");
     if (!ok) return;
+    const carPickupDeliveryId = Number(displayBooking?.PickupDelivery?.Id ?? 0);
+    const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        { carPickupDeliveryId, otpType: "Pickup", phoneNumber: String(phoneNumber).trim() || undefined },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      // continue even if OTP call fails
+    }
     const next = { ...booking, BookingStatus: "Reached" };
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
@@ -246,6 +268,27 @@ export default function ServiceAtGarageMap() {
       await stopBackgroundTracking();
     } catch (_) {}
     navigation.navigate("CarPickUp", { booking: next });
+  };
+
+  const handleDropCarAtGarage = async () => {
+    const carPickupDeliveryId = Number(displayBooking?.PickupDelivery?.Id ?? 0);
+    const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        { carPickupDeliveryId, otpType: "Delivery", phoneNumber: String(phoneNumber).trim() || undefined },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      // continue even if OTP call fails
+    }
+    navigation.navigate("DropCarAtGarage", {
+      booking: displayBooking,
+      estimatedTime: estimatedTime || 0,
+      actualTime: actualTime || 0,
+      carRegistrationNumber:
+        carRegistrationNumber || displayBooking?.CarRegistrationNumber || "",
+    });
   };
 
   if (!booking) {
@@ -285,12 +328,13 @@ export default function ServiceAtGarageMap() {
               {addressLocation && (
                 <Marker
                   coordinate={{ latitude: addressLocation.Latitude, longitude: addressLocation.Longitude }}
-                  title="Customer"
+                  title="Customer location"
+                  description="Customer / pickup location"
                   pinColor="red"
                 />
               )}
               {hasValidCoordinates && !addressLocation && (
-                <Marker coordinate={{ latitude: Latitude, longitude: Longitude }} title="Destination" pinColor="red" />
+                <Marker coordinate={{ latitude: Latitude, longitude: Longitude }} title="Customer location" description="Destination" pinColor="red" />
               )}
               {routeCoords?.length > 0 && location && mapDestination && (
                 <Polyline
@@ -308,59 +352,88 @@ export default function ServiceAtGarageMap() {
         )}
       </View>
 
-      <ScrollView
-        style={styles.actionsScroll}
-        contentContainerStyle={styles.actionsContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {displayBooking.BookingStatus !== "Completed" && (
-          <>
-            {displayBooking.BookingStatus === "Confirmed" && (
-              <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
-                <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
-                <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Start Journey</CustomText>
-              </TouchableOpacity>
-            )}
-            {(displayBooking.BookingStatus === "StartJourney" || displayBooking.BookingStatus === "ServiceStarted") && (
-              <View style={styles.startreach}>
-                <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
-                  <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
-                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Navigate</CustomText>
-                </TouchableOpacity>
-                {displayBooking.BookingStatus === "StartJourney" && (
-                  <TouchableOpacity style={[styles.reachedButton, { flex: 1 }]} onPress={handleReached}>
-                    <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
-                    <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </>
+      <View style={styles.buttonsSection}>
+        <ScrollView
+          style={styles.actionsScroll}
+          contentContainerStyle={styles.actionsContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+        >
+        {/* Buttons based on status */}
+        {statusForButtons === "Confirmed" && (
+          <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
+            <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+          </TouchableOpacity>
         )}
-        {displayBooking.BookingStatus === "Reached" && (
+
+        {/* Navigate and Reached buttons — show for Confirmed, StartJourney, ServiceStarted, Reached */}
+        {statusForButtons !== "Completed" && (
+          <View style={styles.startreach}>
+            <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
+              <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Navigate</CustomText>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.reachedButton, { flex: 1 }]} onPress={handleReached}>
+              <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {statusForButtons === "Reached" && !carPickupDone && (
           <TouchableOpacity
-            style={styles.startButton}
+            style={[styles.startButton, { marginTop: 10 }]}
             onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
-      </ScrollView>
+
+        {statusForButtons === "Reached" && carPickupDone && (
+          <TouchableOpacity
+            style={[styles.dropButton, { marginTop: 10 }]}
+            onPress={handleDropCarAtGarage}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Drop Car at Garage</CustomText>
+            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
+        )}
+
+        {statusForButtons === "Completed" && (
+          <View style={styles.completedHint}>
+            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>This booking is completed.</CustomText>
+          </View>
+        )}
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: color.background },
-  mapWrap: { flex: 1, minHeight: 280 },
+  mapWrap: { flex: 1 },
   mapPlaceholder: {
-    flex: 1,
-    minHeight: 280,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: color.neutral[200],
   },
-  actionsScroll: { flexGrow: 0 },
-  actionsContent: { padding: 16, paddingBottom: 24 },
+  buttonsSection: {
+    backgroundColor: color.background,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  actionsScroll: { maxHeight: 280 },
+  actionsContent: { paddingBottom: 8 },
   startButton: {
     backgroundColor: color.primary,
     paddingVertical: 14,
@@ -389,10 +462,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     elevation: 3,
   },
+  dropButton: {
+    backgroundColor: color.alertInfo,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    elevation: 3,
+  },
   startreach: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 10,
     marginTop: 10,
+  },
+  completedHint: {
+    paddingVertical: 16,
+    alignItems: "center",
   },
 });

@@ -4,14 +4,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
+  ScrollView,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
+import { API_BASE_URL } from "@env";
 
 // Dummy garage offset from current location (for demo map - same style as customer map)
 const GARAGE_OFFSET_LAT = 0.015;
@@ -28,6 +31,7 @@ export default function CustomerToGarageMap() {
   const route = useRoute();
   const { booking, estimatedTime = 0, actualTime = 0, carRegistrationNumber = "" } = route.params || {};
   const [location, setLocation] = useState(null);
+  const [startedToGarage, setStartedToGarage] = useState(false);
   const mapRef = useRef(null);
 
   // Dummy garage position: offset from current location, or fixed if no location yet
@@ -87,21 +91,35 @@ export default function CustomerToGarageMap() {
     };
   }, []);
 
-  const handleStartToGarage = () => {
+  const handleLetsStart = () => {
+    setStartedToGarage(true);
+    const dest = `${garageCoords.latitude},${garageCoords.longitude}`;
+    const url = location
+      ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
+      : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+    Linking.openURL(url).catch(() => {});
+  };
+
+  const handleNavigate = () => {
     if (location) {
       const url = `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${garageCoords.latitude},${garageCoords.longitude}&travelmode=driving`;
       Linking.openURL(url).catch(() => {});
     }
   };
 
-  const handleDropCar = () => {
-    const updatedBooking = {
-      ...booking,
-      ServiceStartedAt: booking?.ServiceStartedAt || new Date().toISOString(),
-      CarRegistrationNumber: carRegistrationNumber || booking?.CarRegistrationNumber || "",
-    };
-    navigation.navigate("ServiceEnd", {
-      booking: updatedBooking,
+  const handleReached = async () => {
+    const carPickupDeliveryId = Number(booking?.PickupDelivery?.Id ?? 0);
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        { carPickupDeliveryId, otpType: "Delivery" },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      // continue even if OTP call fails
+    }
+    navigation.navigate("DropCarAtGarage", {
+      booking,
       estimatedTime: estimatedTime || 0,
       actualTime: actualTime || 0,
       carRegistrationNumber: carRegistrationNumber || booking?.CarRegistrationNumber || "",
@@ -128,32 +146,46 @@ export default function CustomerToGarageMap() {
         >
           <Marker
             coordinate={garageCoords}
-            title="Garage"
+            title="Drop location"
             description="Drop car at garage"
             pinColor={color.primary}
           />
         </MapView>
       </View>
 
-      {carRegistrationNumber ? (
-        <View style={styles.regNumberBar}>
-          <Ionicons name="car" size={18} color={color.primary} style={{ marginRight: 8 }} />
-          <CustomText style={[globalStyles.f14Bold, { color: color.primary }]}>
-            Car registration: {carRegistrationNumber}
-          </CustomText>
-        </View>
-      ) : null}
+      <View style={styles.buttonsSection}>
+        <ScrollView
+          style={styles.actionsScroll}
+          contentContainerStyle={styles.actionsContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {carRegistrationNumber ? (
+            <View style={styles.regNumberBar}>
+              <Ionicons name="car" size={18} color={color.primary} style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, { color: color.primary }]}>
+                Car registration: {carRegistrationNumber}
+              </CustomText>
+            </View>
+          ) : null}
 
-      <View style={styles.actionsContent}>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleStartToGarage}>
-          <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Start to Garage</CustomText>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.dropButton} onPress={handleDropCar}>
-          <MaterialCommunityIcons name="car-side" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Drop Car</CustomText>
-        </TouchableOpacity>
+          {!startedToGarage ? (
+            <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
+              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.twoButtonsRow}>
+              <TouchableOpacity style={[styles.twoButton, styles.navButton]} onPress={handleNavigate}>
+                <Ionicons name="navigate" size={18} color="#fff" style={{ marginRight: 4 }} />
+                <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]} numberOfLines={1}>Navigate</CustomText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.twoButton, styles.reachedButton]} onPress={handleReached}>
+                <Ionicons name="flag" size={18} color="#fff" style={{ marginRight: 4 }} />
+                <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]} numberOfLines={1}>Reached</CustomText>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
       </View>
     </View>
   );
@@ -161,22 +193,35 @@ export default function CustomerToGarageMap() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: color.background },
-  mapWrap: { flex: 1, minHeight: 280 },
+  mapWrap: { flex: 1 },
+  buttonsSection: {
+    backgroundColor: color.background,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  actionsScroll: { maxHeight: 220 },
+  actionsContent: { paddingBottom: 8 },
   regNumberBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: color.white,
-    marginHorizontal: 16,
-    marginTop: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: color.primary,
+    marginBottom: 8,
   },
-  actionsContent: { padding: 16, paddingBottom: 24 },
-  primaryButton: {
+  startButton: {
     backgroundColor: color.primary,
     paddingVertical: 14,
     borderRadius: 10,
@@ -186,14 +231,28 @@ const styles = StyleSheet.create({
     marginTop: 10,
     elevation: 3,
   },
-  dropButton: {
-    backgroundColor: color.alertInfo,
-    paddingVertical: 14,
+  twoButtonsRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+    marginTop: 10,
+  },
+  twoButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    marginTop: 10,
     elevation: 3,
+  },
+  navButton: {
+    backgroundColor: color.alertInfo,
+  },
+  reachedButton: {
+    backgroundColor: color.yellow,
   },
 });

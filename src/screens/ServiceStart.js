@@ -28,6 +28,8 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 
 export default function ServiceStart() {
   const navigation = useNavigation();
@@ -56,7 +58,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [carPickedUp, setCarPickedUp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
 
 
@@ -348,30 +349,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     loadTimerState();
   }, [bookingId]);
 
-  // Check if car has been picked up based on CarPickUpDate or AsyncStorage
-  useEffect(() => {
-    const checkCarPickupState = async () => {
-      try {
-        // First check API data
-        if (booking.CarPickUpDate) {
-          setCarPickedUp(true);
-          await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
-          return;
-        }
-        
-        // Then check AsyncStorage for persisted state
-        const storedState = await AsyncStorage.getItem(`carPickedUp_${booking.BookingID}`);
-        if (storedState === "true") {
-          setCarPickedUp(true);
-        }
-      } catch (error) {
-        console.error("Error checking car pickup state:", error);
-      }
-    };
-    
-    checkCarPickupState();
-  }, [booking.CarPickUpDate, booking.BookingID]);
-
   // Check OTP sent state from AsyncStorage on mount
   useEffect(() => {
     const checkOtpSentState = async () => {
@@ -397,11 +374,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         const maxTimeSeconds = booking.TotalEstimatedDurationMinutes * 60;
         setTimerCompleted(elapsedFromAPI >= maxTimeSeconds);
       }
-      // Check CarPickUpDate when screen comes into focus
-      if (booking.CarPickUpDate) {
-        setCarPickedUp(true);
-      }
-    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes, booking.CarPickUpDate])
+    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes])
   );
 
   const formatTime = (totalSeconds) => {
@@ -542,6 +515,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
             </TouchableOpacity>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt2]} />
+          <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} />
           <View style={[globalStyles.flexrow]}>
             <View
               style={[
@@ -564,7 +538,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-                {bookingParam.BookingTrackID}
+                {getBookingDisplayData(bookingParam).bookingTrackID}
               </CustomText>
             </View>
             <View
@@ -582,7 +556,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-                {bookingParam.BookingDate}
+                {getBookingDisplayData(bookingParam).bookingDate}
               </CustomText>
             </View>
           </View>
@@ -603,7 +577,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.ml1,
                 ]}
               >
-{modelName || vehicleNumber || "N/A"}
+                {getBookingDisplayData(bookingParam).vehicleDisplay}
               </CustomText>
             </View>
             <View
@@ -615,7 +589,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
             >
               <Ionicons name="time-outline" size={16} color={color.primary} />
               <View style={{ flexDirection: "column" }}>
-                {bookingParam.TimeSlot?.split(",").map((slot, index) => (
+                {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
                   <CustomText
                     key={index}
                     style={[
@@ -728,54 +702,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 </View>
               )}
             </View>
-            {/* Car pickup step only for Service at Garage */}
-            {booking.ServiceType === "ServiceAtGarage" &&
-              !booking.CarPickUpDate &&
-              !carPickedUp && (
-              <TouchableOpacity
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgprimary,
-                  globalStyles.p4,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                ]}
-                onPress={async () => {
-                  const success = await updateTechnicianTracking("CarPickUp");
-                  if (success) {
-                    setCarPickedUp(true);
-                    try {
-                      await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
-                    } catch (error) {
-                      console.error("Error storing car pickup state:", error);
-                    }
-                  }
-                }}
-                disabled={carPickedUp}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Ionicons
-                    name="car"
-                    size={20}
-                    color={color.white}
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                  >
-                    Pickup Car
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* OTP + Submit: for Service at Garage show after car pickup; for Service at Home show directly */}
-            {((booking.ServiceType === "ServiceAtGarage" && (booking.CarPickUpDate || carPickedUp)) ||
-              booking.ServiceType !== "ServiceAtGarage") && (
-              <>
+            {/* OTP + Submit (Service at Home only - this screen is not used for Service at Garage) */}
+            <>
                 <CustomText
                   style={[
                     globalStyles.f16Light,
@@ -1012,20 +940,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       })
                     );
 
-                    // Service at Garage: show map to garage, then Drop Car → ServiceEnd
-                    if (booking.ServiceType === "ServiceAtGarage") {
-                      navigation.navigate("CustomerToGarageMap", {
-                        booking: updatedBooking,
-                        estimatedTime: estimatedTime,
-                        actualTime: actualTime,
-                      });
-                    } else {
-                      navigation.navigate("ServiceEnd", {
-                        booking: updatedBooking,
-                        estimatedTime: estimatedTime,
-                        actualTime: actualTime,
-                      });
-                    }
+                    // Service at Home only: go to ServiceEnd (garage flow uses separate screens)
+                    navigation.navigate("ServiceEnd", {
+                      booking: updatedBooking,
+                      estimatedTime: estimatedTime,
+                      actualTime: actualTime,
+                    });
                   }}
                 >
                   <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
@@ -1074,7 +994,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   </View>
                 </TouchableOpacity> */}
               </>
-            )}
             {/* <CustomText
               style={[
                 globalStyles.f28Medium,

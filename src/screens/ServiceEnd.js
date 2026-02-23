@@ -26,6 +26,8 @@ import axios from "axios";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { color } from "../styles/theme";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
@@ -130,23 +132,27 @@ export default function ServiceEnd() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const carPickupDeliveryId = booking?.PickupDelivery?.Id ?? 0;
+
   const uploadAfterServiceImages = async () => {
     if (!images.length) return;
     setIsUploadingImages(true);
     try {
       for (let i = 0; i < images.length; i++) {
         const formData = new FormData();
+        formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
+        formData.append("VehicleNumber", carRegistrationNumber || vehicleNumber || "");
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
-        formData.append("TechID", booking.TechID);
-        formData.append("ImageUploadType", "after");
+        formData.append("TechID", booking.TechID ?? "");
+        formData.append("ImageUploadType", "Delivery");
         formData.append("ImagesType", "tech");
         formData.append("ImageURL1", {
           uri: images[i],
           type: "image/jpeg",
-          name: `after_${i + 1}.jpg`,
+          name: `delivery_${i + 1}.jpg`,
         });
-        await fetch(`${API_BASE_URL}/ServiceImages/InsertServiceImages`, {
+        await fetch(`${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`, {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
           body: formData,
@@ -461,7 +467,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {booking.BookingTrackID}
+                  {getBookingDisplayData(booking).bookingTrackID}
                 </CustomText>
               </View>
               <View
@@ -479,10 +485,11 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {booking.BookingDate}
+                  {getBookingDisplayData(booking).bookingDate}
                 </CustomText>
               </View>
             </View>
+            <BookingPickDropRow booking={booking} style={globalStyles.mt2} />
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <View
                 style={[
@@ -500,7 +507,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {carRegistrationNumber ? `Reg: ${carRegistrationNumber}` : (modelName || vehicleNumber || "N/A")}
+                  {carRegistrationNumber ? `Reg: ${carRegistrationNumber}` : getBookingDisplayData(booking).vehicleDisplay}
                 </CustomText>
               </View>
               <View
@@ -512,7 +519,7 @@ export default function ServiceEnd() {
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {booking.TimeSlot?.split(",").map((slot, index) => (
+                  {(getBookingDisplayData(booking).timeSlot || "").split(",").map((slot, index) => (
                     <CustomText
                       key={index}
                       style={[

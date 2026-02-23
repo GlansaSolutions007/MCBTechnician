@@ -23,6 +23,8 @@ import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import { RefreshControl } from "react-native";
 import TrackingStatusIndicator from "../components/TrackingStatusIndicator";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 export default function Dashboard() {
   // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
@@ -782,6 +784,7 @@ export default function Dashboard() {
                       )) ||
                     0;
                   const amountPending = totalPrice - totalPaidAmount;
+                  const display = getBookingDisplayData(item);
 
                   return (
                   <Pressable
@@ -796,38 +799,41 @@ export default function Dashboard() {
                     ]}
                   >
                     {/* Status Indicator */}
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2, { flexWrap: "wrap", gap: 8 }]}>
                       <View style={[
                         globalStyles.p1,
                         globalStyles.ph2,
-                        { 
+                        {
                           borderRadius: 8,
-                          backgroundColor: 
+                          backgroundColor:
                             item.BookingStatus === "ServiceStarted" ? color.alertSuccess :
                             item.BookingStatus === "StartJourney" ? color.alertInfo :
                             item.BookingStatus === "Reached" ? color.primary :
                             lastPaymentStatus === "Pending" ? color.alertWarning :
-                            color.neutral[300]
-                        }
+                            color.neutral[300],
+                        },
                       ]}>
                         <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
                           {item.BookingStatus === "ServiceStarted" ? "In Progress" :
                            item.BookingStatus === "StartJourney" ? "On Journey" :
                            item.BookingStatus === "Reached" ? "Reached" :
                            lastPaymentStatus === "Pending" ? "Payment Pending" :
-                           item.BookingStatus}
+                           display.bookingStatus}
                         </CustomText>
                       </View>
+                      {display.totalPrice != null && (
+                        <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
+                          ₹{display.totalPrice}
+                        </CustomText>
+                      )}
                     </View>
 
                     <View style={[globalStyles.flexrow]}>
                       <View style={styles.avatarContainer}>
                         <Image
                           source={
-                            item.ProfileImage
-                              ? {
-                                  uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                                }
+                            display.profileImage
+                              ? { uri: `${API_BASE_URL_IMAGE}${display.profileImage}` }
                               : defaultAvatar
                           }
                           style={styles.avatar}
@@ -835,69 +841,28 @@ export default function Dashboard() {
                       </View>
 
                       <View style={[globalStyles.ml3, { flex: 1 }]}>
-                        <View
-                          style={[
-                            globalStyles.flexrow,
-                            globalStyles.justifysb,
-                            globalStyles.alineItemscenter,
-                          ]}
-                        >
-                          <CustomText
-                            style={[globalStyles.f16Bold, globalStyles.black]}
-                          >
-                            {item.CustomerName || item.Leads?.FullName || "N/A"}
+                        <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                          {display.customerName}
+                        </CustomText>
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
+                          <Ionicons name="call-outline" size={14} color={color.neutral[500]} />
+                          <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.ml1]}>
+                            {display.phoneNumber}
                           </CustomText>
                         </View>
-
-                        <View
-                          style={[
-                            globalStyles.flexrow,
-                            globalStyles.alineItemscenter,
-                            globalStyles.mt1,
-                          ]}
-                        >
-                          <Ionicons
-                            name="call-outline"
-                            size={14}
-                            color={color.neutral[500]}
-                          />
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt1]}>
+                          <Ionicons name="location-outline" size={14} color={color.neutral[500]} />
                           <CustomText
-                            style={[
-                              globalStyles.f12Medium,
-                              globalStyles.neutral500,
-                              globalStyles.ml1,
-                            ]}
+                            style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.ml1, { flex: 1 }]}
+                            numberOfLines={2}
                           >
-                            {item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}
-                          </CustomText>
-                        </View>
-
-                        <View
-                          style={[
-                            globalStyles.flexrow,
-                            globalStyles.alineItemscenter,
-                            globalStyles.mt1,
-                          ]}
-                        >
-                          <Ionicons
-                            name="location-outline"
-                            size={14}
-                            color={color.neutral[500]}
-                          />
-                          <CustomText
-                            style={[
-                              globalStyles.f10Regular,
-                              globalStyles.neutral500,
-                              globalStyles.ml1,
-                              { flex: 1 },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {item.FullAddress || item.Leads?.City || "N/A"}
+                            {display.fullAddress}
                           </CustomText>
                         </View>
                       </View>
                     </View>
+
+                    <BookingPickDropRow booking={item} style={globalStyles.mt2} />
 
                     <View style={[globalStyles.divider, globalStyles.mt3]} />
 
