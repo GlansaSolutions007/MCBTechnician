@@ -655,7 +655,7 @@ export default function Dashboard() {
             </View> */}
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="people-outline" />
-              <CustomText style={globalStyles.f12Bold}>
+              <CustomText style={globalStyles.f16Bold}>
                 {bookingCounts.ReportsCount} customers
               </CustomText>
             </View>

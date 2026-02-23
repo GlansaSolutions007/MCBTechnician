@@ -880,6 +880,7 @@ export default function CustomerInfo() {
 
   const CustomerInfoSkeleton = () => (
     <ScrollView style={[globalStyles.bgcontainer]}>
+      <StatusBar style="dark" />
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
           <SkeletonCustomerCard />
@@ -910,6 +911,7 @@ export default function CustomerInfo() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
           {/* <AvailabilityHeader /> */}
