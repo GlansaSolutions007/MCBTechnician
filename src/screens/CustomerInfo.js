@@ -165,10 +165,16 @@ export default function CustomerInfo() {
           if (!fromApi) return prev;
           // Don't overwrite optimistic StartJourney/Reached with stale status from API
           const statusOrder = { Confirmed: 1, StartJourney: 2, Reached: 3, ServiceStarted: 4, Completed: 5 };
-          const prevOrder = statusOrder[prev?.BookingStatus] || 0;
-          const apiOrder = statusOrder[fromApi.BookingStatus] || 0;
+          const prevOrder = statusOrder[prev?.PickupDelivery?.DriverStatus] || 0;
+          const apiOrder = statusOrder[fromApi?.PickupDelivery?.DriverStatus] || 0;
           if (apiOrder < prevOrder) {
-            const merged = { ...fromApi, BookingStatus: prev.BookingStatus };
+            const merged = { 
+              ...fromApi, 
+              PickupDelivery: {
+                ...fromApi.PickupDelivery,
+                DriverStatus: prev?.PickupDelivery?.DriverStatus || fromApi.PickupDelivery?.DriverStatus
+              }
+            };
             navigation.setParams({ booking: merged });
             return merged;
           }
@@ -582,8 +588,46 @@ export default function CustomerInfo() {
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
+    // Post to InsertTracking with status "pickup_started"
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "pickup_started" },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("InsertTracking Error:", e);
+    }
+
+    // Post to UpdateBookingStatus with action "pickup_started"
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "pickup_started",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_started");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
     // Update UI immediately (requested removal of updateTechnicianTracking)
-    const updatedBooking = { ...booking, BookingStatus: "StartJourney" };
+    const updatedBooking = { 
+      ...booking, 
+      PickupDelivery: {
+        ...booking.PickupDelivery,
+        DriverStatus: "pickup_started"
+      }
+    };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
     onRefresh();
@@ -596,8 +640,46 @@ export default function CustomerInfo() {
   };
 
   const Reached = async () => {
+    // Post to InsertTracking with status "pickup_reached"
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "pickup_reached" },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("InsertTracking Error:", e);
+    }
+
+    // Post to UpdateBookingStatus with action "pickup_reached"
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "pickup_reached",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_reached");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
     // Requested removal of updateTechnicianTracking
-    const updatedBooking = { ...booking, BookingStatus: "Reached" };
+    const updatedBooking = { 
+      ...booking, 
+      PickupDelivery: {
+        ...booking.PickupDelivery,
+        DriverStatus: "pickup_reached"
+      }
+    };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
     onRefresh();
@@ -947,31 +1029,8 @@ export default function CustomerInfo() {
               const display = getBookingDisplayData(booking);
               return (
                 <>
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2, { flexWrap: "wrap", gap: 8 }]}>
-                    <View
-                      style={[
-                        globalStyles.p1,
-                        globalStyles.ph2,
-                        {
-                          borderRadius: 8,
-                          backgroundColor:
-                            booking.BookingStatus === "Completed" ? color.alertSuccess :
-                            booking.BookingStatus === "Reached" ? color.primary :
-                            color.alertInfo,
-                        },
-                      ]}
-                    >
-                      <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
-                        {display.bookingStatus}
-                      </CustomText>
-                    </View>
-                    {display.totalPrice != null && (
-                      <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
-                        ₹{display.totalPrice}
-                      </CustomText>
-                    )}
-                  </View>
-                  <BookingPickDropRow booking={booking} style={globalStyles.mt2} />
+                  
+                  {/* <BookingPickDropRow booking={booking} style={globalStyles.mt2} /> */}
                   <View style={[globalStyles.flexrow, globalStyles.mt2]}>
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
                       <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
@@ -1569,9 +1628,9 @@ export default function CustomerInfo() {
               {/* {(booking.BookingStatus === "StartJourney" ||
                 booking.BookingStatus === "ServiceStarted") && ( */}
               {/* <View style={styles.startreach}> */}
-              {displayBooking.BookingStatus !== "Completed" && (
+              {displayBooking?.PickupDelivery?.DriverStatus !== "ServiceComplete" && (
                   <>
-                    {displayBooking.BookingStatus === "Confirmed" && (
+                    {displayBooking?.PickupDelivery?.DriverStatus === "assigned" && (
                       <TouchableOpacity
                         style={styles.startButton}
                         onPress={handleStartRide}
@@ -1590,8 +1649,8 @@ export default function CustomerInfo() {
                       </TouchableOpacity>
                     )}
 
-                    {(displayBooking.BookingStatus === "StartJourney" ||
-                      displayBooking.BookingStatus === "ServiceStarted") && (
+                    {(displayBooking?.PickupDelivery?.DriverStatus === "pickup_started" ||
+                      displayBooking?.PickupDelivery?.DriverStatus === "ServiceStart") && (
                       <View style={styles.startreach}>
                         <TouchableOpacity
                           style={[styles.startButton, { flex: 1 }]}
@@ -1610,7 +1669,7 @@ export default function CustomerInfo() {
                           </CustomText>
                         </TouchableOpacity>
 
-                        {displayBooking.BookingStatus === "StartJourney" && (
+                        {displayBooking?.PickupDelivery?.DriverStatus === "pickup_started" && (
                           <TouchableOpacity
                             style={[styles.ReachedButton, { flex: 1 }]}
                             onPress={Reached}
@@ -1637,9 +1696,9 @@ export default function CustomerInfo() {
             </View>
             {(() => {
               const currentBooking = displayBooking;
-              const bookingStatus = currentBooking.BookingStatus;
+              const DriverStatus = currentBooking?.PickupDelivery?.DriverStatus;
               
-              if (bookingStatus === "Reached") {
+              if (DriverStatus === "pickup_reached") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceStart(currentBooking)}
@@ -1659,7 +1718,7 @@ export default function CustomerInfo() {
                 );
               }
               
-              if (bookingStatus === "ServiceStarted") {
+              if (DriverStatus === "ServiceStart") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceEnd(currentBooking)}

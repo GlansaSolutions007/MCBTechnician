@@ -463,7 +463,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
             </TouchableOpacity>
           </View>
           <View style={[globalStyles.divider, globalStyles.mt2]} />
-          <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} />
+          {/* <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} /> */}
           <View style={[globalStyles.flexrow]}>
             <View
               style={[
@@ -898,89 +898,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 </TouchableOpacity>
 
               </>
-            {/* <CustomText
-              style={[
-                globalStyles.f28Medium,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              Hey{" "}
-              <CustomText style={[globalStyles.f28Bold, globalStyles.primary]}>
-                Buddy
-              </CustomText>
-            </CustomText>
-            <CustomText
-              style={[
-                globalStyles.f12Regular,
-                globalStyles.neutral500,
-                globalStyles.mt2,
-              ]}
-            >
-              If the estimation time exceeded. Please feel free to mention the
-              reason
-            </CustomText>
-
-            <TextInput
-              style={[globalStyles.textArea, globalStyles.mt3]}
-              placeholder="eg. Sick leave..., Going to village"
-              value={reason}
-              onChangeText={setReason}
-              maxLength={100}
-              multiline
-            />
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifycenter,
-                globalStyles.mt4,
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  {
-                    backgroundColor: color.fullredLight,
-                    padding: 16,
-                    borderRadius: 10,
-                    marginRight: 8,
-                  },
-                ]}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.textWhite,
-                    globalStyles.textac,
-                    globalStyles.flexrow,
-                    globalStyles.justifycenter,
-                    globalStyles.alineItemscenter,
-                  ]}
-                >
-                  Cancel service
-                </CustomText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  {
-                    backgroundColor: "#000",
-                    padding: 16,
-                    borderRadius: 10,
-                    marginLeft: 8,
-                  },
-                ]}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Image source={helpcall} />
-                  <CustomText style={globalStyles.textWhite}>
-                    Call help line
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            </View> */}
             <View>
               <TouchableOpacity
                 style={[
@@ -1020,112 +937,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
         {timerStarted && (
           <View>
-            {/* <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.mt4,
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.borderRadiuslarge,
-              ]}
-            >
-              <View
-                style={[
-                  globalStyles.alineSelfcenter,
-                  globalStyles.flexrow,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  Estimated Time:
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  {" "}
-                  {booking.TotalEstimatedDurationMinutes
-                    ? `${Math.floor(
-                        booking.TotalEstimatedDurationMinutes / 60
-                      )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
-                    : "N/A"}
-                </CustomText>
-              </View>
-            </View> */}
-
-            {/* <View style={{ alignItems: "center", marginTop: 30 }}>
-              <AnimatedCircularProgress
-                size={240}
-                width={10}
-                fill={Math.min((elapsedTime / MAX_TIME) * 100, 100)}
-                tintColor={elapsedTime > MAX_TIME ? "red" : color.primary}
-                backgroundColor={color.neutral[200]}
-                rotation={0}
-                lineCap="round"
-              >
-                {() => (
-                  <>
-                    <CustomText
-                      style={[globalStyles.f12Medium, { color: color.black }]}
-                    >
-                      {booking.TotalEstimatedDurationMinutes
-                        ? `${Math.floor(
-                            booking.TotalEstimatedDurationMinutes / 60
-                          )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
-                        : "N/A"}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Medium, { color: color.black }]}
-                    >
-                      Service Timing
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f28ExtraBold, { marginTop: 5 }]}
-                    >
-                      {formatTime(elapsedTime)}
-                    </CustomText>
-                  </>
-                )}
-              </AnimatedCircularProgress>
-
-              {timerCompleted && (
-                <>
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.w100,
-                      globalStyles.justifysb,
-                      globalStyles.mt4,
-                      globalStyles.mb2,
-                      globalStyles.bgprimary,
-                      globalStyles.p4,
-                      globalStyles.borderRadiuslarge,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        globalStyles.alineSelfcenter,
-                        globalStyles.flexrow,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
-                      <CustomText
-                        style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                      >
-                        Total Time Taken: {formatTime(elapsedTime)}
-                      </CustomText>
-                    </View>
-                  </View>
-                </>
-              )}
-            </View> */}
-
-          
-          
-
-
             <TouchableOpacity
               onPress={async () => {
                 navigation.navigate("ServiceEnd", {
