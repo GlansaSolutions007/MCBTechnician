@@ -277,36 +277,6 @@ export default function ServiceEnd() {
     }
   };
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: actionType,
-          bookingOTP: otp,
-        }
-      );
-
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
-        setModalVisible(true);
-        return false;
-      }
-      setOtpValid(true);
-      return true;
-    } catch (error) {
-      setOtpValid(false);
-      setModalMessage("Invalid OTP. Please try again.");
-      setModalVisible(true);
-      return false;
-    }
-  };
-
   const Completedservice = async () => {
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
@@ -335,9 +305,17 @@ export default function ServiceEnd() {
 
     // If PaymentStatus is "Success", update technician tracking and navigate to dashboard
     if (paymentStatus === "Success") {
-      const statusUpdated = await updateTechnicianTracking("Completed");
-      if (!statusUpdated) {
-        return;
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          {
+            pickDropId: Number(carPickupDeliveryId),
+            status: "completed",
+          },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } catch (e) {
+        console.error("InsertTracking Completed Error:", e);
       }
       navigation.reset({
         index: 0,

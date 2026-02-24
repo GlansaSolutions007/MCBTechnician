@@ -146,8 +146,37 @@ const fetchBookings = async () => {
     navigation.navigate("customerInfo", { booking });
   };
   const openBooking = (item) => {
+    // Calculate estimated and actual time to pass to next screens
+    const estimatedTime = item.TotalEstimatedDurationMinutes
+      ? item.TotalEstimatedDurationMinutes * 60
+      : 0;
+
+    let actualTime = 0;
+    if (item.ServiceStartedAt) {
+      const startTime = new Date(item.ServiceStartedAt);
+      actualTime = Math.floor((new Date() - startTime) / 1000);
+    }
+
+    const driverStatus = item.PickupDelivery?.DriverStatus;
+
     if (item.ServiceType === "ServiceAtGarage") {
-      navigation.navigate("ServiceAtGarageMap", { booking: item });
+      if (driverStatus === "car_picked" || driverStatus === "in_transit") {
+        navigation.navigate("CustomerToGarageMap", {
+          booking: item,
+          estimatedTime,
+          actualTime,
+          carRegistrationNumber: item.CarRegistrationNumber || "",
+        });
+      } else if (driverStatus === "drop_reached") {
+        navigation.navigate("DropCarAtGarage", {
+          booking: item,
+          estimatedTime,
+          actualTime,
+          carRegistrationNumber: item.CarRegistrationNumber || "",
+        });
+      } else {
+        navigation.navigate("ServiceAtGarageMap", { booking: item });
+      }
     } else {
       customerInfo(item);
     }
@@ -370,7 +399,7 @@ const onRefresh = async () => {
               key={`${item.BookingID ?? "booking"}-${index}`}
 
               style={[
-                item.BookingStatus === 'Completed' ? globalStyles.bgneutral100 : globalStyles.bgwhite,
+                item.PickupDelivery?.DriverStatus === 'completed' ? globalStyles.bgneutral100 : globalStyles.bgwhite,
                 globalStyles.p4,
                 globalStyles.mt4,
                 isAnimating ? globalStyles.radius : globalStyles.card,
@@ -379,7 +408,7 @@ const onRefresh = async () => {
             >
               <View style={[
                 styles.accent,
-                { backgroundColor: item.BookingStatus === 'Completed' ? color.alertError : color.primary }
+                { backgroundColor: item.PickupDelivery?.DriverStatus === 'completed' ? color.alertError : color.primary }
               ]} />
               <View style={styles.cardContent}>
                 <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3, { flexWrap: "wrap", gap: 8 }]}>
@@ -393,10 +422,11 @@ const onRefresh = async () => {
                   </View>
                   <View style={[
                     styles.statusChip,
-                    { backgroundColor: item.BookingStatus === 'Completed' ? color.alertSuccess : item.BookingStatus === 'Reached' ? color.alertInfo : color.primary }
+                    { backgroundColor: item.PickupDelivery?.DriverStatus === 'completed' ? color.alertSuccess : item.PickupDelivery?.DriverStatus === 'pickup_reached' ? color.alertInfo : color.primary }
                   ]}>
                     <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
-                      {item.BookingStatus || "Pending"}
+                      {/* {item.BookingStatus || "No Status"} */}
+                      {item.PickupDelivery?.DriverStatus || "No Status"}
                     </CustomText>
                   </View>
                   {/* {item.TotalPrice != null && item.TotalPrice > 0 && (

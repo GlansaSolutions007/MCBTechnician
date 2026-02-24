@@ -180,7 +180,37 @@ export default function DropCarAtGarage() {
         setVerifyingComplete(false);
         return;
       }
-      // OTP valid — post images to api/ServiceImages/InsertPickupDeliveryImages (ImageUploadType=Delivery)
+
+      // OTP valid — Post to InsertTracking with status "completed"
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: Number(carPickupDeliveryId) || 0, status: "completed" },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("Completed status posted successfully");
+
+      // Post to UpdateBookingStatus with action "completed"
+      try {
+        const statusPayload = {
+          bookingID: Number(booking?.BookingID || 0),
+          serviceType: booking?.ServiceType || "ServiceAtGarage",
+          routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+          action: "completed",
+          updatedBy: Number(booking?.TechID || 3),
+          role: "Technician",
+        };
+        console.log("UpdateBookingStatus Payload (completed):", JSON.stringify(statusPayload, null, 2));
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+          statusPayload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        console.log("UpdateBookingStatus posted for completed");
+      } catch (e) {
+        console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+      }
+
+      // Post images to api/ServiceImages/InsertPickupDeliveryImages (ImageUploadType=Delivery)
       setIsUploading(true);
       await uploadDeliveryImages();
       setIsUploading(false);

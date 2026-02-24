@@ -61,13 +61,7 @@ export default function ServiceAtGarageMap() {
   const carPickupDone = !!(
     displayBooking?.CarPickUpDate ?? displayBooking?.CarPickupDate
   );
-  const statusForButtons =
-    displayBooking?.BookingStatus === "StartJourney" ||
-    displayBooking?.BookingStatus === "ServiceStarted" ||
-    displayBooking?.BookingStatus === "Reached" ||
-    displayBooking?.BookingStatus === "Completed"
-      ? displayBooking.BookingStatus
-      : "Confirmed";
+  const statusForButtons = displayBooking?.PickupDelivery?.DriverStatus;
 
   const fullAddress = booking?.FullAddress || booking?.Leads?.FullAddress || booking?.Leads?.City || "";
   const rawLat = booking?.latitude ?? booking?.Latitude;
@@ -143,10 +137,21 @@ export default function ServiceAtGarageMap() {
         const fromApi = data.find((b) => b.BookingID === booking.BookingID);
         if (fromApi) {
           setUpdatedBooking((prev) => {
-            const statusOrder = { Confirmed: 1, StartJourney: 2, Reached: 3, ServiceStarted: 4, Completed: 5 };
-            const prevOrder = statusOrder[prev?.BookingStatus] ?? 0;
-            const apiOrder = statusOrder[fromApi.BookingStatus] ?? 0;
-            if (apiOrder < prevOrder) return { ...fromApi, BookingStatus: prev.BookingStatus };
+            const statusOrder = {
+              assigned: 1,
+              pickup_started: 2,
+              pickup_reached: 3,
+              car_picked: 4,
+              in_transit: 5,
+              drop_reached: 6,
+              completed: 7,
+              cancelled: 8,
+            };
+            const prevStatus = prev?.PickupDelivery?.DriverStatus || "assigned";
+            const apiStatus = fromApi?.PickupDelivery?.DriverStatus || "assigned";
+            const prevOrder = statusOrder[prevStatus] ?? 0;
+            const apiOrder = statusOrder[apiStatus] ?? 0;
+            if (apiOrder < prevOrder) return { ...fromApi, PickupDelivery: { ...fromApi.PickupDelivery, DriverStatus: prevStatus } };
             return fromApi;
           });
         }
@@ -201,23 +206,6 @@ export default function ServiceAtGarageMap() {
     if (location && dest) fetchRoute(location, dest);
   }, [location, addressLocation, destination]);
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        { bookingID: Number(booking.BookingID), actionType },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      if (res?.data?.status === false || res?.data?.isValid === false) {
-        Alert.alert("Error", res?.data?.message || `Failed to update ${actionType}.`);
-        return false;
-      }
-      return true;
-    } catch (err) {
-      Alert.alert("Error", err?.response?.data?.message || `Failed to send ${actionType}.`);
-      return false;
-    }
-  };
 
   const openGoogleMaps = async () => {
     try {
@@ -235,9 +223,46 @@ export default function ServiceAtGarageMap() {
   };
 
   const handleStartRide = async () => {
-    const ok = await updateTechnicianTracking("StartJourney");
-    if (!ok) return;
-    const next = { ...booking, BookingStatus: "StartJourney" };
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        {
+          pickDropId: Number(displayBooking?.PickupDelivery?.Id || 0),
+          status: "pickup_started",
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("InsertTracking Error:", e);
+    }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "pickup_started",
+        updatedBy: Number(displayBooking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_started");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
+    const next = {
+      ...booking,
+      PickupDelivery: {
+        ...booking.PickupDelivery,
+        DriverStatus: "pickup_started",
+      },
+    };
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
     onRefresh();
@@ -247,20 +272,62 @@ export default function ServiceAtGarageMap() {
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
-    const ok = await updateTechnicianTracking("Reached");
-    if (!ok) return;
     const carPickupDeliveryId = Number(displayBooking?.PickupDelivery?.Id ?? 0);
     const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
     try {
       await axios.post(
-        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        { carPickupDeliveryId, otpType: "Pickup", phoneNumber: String(phoneNumber).trim() || undefined },
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        {
+          pickDropId: Number(carPickupDeliveryId),
+          status: "pickup_reached",
+        },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (e) {
-      // continue even if OTP call fails
+      console.error("InsertTracking Error:", e);
     }
-    const next = { ...booking, BookingStatus: "Reached" };
+
+    try {
+      const statusPayload = {
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "pickup_reached",
+        updatedBy: Number(displayBooking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_reached");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
+    try {
+      console.log("GenerateOTP==================", carPickupDeliveryId, "Pickup", phoneNumber);
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        {
+          carPickupDeliveryId,
+          otpType: "Pickup",
+          phoneNumber: String(phoneNumber).trim(),
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("GenerateOTP Error:", e);
+    }
+    const next = {
+      ...booking,
+      PickupDelivery: {
+        ...booking.PickupDelivery,
+        DriverStatus: "pickup_reached",
+      },
+    };
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
     onRefresh();
@@ -276,12 +343,36 @@ export default function ServiceAtGarageMap() {
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        { carPickupDeliveryId, otpType: "Delivery", phoneNumber: String(phoneNumber).trim() || undefined },
+        {
+          carPickupDeliveryId,
+          otpType: "Delivery",
+        },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (e) {
       // continue even if OTP call fails
     }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "in_transit",
+        updatedBy: Number(displayBooking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (in_transit):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for in_transit");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,
       estimatedTime: estimatedTime || 0,
@@ -360,7 +451,7 @@ export default function ServiceAtGarageMap() {
           showsVerticalScrollIndicator={false}
         >
         {/* First: only Let's Start. On click → update to StartJourney, then show only Navigate + Reached */}
-        {statusForButtons === "Confirmed" && (
+        {statusForButtons === "assigned" && (
           <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
             <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
             <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
@@ -368,7 +459,7 @@ export default function ServiceAtGarageMap() {
         )}
 
         {/* StartJourney / ServiceStarted: only Navigate and Reached */}
-        {(statusForButtons === "StartJourney" || statusForButtons === "ServiceStarted") && (
+        {statusForButtons === "pickup_started" && (
           <View style={styles.startreach}>
             <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
               <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -382,7 +473,7 @@ export default function ServiceAtGarageMap() {
         )}
 
         {/* Reached: hide Navigate/Reached, show Pickup Car (or Drop Car at Garage if pickup done) */}
-        {statusForButtons === "Reached" && !carPickupDone && (
+        {statusForButtons === "pickup_reached" && !carPickupDone && (
           <TouchableOpacity
             style={[styles.startButton, { marginTop: 10 }]}
             onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
@@ -391,16 +482,19 @@ export default function ServiceAtGarageMap() {
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
-        {statusForButtons === "Reached" && carPickupDone && (
-          <TouchableOpacity style={[styles.dropButton, { marginTop: 10 }]} onPress={handleDropCarAtGarage}>
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Drop Car at Garage</CustomText>
+        {statusForButtons === "pickup_reached" && carPickupDone && (
+        <TouchableOpacity
+            style={[styles.startButton, { marginTop: 10 }]}
+            onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
 
-        {statusForButtons === "Completed" && (
+        {statusForButtons === "completed" && (
           <View style={styles.completedHint}>
-            <CustomText style={[globalStyles.f14Regular, globalStyles.neutral500]}>This booking is completed.</CustomText>
+            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>This booking is completed.</CustomText>
           </View>
         )}
         </ScrollView>

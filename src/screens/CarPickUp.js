@@ -111,6 +111,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Pickup",
+        phoneNumber: String(phoneNumber).trim(),
       };
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
@@ -863,15 +864,44 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
                     // Then update tracking: CarPickUp, ServiceStarted
                     if (!booking.CarPickUpDate && !carPickedUp) {
-                      const carPickUpOk = await updateTechnicianTracking("CarPickUp");
-                      if (!carPickUpOk) return;
+                      try {
+                        await axios.post(
+                          `${API_BASE_URL}ServiceImages/InsertTracking`,
+                          {
+                            pickDropId: Number(carPickupDeliveryId) || 0,
+                            status: "car_picked",
+                          },
+                          { headers: { "Content-Type": "application/json" } }
+                        );
+                      } catch (e) {
+                        console.error("InsertTracking Error:", e);
+                      }
+
+                      try {
+                        const statusPayload = {
+                          bookingID: Number(booking?.BookingID || 0),
+                          serviceType: booking?.ServiceType || "ServiceAtGarage",
+                          routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+                          action: "car_picked",
+                          updatedBy: Number(booking?.TechID || 3),
+                          role: "Technician",
+                        };
+                        console.log("UpdateBookingStatus Payload (car_picked):", JSON.stringify(statusPayload, null, 2));
+                        await axios.post(
+                          `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+                          statusPayload,
+                          { headers: { "Content-Type": "application/json" } }
+                        );
+                        console.log("UpdateBookingStatus posted for car_picked");
+                      } catch (e) {
+                        console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+                      }
+
                       setCarPickedUp(true);
                       try {
                         await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
                       } catch (e) {}
                     }
-                    const isValid = await updateTechnicianTracking("ServiceStarted");
-                    if (!isValid) return;
 
                     // Calculate estimated and actual time
                     const estimatedTime = booking.TotalEstimatedDurationMinutes

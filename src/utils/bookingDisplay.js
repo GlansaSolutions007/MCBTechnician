@@ -44,7 +44,8 @@ export function getBookingDisplayData(booking) {
       (booking.PickupDelivery?.PickupTime
         ? `Pick ${booking.PickupDelivery.PickupTime}`
         : "—"),
-    bookingStatus: booking.BookingStatus || "Pending",
+    bookingStatus: booking.PickupDelivery?.DriverStatus || booking.BookingStatus || "Pending",
+    driverStatus: booking.PickupDelivery?.DriverStatus || "assigned",
     totalPrice:
       booking.TotalPrice != null && booking.TotalPrice > 0
         ? booking.TotalPrice

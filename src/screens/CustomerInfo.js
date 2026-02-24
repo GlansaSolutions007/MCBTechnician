@@ -569,40 +569,6 @@ export default function CustomerInfo() {
     }
   };
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const payload = {
-        bookingID: Number(bookingId),
-        actionType: actionType,
-      };
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        
-        payload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("response====================",response.data);
-      console.log("response====================",`${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`);
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        Alert.alert(
-          "Error",
-          response?.data?.message || `Failed to update ${actionType}.`
-        );
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || `Failed to send ${actionType} action.`
-      );
-      return false;
-    }
-  };
 
   const handleStartRidedirect = async () => {
     onRefresh();
@@ -616,9 +582,7 @@ export default function CustomerInfo() {
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
-    const success = await updateTechnicianTracking("StartJourney");
-    if (!success) return;
-    // Update UI immediately: status StartJourney → show Reached button (API may not return updated status yet)
+    // Update UI immediately (requested removal of updateTechnicianTracking)
     const updatedBooking = { ...booking, BookingStatus: "StartJourney" };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
@@ -632,8 +596,7 @@ export default function CustomerInfo() {
   };
 
   const Reached = async () => {
-    const success = await updateTechnicianTracking("Reached");
-    if (!success) return;
+    // Requested removal of updateTechnicianTracking
     const updatedBooking = { ...booking, BookingStatus: "Reached" };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);

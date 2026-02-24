@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,7 +9,6 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
-import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import CustomText from "../components/CustomText";
@@ -16,7 +16,7 @@ import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import { API_BASE_URL } from "@env";
 
-// Dummy garage offset from current location (for demo map - same style as customer map)
+// Dummy garage offset from current location
 const GARAGE_OFFSET_LAT = 0.015;
 const GARAGE_OFFSET_LNG = 0.015;
 const DEFAULT_REGION = {
@@ -31,10 +31,12 @@ export default function CustomerToGarageMap() {
   const route = useRoute();
   const { booking, estimatedTime = 0, actualTime = 0, carRegistrationNumber = "" } = route.params || {};
   const [location, setLocation] = useState(null);
-  const [startedToGarage, setStartedToGarage] = useState(false);
+  const [updatedBooking, setUpdatedBooking] = useState(booking);
+  const displayBooking = updatedBooking || booking;
+  const driverStatus = displayBooking?.PickupDelivery?.DriverStatus || "car_picked";
   const mapRef = useRef(null);
 
-  // Dummy garage position: offset from current location, or fixed if no location yet
+  // Dummy garage position
   const garageCoords = location
     ? {
         latitude: location.latitude + GARAGE_OFFSET_LAT,
@@ -58,41 +60,77 @@ export default function CustomerToGarageMap() {
         longitude: (DEFAULT_REGION.longitude + garageCoords.longitude) / 2,
       };
 
+  const onRefresh = async () => {
+    if (!booking?.BookingID || !booking?.TechID) return;
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${booking.TechID}`
+      );
+      if (response.data && response.data.length > 0) {
+        const fromApi = response.data.find((b) => b.BookingID === booking.BookingID);
+        if (fromApi) {
+          setUpdatedBooking(fromApi);
+          navigation.setParams({ booking: fromApi });
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing booking:", error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+    }, [booking?.BookingID])
+  );
+
   useEffect(() => {
-    let sub = null;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") return;
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const coords = {
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        };
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
         setLocation(coords);
         if (mapRef.current?.animateToRegion) {
-          mapRef.current.animateToRegion(
-            {
-              ...coords,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
-            },
-            500
-          );
+          mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.05, longitudeDelta: 0.05 }, 500);
         }
       } catch (e) {}
     })();
-    return () => {
-      try {
-        sub?.remove?.();
-      } catch (_) {}
-    };
   }, []);
 
-  const handleLetsStart = () => {
-    setStartedToGarage(true);
+  const handleLetsStart = async () => {
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "in_transit" },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      await onRefresh();
+    } catch (e) {
+      console.error("InsertTracking Error:", e);
+    }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "in_transit",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (in_transit):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for in_transit");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
     const dest = `${garageCoords.latitude},${garageCoords.longitude}`;
     const url = location
       ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
@@ -111,17 +149,51 @@ export default function CustomerToGarageMap() {
     const carPickupDeliveryId = Number(booking?.PickupDelivery?.Id ?? 0);
     try {
       await axios.post(
-        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        { carPickupDeliveryId, otpType: "Delivery" },
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: carPickupDeliveryId, status: "drop_reached" },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (e) {
-      // continue even if OTP call fails
+      console.error("InsertTracking Error:", e);
     }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        action: "drop_reached",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (drop_reached):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for drop_reached");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
+    try {
+      const payload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId),
+        otpType: "Delivery",
+        phoneNumber: displayBooking?.PickupDelivery?.DropAt?.PersonNumber
+      };
+      const response = await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("OTP ================>>>>>>>>>>", payload);
+    } catch (e) {}
     navigation.navigate("DropCarAtGarage", {
-      booking,
-      estimatedTime: estimatedTime || 0,
-      actualTime: actualTime || 0,
+      booking: displayBooking,
+      estimatedTime,
+      actualTime,
       carRegistrationNumber: carRegistrationNumber || booking?.CarRegistrationNumber || "",
     });
   };
@@ -168,12 +240,14 @@ export default function CustomerToGarageMap() {
             </View>
           ) : null}
 
-          {!startedToGarage ? (
+          {driverStatus === "car_picked" && (
             <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
               <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
               <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
             </TouchableOpacity>
-          ) : (
+          )}
+
+          {driverStatus === "in_transit" && (
             <View style={styles.twoButtonsRow}>
               <TouchableOpacity style={[styles.twoButton, styles.navButton]} onPress={handleNavigate}>
                 <Ionicons name="navigate" size={18} color="#fff" style={{ marginRight: 4 }} />

@@ -388,58 +388,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const payload = {
-        bookingID: Number(bookingId),
-        actionType: actionType,
-      };
-      console.log("updateTechnicianTracking123333333", updateTechnicianTracking);
-      console.log("actionType", actionType);
-      console.log("bookingId", bookingId);
-      // Only include OTP if it exists (for actions that require it)
-      if (otp) {
-        payload.bookingOTP = otp;
-      }
-
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        payload
-      );
-
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        // Only show OTP error for actions that require OTP
-        if (actionType === "ServiceStarted") {
-          setOtpValid(false);
-          setModalMessage("Invalid OTP. Please try again.");
-          setModalVisible(true);
-        } else {
-          setModalMessage(response?.data?.message || "Action failed. Please try again.");
-          setModalVisible(true);
-        }
-        return false;
-      }
-      
-      // Only set OTP valid for ServiceStarted action
-      if (actionType === "ServiceStarted") {
-        setOtpValid(true);
-      }
-      return true;
-    } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
-      if (actionType === "ServiceStarted") {
-        setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
-      } else {
-        setModalMessage("Action failed. Please try again.");
-      }
-      setModalVisible(true);
-      return false;
-    }
-  };
 
   return (
     <KeyboardAvoidingView
@@ -848,13 +796,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Validation: Verify OTP and start service
-                    const isValid = await updateTechnicianTracking(
-                      "ServiceStarted"
-                    );
-                    if (!isValid) {
-                      return;
-                    }
+                    // Validation: OTP bypass (requested removal of updateTechnicianTracking)
+                    const isValid = true;
+                    setOtpValid(true);
 
                     // Upload images if any (wait for completion before navigating)
                     if (images.length > 0) {
@@ -953,46 +897,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   </CustomText>
                 </TouchableOpacity>
 
-                {/* <TouchableOpacity
-                  style={[
-                    globalStyles.mt2,
-                    globalStyles.bgwhite,
-                    globalStyles.p3,
-                    globalStyles.borderRadiuslarge,
-                    {
-                      width: "100%",
-                      minHeight: 45,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderWidth: 1,
-                      borderColor: color.primary,
-                      marginBottom: keyboardVisible ? 20 : 0,
-                    },
-                  ]}
-                  onPress={async () => {
-                    const success = await updateTechnicianTracking("BookingStartOTP");
-                    if (success) {
-                      setModalMessage("OTP has been resent successfully");
-                      setModalVisible(true);
-                    }
-                  }}
-                >
-                  <View
-                    style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                  >
-                    <Ionicons
-                      name="refresh"
-                      size={18}
-                      color={color.primary}
-                      style={{ marginRight: 8 }}
-                    />
-                    <CustomText
-                      style={[globalStyles.f14Bold, globalStyles.primary]}
-                    >
-                      Resend OTP
-                    </CustomText>
-                  </View>
-                </TouchableOpacity> */}
               </>
             {/* <CustomText
               style={[
