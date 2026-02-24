@@ -54,6 +54,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [error, setError] = useState("");
   const [carRegistrationNumber, setCarRegistrationNumber] = useState("");
   const [registrationError, setRegistrationError] = useState("");
+  const [imageError, setImageError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
@@ -158,6 +159,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
       setImages((prev) => [...prev, ...selected].slice(0, 6));
+      setImageError("");
     }
   };
 
@@ -573,18 +575,27 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   globalStyles.mt1,
                 ]}
               >
-                Upload up to 5 images and enter OTP to start
+                Upload at least one image (up to 5) <CustomText style={{ color: color.alertError }}>*</CustomText> and enter OTP to start
               </CustomText>
               <TouchableOpacity
-                style={[globalStyles.inputBox, globalStyles.mt3]}
-                onPress={pickImage}
+                style={[
+                  globalStyles.inputBox,
+                  globalStyles.mt3,
+                  imageError ? { borderColor: color.alertError, borderWidth: 2 } : {},
+                ]}
+                onPress={() => { setImageError(""); pickImage(); }}
               >
                 <CustomText
                   style={[globalStyles.f16Light, globalStyles.neutral500]}
                 >
-                  Choose Files
+                  Choose Files {images.length > 0 ? `(${images.length} selected)` : ""}
                 </CustomText>
               </TouchableOpacity>
+              {imageError ? (
+                <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
+                  {imageError}
+                </CustomText>
+              ) : null}
 
               {images.length > 0 && (
                 <View>
@@ -764,6 +775,13 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     },
                   ]}
                   onPress={async () => {
+                    // Validation: At least one image required (Pre-service checklist)
+                    if (!images.length || images.length < 1) {
+                      setImageError("Please upload at least one image");
+                      return;
+                    }
+                    setImageError("");
+
                     // Validation: Car registration number is mandatory
                     const regNo = carRegistrationNumber?.trim() || "";
                     if (!regNo) {
@@ -778,7 +796,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Only on Submit: POST OTP and verify via api/ServiceImages/VerifyOTP
+                    // Verify OTP — if invalid: show error only; do not post images, do not remove selected images
                     try {
                       const verifyPayload = {
                         carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
@@ -794,17 +812,56 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         setOtpValid(false);
                         setModalMessage(verifyRes?.data?.message || "Invalid OTP. Please try again.");
                         setModalVisible(true);
-                        return;
+                        return; // do not upload images, do not clear images
                       }
                       setOtpValid(true);
                     } catch (verifyErr) {
                       setOtpValid(false);
                       setModalMessage(verifyErr?.response?.data?.message || "Invalid OTP. Please try again.");
                       setModalVisible(true);
-                      return;
+                      return; // do not upload images, do not clear images
                     }
 
-                    // If car pickup not yet recorded, call CarPickUp first then ServiceStarted
+                    // OTP is valid — post images to api/ServiceImages/InsertPickupDeliveryImages (ImageUploadType=Pickup)
+                    try {
+                      setIsUploading(true);
+                      for (let i = 0; i < images.length; i++) {
+                        const formData = new FormData();
+                        formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
+                        formData.append("VehicleNumber", regNo);
+                        formData.append("BookingID", booking.BookingID);
+                        formData.append("UploadedBy", 1);
+                        formData.append("TechID", booking.TechID ?? "");
+                        formData.append("ImageUploadType", "Pickup");
+                        formData.append("ImagesType", "tech");
+                        formData.append("ImageURL1", {
+                          uri: images[i],
+                          type: "image/jpeg",
+                          name: `pickup_${i + 1}.jpg`,
+                        });
+                        await fetch(
+                          `${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`,
+                          {
+                            method: "POST",
+                            headers: {
+                              Accept: "application/json",
+                              "Content-Type": "multipart/form-data",
+                            },
+                            body: formData,
+                          }
+                        );
+                      }
+                      setIsUploading(false);
+                      setUploadDone(true);
+                      setImages([]);
+                    } catch (uploadErr) {
+                      setIsUploading(false);
+                      setModalMessage("Image upload failed. Please try again.");
+                      setModalVisible(true);
+                      return; // do not clear images so user can retry
+                    }
+
+                    // Then update tracking: CarPickUp, ServiceStarted
                     if (!booking.CarPickUpDate && !carPickedUp) {
                       const carPickUpOk = await updateTechnicianTracking("CarPickUp");
                       if (!carPickUpOk) return;
@@ -815,57 +872,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     }
                     const isValid = await updateTechnicianTracking("ServiceStarted");
                     if (!isValid) return;
-
-                    // Upload pickup images via InsertPickupDeliveryImages (ImageUploadType=Pickup)
-                    if (images.length > 0) {
-                      try {
-                        setIsUploading(true);
-                        for (let i = 0; i < images.length; i++) {
-                          const formData = new FormData();
-                          formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
-                          formData.append("VehicleNumber", carRegistrationNumber?.trim() || "");
-                          formData.append("BookingID", booking.BookingID);
-                          formData.append("UploadedBy", 1);
-                          formData.append("TechID", booking.TechID ?? "");
-                          formData.append("ImageUploadType", "Pickup");
-                          formData.append("ImagesType", "tech");
-                          formData.append("ImageURL1", {
-                            uri: images[i],
-                            type: "image/jpeg",
-                            name: `pickup_${i + 1}.jpg`,
-                          });
-
-                          const response = await fetch(
-                            `${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`,
-                            {
-                              method: "POST",
-                              headers: {
-                                Accept: "application/json",
-                                "Content-Type": "multipart/form-data",
-                              },
-                              body: formData,
-                            }
-                          );
-
-                          const text = await response.text();
-                          let data;
-                          try {
-                            data = JSON.parse(text);
-                          } catch {
-                            data = text;
-                          }
-
-                          console.log(`Image ${i + 1} uploaded:`, data);
-                        }
-                        setIsUploading(false);
-                        setUploadDone(true);
-                        setImages([]);
-                      } catch (error) {
-                        setIsUploading(false);
-                        console.error("Upload error:", error);
-                        // Continue navigation even if upload fails
-                      }
-                    }
 
                     // Calculate estimated and actual time
                     const estimatedTime = booking.TotalEstimatedDurationMinutes

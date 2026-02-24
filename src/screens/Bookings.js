@@ -399,11 +399,11 @@ const onRefresh = async () => {
                       {item.BookingStatus || "Pending"}
                     </CustomText>
                   </View>
-                  {item.TotalPrice != null && item.TotalPrice > 0 && (
+                  {/* {item.TotalPrice != null && item.TotalPrice > 0 && (
                     <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
                       ₹{item.TotalPrice}
                     </CustomText>
-                  )}
+                  )} */}
                 </View>
                 <View style={globalStyles.flexrow}>
                   <Image

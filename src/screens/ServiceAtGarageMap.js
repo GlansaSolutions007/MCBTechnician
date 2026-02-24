@@ -359,7 +359,7 @@ export default function ServiceAtGarageMap() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           showsVerticalScrollIndicator={false}
         >
-        {/* Buttons based on status */}
+        {/* First: only Let's Start. On click → update to StartJourney, then show only Navigate + Reached */}
         {statusForButtons === "Confirmed" && (
           <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
             <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -367,8 +367,8 @@ export default function ServiceAtGarageMap() {
           </TouchableOpacity>
         )}
 
-        {/* Navigate and Reached buttons — show for Confirmed, StartJourney, ServiceStarted, Reached */}
-        {statusForButtons !== "Completed" && (
+        {/* StartJourney / ServiceStarted: only Navigate and Reached */}
+        {(statusForButtons === "StartJourney" || statusForButtons === "ServiceStarted") && (
           <View style={styles.startreach}>
             <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
               <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -381,6 +381,7 @@ export default function ServiceAtGarageMap() {
           </View>
         )}
 
+        {/* Reached: hide Navigate/Reached, show Pickup Car (or Drop Car at Garage if pickup done) */}
         {statusForButtons === "Reached" && !carPickupDone && (
           <TouchableOpacity
             style={[styles.startButton, { marginTop: 10 }]}
@@ -390,12 +391,8 @@ export default function ServiceAtGarageMap() {
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
         )}
-
         {statusForButtons === "Reached" && carPickupDone && (
-          <TouchableOpacity
-            style={[styles.dropButton, { marginTop: 10 }]}
-            onPress={handleDropCarAtGarage}
-          >
+          <TouchableOpacity style={[styles.dropButton, { marginTop: 10 }]} onPress={handleDropCarAtGarage}>
             <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Drop Car at Garage</CustomText>
             <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
           </TouchableOpacity>

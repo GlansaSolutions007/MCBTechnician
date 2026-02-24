@@ -103,7 +103,7 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="DropCarAtGarage"
         component={DropCarAtGarage}
-        options={{ title: "Drop Car at Garage" }}
+        options={{ title: "Car drop" }}
       />
       <Stack.Screen
         name="ServiceEnd"

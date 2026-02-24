@@ -40,8 +40,8 @@ export default function DropCarAtGarage() {
   } = route.params || {};
 
   const [images, setImages] = useState([]);
-  const [carRegistrationNumber, setCarRegistrationNumber] = useState(initialCarReg || "");
-  const [registrationError, setRegistrationError] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [carRegistrationNumber] = useState(initialCarReg || "");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [otpCooldown, setOtpCooldown] = useState(0);
@@ -58,10 +58,6 @@ export default function DropCarAtGarage() {
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
   const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
   const profileImage = bookingParam?.ProfileImage || null;
-
-  useEffect(() => {
-    if (initialCarReg) setCarRegistrationNumber(initialCarReg);
-  }, [initialCarReg]);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
@@ -81,6 +77,7 @@ export default function DropCarAtGarage() {
     if (!result.canceled) {
       const selected = result.assets.map((a) => a.uri);
       setImages((prev) => [...prev, ...selected].slice(0, 6));
+      setImageError("");
     }
   };
 
@@ -162,33 +159,32 @@ export default function DropCarAtGarage() {
 
   const handleComplete = async () => {
     const regNo = carRegistrationNumber?.trim() || "";
-    if (!regNo) {
-      setRegistrationError("Car registration number is required.");
+    setImageError("");
+    setError("");
+
+    // At least one drop car image required
+    if (!images || images.length < 1) {
+      setImageError("At least one image is required.");
       return;
     }
-    setRegistrationError("");
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
-    setError("");
+
     setVerifyingComplete(true);
     try {
+      // Verify delivery OTP — if invalid, do not post images
       const valid = await verifyDeliveryOTP();
       if (!valid) {
         setVerifyingComplete(false);
         return;
       }
-      if (images.length > 0) {
-        setIsUploading(true);
-        await uploadDeliveryImages();
-        setIsUploading(false);
-      }
-      const updatedBooking = {
-        ...booking,
-        ServiceStartedAt: booking?.ServiceStartedAt || new Date().toISOString(),
-        CarRegistrationNumber: regNo,
-      };
+      // OTP valid — post images to api/ServiceImages/InsertPickupDeliveryImages (ImageUploadType=Delivery)
+      setIsUploading(true);
+      await uploadDeliveryImages();
+      setIsUploading(false);
+
       // Flow finish — navigate to Dashboard
       navigation.reset({
         index: 0,
@@ -312,14 +308,26 @@ export default function DropCarAtGarage() {
               Drop car at garage
             </CustomText>
             <CustomText style={[globalStyles.f10Light, globalStyles.neutral500, globalStyles.mt1]}>
-              Upload images, enter Delivery OTP and tap Complete
+              Upload images (at least one required), enter Delivery OTP and tap Complete
             </CustomText>
 
-            <TouchableOpacity style={[globalStyles.inputBox, globalStyles.mt3]} onPress={pickImage}>
+            <TouchableOpacity
+              style={[
+                globalStyles.inputBox,
+                globalStyles.mt3,
+                { borderColor: imageError ? color.alertError : "#ccc", borderWidth: imageError ? 2 : 1 },
+              ]}
+              onPress={pickImage}
+            >
               <CustomText style={[globalStyles.f16Light, globalStyles.neutral500]}>
                 Choose Files
               </CustomText>
             </TouchableOpacity>
+            {imageError ? (
+              <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
+                {imageError}
+              </CustomText>
+            ) : null}
 
             {images.length > 0 && (
               <View>
@@ -348,13 +356,13 @@ export default function DropCarAtGarage() {
             )}
 
             <CustomText style={[globalStyles.f16Bold, globalStyles.mt3, globalStyles.black]}>
-              Car Registration Number <CustomText style={{ color: color.alertError }}>*</CustomText>
+              Car Registration Number
             </CustomText>
             <TextInput
               style={[
                 globalStyles.inputBox,
                 globalStyles.mt2,
-                { borderColor: registrationError ? color.alertError : "#ccc", borderWidth: registrationError ? 2 : 1, backgroundColor: color.neutral[100] },
+                { borderColor: "#ccc", borderWidth: 1, backgroundColor: color.neutral[100] },
               ]}
               placeholder="From pickup"
               placeholderTextColor={color.neutral[500]}
@@ -362,11 +370,6 @@ export default function DropCarAtGarage() {
               editable={false}
               autoCapitalize="characters"
             />
-            {registrationError ? (
-              <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
-                {registrationError}
-              </CustomText>
-            ) : null}
 
             <CustomText style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.neutral500]}>
               Delivery OTP
