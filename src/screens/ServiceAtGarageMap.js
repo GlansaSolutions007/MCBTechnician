@@ -64,7 +64,18 @@ export default function ServiceAtGarageMap() {
   const pd = displayBooking?.PickupDelivery;
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
   const statusForButtons = currentLeg?.DriverStatus;
-  const pickDropId = Number(currentLeg?.Id ?? 0);
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const pickDropId = Number(
+    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
   const routeType =
     currentLeg?.PickFrom?.[0]?.RouteType ||
     currentLeg?.DropAt?.RouteType ||
@@ -335,8 +346,9 @@ export default function ServiceAtGarageMap() {
       await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         {
-          carPickupDeliveryId: pickDropId,
+          carPickupDeliveryId: Number(pickDropId) || 0,
           otpType: "Delivery",
+          phoneNumber: String(phoneNumber || "").trim(),
         },
         { headers: { "Content-Type": "application/json" } }
       );

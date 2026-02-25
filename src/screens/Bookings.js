@@ -303,12 +303,16 @@ export default function Bookings() {
     }
   };
 
+  const isBookingCompleted = (booking) => {
+    const status = booking?.BookingStatus;
+    if (status === "Completed" || status === "ServiceComplete") return true;
+    const driverStatus = getDriverStatus(booking);
+    return driverStatus === "completed" || driverStatus === "ServiceComplete";
+  };
+
   const getFilteredBookings = () => {
     const nonFutureBookings = todaysBookings.filter((booking) => {
-      // const serviceDate = booking.BookingDate || booking.TechAssignDate;
-
       let serviceDate = null;
-
       if (
         Array.isArray(booking.PickupDelivery) &&
         booking.PickupDelivery.length > 0
@@ -318,28 +322,20 @@ export default function Bookings() {
         );
         serviceDate = sortedPD[0]?.AssignDate;
       }
-
       if (!serviceDate) return true;
-
       if (isFutureDate(serviceDate)) return false;
       return true;
     });
 
     switch (filterType) {
+      case "all":
+        return nonFutureBookings;
       case "completed":
-        return nonFutureBookings.filter(
-          (booking) => booking.BookingStatus === "Completed",
-        );
+        return nonFutureBookings.filter((b) => isBookingCompleted(b));
       case "pending":
-        return nonFutureBookings.filter((booking) => {
-          if (booking.BookingStatus === "Completed") return false;
-          return true;
-        });
+        return nonFutureBookings.filter((b) => !isBookingCompleted(b));
       default:
-        return nonFutureBookings.filter((booking) => {
-          if (booking.BookingStatus === "Completed") return false;
-          return true;
-        });
+        return nonFutureBookings;
     }
   };
 

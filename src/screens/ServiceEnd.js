@@ -114,6 +114,7 @@ export default function ServiceEnd() {
   const [cooldownTimer, setCooldownTimer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [images, setImages] = useState([]);
+  const [imageError, setImageError] = useState("");
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const pickImage = async () => {
@@ -125,6 +126,7 @@ export default function ServiceEnd() {
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
       setImages((prev) => [...prev, ...selected].slice(0, 5));
+      setImageError("");
     }
   };
 
@@ -132,7 +134,25 @@ export default function ServiceEnd() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const carPickupDeliveryId = booking?.PickupDelivery?.Id ?? 0;
+  const pd = booking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const carPickupDeliveryId = Number(
+    legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
+  const routeType =
+    currentLeg?.PickFrom?.[0]?.RouteType ??
+    currentLeg?.PickFrom?.RouteType ??
+    currentLeg?.DropAt?.RouteType ??
+    "CustomerToDealer";
 
   const uploadAfterServiceImages = async () => {
     if (!images.length) return;
@@ -145,7 +165,7 @@ export default function ServiceEnd() {
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
         formData.append("TechID", booking.TechID ?? "");
-        formData.append("ImageUploadType", "Delivery");
+        formData.append("ImageUploadType", "completedservice");
         formData.append("ImagesType", "tech");
         formData.append("ImageURL1", {
           uri: images[i],
@@ -213,25 +233,34 @@ export default function ServiceEnd() {
   const sendOTP = async () => {
     try {
       setIsLoading(true);
+      if (!carPickupDeliveryId) {
+        setModalMessage("Booking pickup/delivery info is missing. Cannot send OTP.");
+        setModalVisible(true);
+        setIsLoading(false);
+        return;
+      }
+      const payload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId),
+        otpType: "Delivery",
+        phoneNumber: String(phoneNumber || "").trim(),
+      };
       const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: "SendOTP",
-        }
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
       );
 
       if (response?.data?.status === true || response?.data?.success === true) {
         setOtpSent(true);
         setModalMessage("OTP sent successfully to customer!");
         setModalVisible(true);
-        startCooldownTimer(); // Start 3-minute cooldown
+        startCooldownTimer();
       } else {
-        setModalMessage("Failed to send OTP. Please try again.");
+        setModalMessage(response?.data?.message || "Failed to send OTP. Please try again.");
         setModalVisible(true);
       }
     } catch (error) {
-      setModalMessage("Failed to send OTP. Please try again.");
+      setModalMessage(error?.response?.data?.message || "Failed to send OTP. Please try again.");
       setModalVisible(true);
     } finally {
       setIsLoading(false);
@@ -241,35 +270,32 @@ export default function ServiceEnd() {
   const verifyOTP = async () => {
     try {
       setIsLoading(true);
+      const verifyPayload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
+        otp: String(otp).trim(),
+        otpType: "Delivery",
+      };
       const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: "VerifyOTP",
-          bookingOTP: otp,
-          // loginId: booking.PhoneNumber,
-          // otp: otp,
-          // deviceToken: "dummy",
-          // deviceId: "dummy",
-        }
+        `${API_BASE_URL}ServiceImages/VerifyOTP`,
+        verifyPayload,
+        { headers: { "Content-Type": "application/json" } }
       );
-
-      if (
-        response?.data?.status === true ||
-        response?.data?.success === true ||
-        response?.data?.isValid === true
-      ) {
-        setOtpValid(true);
-        return true;
-      } else {
+      const data = response?.data;
+      const isInvalid =
+        data?.status === false ||
+        data?.isValid === false ||
+        (data?.success === false && data?.isValid !== true);
+      if (isInvalid) {
         setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
+        setModalMessage(data?.message || "Invalid OTP. Please try again.");
         setModalVisible(true);
         return false;
       }
+      setOtpValid(true);
+      return true;
     } catch (error) {
       setOtpValid(false);
-      setModalMessage("Invalid OTP. Please try again.");
+      setModalMessage(error?.response?.data?.message || "Invalid OTP. Please try again.");
       setModalVisible(true);
       return false;
     } finally {
@@ -278,59 +304,77 @@ export default function ServiceEnd() {
   };
 
   const Completedservice = async () => {
+    setError("");
+    setImageError("");
+
+    if (!images || images.length < 1) {
+      setImageError("At least one image is required.");
+      return;
+    }
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
       return;
     }
-
-    // Upload after-service images if any
-    if (images.length > 0) {
-      await uploadAfterServiceImages();
-    }
-
-    // First verify OTP with Auth API
-    const otpValid = await verifyOTP();
-    if (!otpValid) {
+    if (!carPickupDeliveryId) {
+      setModalMessage("Booking pickup/delivery info is missing. Please go back and open this booking again.");
+      setModalVisible(true);
       return;
     }
 
-    // Get PaymentStatus from booking (check Payments array first, then direct property)
-    const paymentStatus = booking.Payments?.[0]?.PaymentStatus || booking.PaymentStatus;
-
-    // If PaymentStatus is null or payment is null, navigate to CollectPayment without updating status
-    if (paymentStatus === null || paymentStatus === undefined) {
-      navigation.navigate("CollectPayment", { booking });
+    // Verify OTP first — only if valid, then upload images
+    const otpValidResult = await verifyOTP();
+    if (!otpValidResult) {
       return;
     }
 
-    // If PaymentStatus is "Success", update technician tracking and navigate to dashboard
-    if (paymentStatus === "Success") {
-      try {
-        await axios.post(
-          `${API_BASE_URL}ServiceImages/InsertTracking`,
-          {
-            pickDropId: Number(carPickupDeliveryId),
-            status: "completed",
-          },
-          { headers: { "Content-Type": "application/json" } }
-        );
-      } catch (e) {
-        console.error("InsertTracking Completed Error:", e);
-      }
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: "CustomerTabNavigator",
-            params: { screen: "Dashboard" },
-          },
-        ],
-      });
+    // OTP valid — upload after-service images (ImageUploadType=completedservice)
+    try {
+      await uploadAfterServiceImages(true);
+    } catch (err) {
       return;
     }
 
-    // For any other PaymentStatus (like "Pending"), navigate to CollectPayment without updating status
-    navigation.navigate("CollectPayment", { booking });
+    // Post status "ServiceComplete" via UpdateBookingStatus
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType,
+        action: "ServiceComplete",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("UpdateBookingStatus (ServiceComplete) Error:", e?.response?.data ?? e);
+    }
+
+    // No payment flow — always complete tracking and navigate to home
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        {
+          pickDropId: Number(carPickupDeliveryId),
+          status: "completed",
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (e) {
+      console.error("InsertTracking Completed Error:", e);
+    }
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: "CustomerTabNavigator",
+          params: { screen: "Dashboard" },
+        },
+      ],
+    });
   };
   useEffect(() => {
     const fetchLeads = async () => {
@@ -485,7 +529,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {carRegistrationNumber ? `Reg: ${carRegistrationNumber}` : getBookingDisplayData(booking).vehicleDisplay}
+                  {carRegistrationNumber || getBookingDisplayData(booking).vehicleDisplay || "—"}
                 </CustomText>
               </View>
               <View
@@ -544,68 +588,86 @@ export default function ServiceEnd() {
             ))}
           </View>
 
-          {/* After-service image upload */}
-          <View style={{ marginTop: 16 }}>
-            <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
-              Upload after-service images (optional)
+          {/* After-service checklist — same UI as ServiceStart; images uploaded when Completed is pressed after OTP */}
+          <View
+            style={[
+              globalStyles.mt3,
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.pt0,
+              globalStyles.pb3,
+              globalStyles.ph3,
+              globalStyles.card,
+            ]}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+              After-service checklist
             </CustomText>
-            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500, globalStyles.mb2]}>
-              Add up to 5 photos of completed work
+            <CustomText
+              style={[globalStyles.f10Light, globalStyles.neutral500, globalStyles.mt1]}
+            >
+              At least one image required. Choose files, then enter OTP and tap Completed.
             </CustomText>
+
+            
+
             <TouchableOpacity
-              style={[globalStyles.inputBox, globalStyles.mt2, { borderWidth: 1, borderColor: "#ccc", paddingVertical: 12 }]}
+              style={[
+                globalStyles.inputBox,
+                globalStyles.mt3,
+                { borderColor: imageError ? (color.alertError || "#c00") : "#ccc", borderWidth: imageError ? 2 : 1 },
+              ]}
               onPress={pickImage}
             >
-              <CustomText style={[globalStyles.f14Medium, globalStyles.neutral500]}>
+              <CustomText style={[globalStyles.f16Light, globalStyles.neutral500]}>
                 Choose Files
               </CustomText>
             </TouchableOpacity>
+            {imageError ? (
+              <CustomText style={[globalStyles.f12Regular, { color: color.alertError || "#c00", marginTop: 4 }]}>
+                {imageError}
+              </CustomText>
+            ) : null}
+
             {images.length > 0 && (
-              <>
-                <View style={[globalStyles.flexrow, { flexWrap: "wrap", marginTop: 12 }]}>
-                  {images.map((uri, index) => (
-                    <View key={index} style={{ width: "30%", marginBottom: 10, marginRight: "3%", position: "relative" }}>
-                      <Image source={{ uri }} style={{ width: "100%", aspectRatio: 1, borderRadius: 8 }} />
-                      <TouchableOpacity
-                        onPress={() => removeImage(index)}
-                        style={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          backgroundColor: "#000",
-                          borderRadius: 12,
-                          padding: 2,
-                          zIndex: 1,
-                        }}
-                      >
-                        <Ionicons name="close" color="#fff" size={14} />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-                <TouchableOpacity
-                  onPress={uploadAfterServiceImages}
-                  disabled={isUploadingImages}
-                  style={[
-                    globalStyles.flexrow,
-                    globalStyles.alineItemscenter,
-                    globalStyles.justifycenter,
-                    {
-                      marginTop: 12,
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      borderRadius: 10,
-                      backgroundColor: color.primary,
-                      opacity: isUploadingImages ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  <Ionicons name="cloud-upload-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-                    {isUploadingImages ? "Uploading..." : "Upload Images"}
-                  </CustomText>
-                </TouchableOpacity>
-              </>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifycenter,
+                  globalStyles.mt3,
+                  { flexWrap: "wrap" },
+                ]}
+              >
+                {images.map((uri, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      width: "32%",
+                      marginBottom: 10,
+                      position: "relative",
+                    }}
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={{ width: 100, height: 100, borderRadius: 10 }}
+                    />
+                    <TouchableOpacity
+                      onPress={() => removeImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: 5,
+                        right: 18,
+                        backgroundColor: "#000",
+                        borderRadius: 10,
+                        padding: 2,
+                        zIndex: 1,
+                      }}
+                    >
+                      <Ionicons name="close" color="#fff" size={15} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
             )}
           </View>
 
@@ -701,6 +763,22 @@ export default function ServiceEnd() {
           {/* OTP Section - Only show after OTP is sent */}
           {/* {otpSent && ( */}
           {/* <> */}
+          <CustomText
+              style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.neutral500]}
+            >
+              Car Registration Number
+            </CustomText>
+            <View
+              style={[
+                globalStyles.inputBox,
+                globalStyles.mt2,
+                { borderColor: "#ccc", borderWidth: 1, paddingVertical: 12, paddingHorizontal: 12 },
+              ]}
+            >
+              <CustomText style={[globalStyles.f12Medium, globalStyles.black]}>
+                {carRegistrationNumber || getBookingDisplayData(booking).vehicleDisplay || "—"}
+              </CustomText>
+            </View>
           <CustomText
             style={[
               globalStyles.f16Light,
@@ -798,18 +876,18 @@ export default function ServiceEnd() {
           {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && ( */}
           <TouchableOpacity
             onPress={Completedservice}
-            disabled={isLoading}
+            disabled={isLoading || isUploadingImages}
             style={[
               globalStyles.blackButton,
               {
                 marginTop: 16,
                 marginBottom: keyboardVisible ? 130 : 80,
-                opacity: isLoading ? 0.6 : 1,
+                opacity: isLoading || isUploadingImages ? 0.6 : 1,
               },
             ]}
           >
             <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-              {isLoading ? "Verifying..." : "Completed"}
+              {isLoading ? "Verifying..." : isUploadingImages ? "Uploading..." : "Completed"}
             </CustomText>
           </TouchableOpacity>
           {/* )} */}

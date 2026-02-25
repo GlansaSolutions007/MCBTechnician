@@ -145,8 +145,22 @@ export default function CustomerToGarageMap() {
     }
   };
 
+  const pd = displayBooking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const carPickupDeliveryId = Number(
+    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
+
   const handleReached = async () => {
-    const carPickupDeliveryId = Number(booking?.PickupDelivery?.Id ?? 0);
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -177,11 +191,16 @@ export default function CustomerToGarageMap() {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
+    const phoneNumber =
+      displayBooking?.PhoneNumber ||
+      displayBooking?.Leads?.PhoneNumber ||
+      displayBooking?.PickupDelivery?.DropAt?.PersonNumber ||
+      "";
     try {
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Delivery",
-        phoneNumber: displayBooking?.PickupDelivery?.DropAt?.PersonNumber
+        phoneNumber: String(phoneNumber).trim(),
       };
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,

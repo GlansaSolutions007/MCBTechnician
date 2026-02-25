@@ -116,7 +116,18 @@ export default function CustomerInfo() {
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
   const driverStatus =
     displayBooking?.DriverStatus ?? currentLeg?.DriverStatus;
-  const pickDropId = Number(currentLeg?.Id ?? 0);
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const pickDropId = Number(
+    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
   const routeType =
     currentLeg?.PickFrom?.RouteType ??
     (Array.isArray(currentLeg?.PickFrom) ? currentLeg?.PickFrom?.[0]?.RouteType : null) ??
@@ -690,6 +701,24 @@ export default function CustomerInfo() {
       }
     }
 
+    const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
+    const generateOtpPayload = {
+      carPickupDeliveryId: pickDropId,
+      otpType: "Pickup",
+      phoneNumber: String(phoneNumber).trim(),
+    };
+    console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
+    try {
+      const genOtpRes = await axios.post(
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        generateOtpPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
+    } catch (e) {
+      console.error("GenerateOTP Error:", e?.response?.data ?? e);
+    }
+
     try {
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
@@ -699,7 +728,7 @@ export default function CustomerInfo() {
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
+      console.log("ServiceImages/UpdateBookingStatus POST data:", JSON.stringify(statusPayload, null, 2));
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
@@ -711,7 +740,7 @@ export default function CustomerInfo() {
     }
 
     // Requested removal of updateTechnicianTracking
-    const updatedBooking = { 
+    const updatedBooking ={ 
       ...booking, 
       PickupDelivery: {
         ...booking.PickupDelivery,

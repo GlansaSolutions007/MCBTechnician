@@ -52,7 +52,20 @@ export default function DropCarAtGarage() {
   const [verifyingComplete, setVerifyingComplete] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-  const carPickupDeliveryId = booking?.PickupDelivery?.Id ?? 0;
+  const pd = booking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const carPickupDeliveryId = Number(
+    legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
   const bookingParam = route?.params?.booking || booking;
 
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
@@ -89,9 +102,20 @@ export default function DropCarAtGarage() {
     try {
       setIsLoading(true);
       setError("");
+      if (!carPickupDeliveryId) {
+        setModalMessage("Booking delivery info is missing. Cannot send OTP.");
+        setModalVisible(true);
+        setIsLoading(false);
+        return;
+      }
+      const generateOtpPayload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId),
+        otpType: "Delivery",
+        phoneNumber: String(phoneNumber || "").trim(),
+      };
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        { carPickupDeliveryId: Number(carPickupDeliveryId), otpType: "Delivery" },
+        generateOtpPayload,
         { headers: { "Content-Type": "application/json" } }
       );
       if (response?.data?.status === true || response?.data?.success === true) {
