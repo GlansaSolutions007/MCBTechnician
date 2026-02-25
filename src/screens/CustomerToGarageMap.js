@@ -116,17 +116,17 @@ export default function CustomerToGarageMap() {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
-        action: "pickup_started",
+        action: "in_transit",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      console.log("UpdateBookingStatus Payload (in_transit):", JSON.stringify(statusPayload, null, 2));
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for pickup_started");
+      console.log("UpdateBookingStatus posted for in_transit");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }

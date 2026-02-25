@@ -36,105 +36,194 @@ export default function Bookings() {
 
   const [refreshing, setRefreshing] = useState(false);
   const pulse = useRef(new Animated.Value(0)).current;
-  const [filterType, setFilterType] = useState('pending');
+  const [filterType, setFilterType] = useState("pending");
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  fetchBookings();
-}, []);
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
-const fetchBookings = async () => {
-  try {
-    setLoading(true);
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
 
-    const techIDFromStorage = await AsyncStorage.getItem("techID");
-    const techID = techIdFromParams ?? techIDFromStorage;
+      const techIDFromStorage = await AsyncStorage.getItem("techID");
+      const techID = techIdFromParams ?? techIDFromStorage;
 
-    if (!techID) {
-      console.log("Tech ID not found");
-      setTodaysBookings([]);
-      return;
-    }
-
-    const response = await axios.get(
-      `${API_BASE_URL}Bookings/GetAssignedBookings`,
-      {
-        params: { Id: techID, techId: techID },
+      if (!techID) {
+        console.log("Tech ID not found");
+        setTodaysBookings([]);
+        return;
       }
-    );
 
-    // ✅ ALWAYS ensure array
-    const bookingsData = Array.isArray(response?.data)
-      ? response.data
-      : response?.data?.data || [];
+      const response = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings`,
+        {
+          params: { Id: techID, techId: techID },
+        },
+      );
 
-    setTodaysBookings(bookingsData);
-    console.log("Bookings Data==============>", bookingsData);
-    console.log("Bookings Data=> ServiceType ServiceAtGarage:", bookingsData);
-  } catch (error) {
-    console.error("Error fetching bookings:", error?.response || error.message);
-    setTodaysBookings([]);
-  } finally {
-    setLoading(false);
-  }
-};
+      // ✅ ALWAYS ensure array
+      const bookingsData = Array.isArray(response?.data)
+        ? response.data
+        : response?.data?.data || [];
 
+      setTodaysBookings(bookingsData);
+      console.log("Bookings Data==============>", bookingsData);
+      console.log("Bookings Data=> ServiceType ServiceAtGarage:", bookingsData);
+    } catch (error) {
+      console.error(
+        "Error fetching bookings:",
+        error?.response || error.message,
+      );
+      setTodaysBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-  
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: false }),
-        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: false }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 700,
+          useNativeDriver: false,
+        }),
+      ]),
     );
     loop.start();
     return () => {
-      try { loop.stop(); } catch (_) {}
+      try {
+        loop.stop();
+      } catch (_) {}
     };
   }, [pulse]);
 
   const bg = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [globalStyles.bgneutral200?.backgroundColor || "#D9D9D9", globalStyles.bgneutral100?.backgroundColor || "#E8E8E8"],
+    outputRange: [
+      globalStyles.bgneutral200?.backgroundColor || "#D9D9D9",
+      globalStyles.bgneutral100?.backgroundColor || "#E8E8E8",
+    ],
   });
 
   const SkeletonBookingCard = ({ index }) => (
-    <View key={`skeleton-${index}`} style={[globalStyles.bgwhite, globalStyles.p4, globalStyles.mt4, globalStyles.card, styles.cardWrapper]}>
+    <View
+      key={`skeleton-${index}`}
+      style={[
+        globalStyles.bgwhite,
+        globalStyles.p4,
+        globalStyles.mt4,
+        globalStyles.card,
+        styles.cardWrapper,
+      ]}
+    >
       <View style={[styles.accent, { backgroundColor: color.neutral[200] }]} />
       <View style={globalStyles.flexrow}>
         <Animated.View style={[styles.skelAvatar, { backgroundColor: bg }]} />
         <View style={[globalStyles.ml3, { flex: 1 }]}>
-          <Animated.View style={[styles.skelLineMedium, { backgroundColor: bg, width: 160 }]} />
-          <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 140, marginTop: 8 }]} />
-          <Animated.View style={[styles.skelFlexLine, { backgroundColor: bg, marginTop: 8 }]} />
+          <Animated.View
+            style={[styles.skelLineMedium, { backgroundColor: bg, width: 160 }]}
+          />
+          <Animated.View
+            style={[
+              styles.skelLineSmall,
+              { backgroundColor: bg, width: 140, marginTop: 8 },
+            ]}
+          />
+          <Animated.View
+            style={[styles.skelFlexLine, { backgroundColor: bg, marginTop: 8 }]}
+          />
         </View>
       </View>
       <View style={globalStyles.divider} />
-      <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
+      <View
+        style={[
+          globalStyles.flexrow,
+          globalStyles.justifysb,
+          globalStyles.alineItemscenter,
+        ]}
+      >
         <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
           <View style={globalStyles.mr3}>
-            <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
-              <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-              <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 120, marginLeft: 8 }]} />
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Animated.View
+                style={[styles.skelIcon, { backgroundColor: bg }]}
+              />
+              <Animated.View
+                style={[
+                  styles.skelLineSmall,
+                  { backgroundColor: bg, width: 120, marginLeft: 8 },
+                ]}
+              />
             </View>
-            <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
-              <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-              <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100, marginLeft: 8 }]} />
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Animated.View
+                style={[styles.skelIcon, { backgroundColor: bg }]}
+              />
+              <Animated.View
+                style={[
+                  styles.skelLineSmall,
+                  { backgroundColor: bg, width: 100, marginLeft: 8 },
+                ]}
+              />
             </View>
           </View>
           <View>
-            <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
-              <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-              <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 100, marginLeft: 8 }]} />
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Animated.View
+                style={[styles.skelIcon, { backgroundColor: bg }]}
+              />
+              <Animated.View
+                style={[
+                  styles.skelLineSmall,
+                  { backgroundColor: bg, width: 100, marginLeft: 8 },
+                ]}
+              />
             </View>
-            <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
-              <Animated.View style={[styles.skelIcon, { backgroundColor: bg }]} />
-              <Animated.View style={[styles.skelLineSmall, { backgroundColor: bg, width: 80, marginLeft: 8 }]} />
+            <View
+              style={[
+                globalStyles.flexrow,
+                globalStyles.mt2,
+                globalStyles.alineItemscenter,
+              ]}
+            >
+              <Animated.View
+                style={[styles.skelIcon, { backgroundColor: bg }]}
+              />
+              <Animated.View
+                style={[
+                  styles.skelLineSmall,
+                  { backgroundColor: bg, width: 80, marginLeft: 8 },
+                ]}
+              />
             </View>
           </View>
         </View>
@@ -146,7 +235,6 @@ const fetchBookings = async () => {
     navigation.navigate("customerInfo", { booking });
   };
   const openBooking = (item) => {
-    // Calculate estimated and actual time to pass to next screens
     const estimatedTime = item.TotalEstimatedDurationMinutes
       ? item.TotalEstimatedDurationMinutes * 60
       : 0;
@@ -157,7 +245,7 @@ const fetchBookings = async () => {
       actualTime = Math.floor((new Date() - startTime) / 1000);
     }
 
-    const driverStatus = item.PickupDelivery?.DriverStatus;
+    const driverStatus = getDriverStatus(item);
 
     if (item.ServiceType === "ServiceAtGarage") {
       if (driverStatus === "car_picked" || driverStatus === "in_transit") {
@@ -182,29 +270,32 @@ const fetchBookings = async () => {
     }
   };
 
-  // Helper function to check if a date is in the future
+  const getDriverStatus = (booking) => {
+    const pd = booking?.PickupDelivery;
+    if (!pd) return null;
+    if (Array.isArray(pd)) {
+      const found = pd.find((p) => p?.DriverStatus);
+      return found?.DriverStatus ?? pd[0]?.DriverStatus ?? null;
+    }
+    return pd?.DriverStatus ?? null;
+  };
+
   const isFutureDate = (dateString) => {
     if (!dateString) return false;
-    
+
     try {
-      // Get today's date - set to start of day for comparison
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       today.setMilliseconds(0);
-      
-      // Parse the date string (handles formats like "2026-02-01" or "2026-01-10T18:01:27.640")
+
       const bookingDate = new Date(dateString);
-      
-      // Check if date is valid
+
       if (isNaN(bookingDate.getTime())) {
         return false;
       }
-      
-      // Set to start of day for comparison (ignore time)
       bookingDate.setHours(0, 0, 0, 0);
       bookingDate.setMilliseconds(0);
-      
-      // Return true if booking date is greater than today (future date)
+
       return bookingDate > today;
     } catch (error) {
       console.error("Error parsing date:", dateString, error);
@@ -213,33 +304,40 @@ const fetchBookings = async () => {
   };
 
   const getFilteredBookings = () => {
-    // First, filter out ALL future bookings (regardless of status)
-    // Prioritize BookingDate over TechAssignDate for filtering
-    const nonFutureBookings = todaysBookings.filter(booking => {
-      // Use BookingDate first, then fallback to TechAssignDate
-      const serviceDate = booking.BookingDate || booking.TechAssignDate;
-      if (!serviceDate) return true; // If no date, include it (let other filters handle it)
-      
-      // Exclude any booking with a future service date
+    const nonFutureBookings = todaysBookings.filter((booking) => {
+      // const serviceDate = booking.BookingDate || booking.TechAssignDate;
+
+      let serviceDate = null;
+
+      if (
+        Array.isArray(booking.PickupDelivery) &&
+        booking.PickupDelivery.length > 0
+      ) {
+        const sortedPD = [...booking.PickupDelivery].sort(
+          (a, b) => new Date(b.AssignDate) - new Date(a.AssignDate),
+        );
+        serviceDate = sortedPD[0]?.AssignDate;
+      }
+
+      if (!serviceDate) return true;
+
       if (isFutureDate(serviceDate)) return false;
       return true;
     });
 
     switch (filterType) {
-      case 'completed':
-        // Show only completed bookings (these should go to Reports)
-        return nonFutureBookings.filter(booking => booking.BookingStatus === 'Completed');
-      case 'pending':
-        // Show only pending bookings that are NOT completed
-        return nonFutureBookings.filter(booking => {
-          // Exclude completed
-          if (booking.BookingStatus === 'Completed') return false;
+      case "completed":
+        return nonFutureBookings.filter(
+          (booking) => booking.BookingStatus === "Completed",
+        );
+      case "pending":
+        return nonFutureBookings.filter((booking) => {
+          if (booking.BookingStatus === "Completed") return false;
           return true;
         });
       default:
-        // Default: show all non-future bookings (not completed)
-        return nonFutureBookings.filter(booking => {
-          if (booking.BookingStatus === 'Completed') return false;
+        return nonFutureBookings.filter((booking) => {
+          if (booking.BookingStatus === "Completed") return false;
           return true;
         });
     }
@@ -249,9 +347,9 @@ const fetchBookings = async () => {
 
   const handleFilterChange = (newFilterType) => {
     if (newFilterType === filterType) return;
-    
+
     setIsAnimating(true);
-    
+
     // Start smooth transition animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -267,7 +365,7 @@ const fetchBookings = async () => {
     ]).start(() => {
       // Change filter after fade out
       setFilterType(newFilterType);
-      
+
       // Fade back in with new content
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -286,13 +384,11 @@ const fetchBookings = async () => {
     });
   };
 
-const onRefresh = async () => {
-  setRefreshing(true);
-  await fetchBookings();
-  setRefreshing(false);
-};
-
-
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchBookings();
+    setRefreshing(false);
+  };
 
   return (
     <ScrollView
@@ -310,59 +406,70 @@ const onRefresh = async () => {
       <View style={globalStyles.container}>
         {/* Filter Section */}
         {todaysBookings.length > 0 && (
-          <View style={[styles.filterCard, globalStyles.card, globalStyles.mt3]}>
+          <View
+            style={[styles.filterCard, globalStyles.card, globalStyles.mt3]}
+          >
             {/* <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mb3]}>
               Filter Bookings
             </CustomText> */}
-            
+
             <View style={styles.filterButtons}>
               <TouchableOpacity
-                onPress={() => handleFilterChange('all')}
+                onPress={() => handleFilterChange("all")}
                 style={[
                   styles.filterButton,
-                  filterType === 'all' && styles.filterButtonActive
+                  filterType === "all" && styles.filterButtonActive,
                 ]}
                 activeOpacity={0.7}
               >
-               
-                <CustomText style={[
-                  globalStyles.f12Medium,
-                  filterType === 'all' ? globalStyles.textWhite : globalStyles.neutral500
-                ]}>
+                <CustomText
+                  style={[
+                    globalStyles.f12Medium,
+                    filterType === "all"
+                      ? globalStyles.textWhite
+                      : globalStyles.neutral500,
+                  ]}
+                >
                   All
                 </CustomText>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
-                onPress={() => handleFilterChange('pending')}
+                onPress={() => handleFilterChange("pending")}
                 style={[
                   styles.filterButton,
-                  filterType === 'pending' && styles.filterButtonActive
+                  filterType === "pending" && styles.filterButtonActive,
                 ]}
                 activeOpacity={0.7}
               >
-               
-                <CustomText style={[
-                  globalStyles.f12Medium,
-                  filterType === 'pending' ? globalStyles.textWhite : globalStyles.neutral500
-                ]}>
+                <CustomText
+                  style={[
+                    globalStyles.f12Medium,
+                    filterType === "pending"
+                      ? globalStyles.textWhite
+                      : globalStyles.neutral500,
+                  ]}
+                >
                   Pending
                 </CustomText>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
-                onPress={() => handleFilterChange('completed')}
+                onPress={() => handleFilterChange("completed")}
                 style={[
                   styles.filterButton,
-                  filterType === 'completed' && styles.filterButtonActive
+                  filterType === "completed" && styles.filterButtonActive,
                 ]}
                 activeOpacity={0.7}
               >
-              
-                <CustomText style={[
-                  globalStyles.f12Medium,
-                  filterType === 'completed' ? globalStyles.textWhite : globalStyles.neutral500
-                ]}>
+                <CustomText
+                  style={[
+                    globalStyles.f12Medium,
+                    filterType === "completed"
+                      ? globalStyles.textWhite
+                      : globalStyles.neutral500,
+                  ]}
+                >
                   Completed
                 </CustomText>
               </TouchableOpacity>
@@ -370,134 +477,269 @@ const onRefresh = async () => {
           </View>
         )}
 
-       {loading ? (
-  [0, 1, 2, 3, 4, 5].map((i) => (
-    <SkeletonBookingCard key={`s-${i}`} index={i} />
-  ))
-) : filteredBookings.length === 0 ? (
-
-          <View style={[globalStyles.alineItemscenter, globalStyles.justifycenter, { paddingVertical: 40 }]}>
-            <Ionicons name="document-text-outline" size={48} color={color.neutral[300]} />
-            <CustomText style={[globalStyles.f16Medium, globalStyles.neutral500, globalStyles.mt2, globalStyles.textac]}>
-              {todaysBookings.length === 0 
-                ? "No bookings assigned" 
-                : `No ${filterType === 'all' ? '' : filterType} bookings found`
-              }
-          </CustomText>
-          </View>
-        ) : refreshing ? (
-          [0,1,2,3,4,5].map((i) => <SkeletonBookingCard key={`s-${i}`} index={i} />)
-        ) : (
-          <Animated.View style={{ 
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }}>
-            {filteredBookings.map((item, index) => (
-            <Pressable
-              onPress={() => openBooking(item)}
-              // key={item.BookingID?.toString() || `idx-${index}`}
-              key={`${item.BookingID ?? "booking"}-${index}`}
-
+        {loading ? (
+          [0, 1, 2, 3, 4, 5].map((i) => (
+            <SkeletonBookingCard key={`s-${i}`} index={i} />
+          ))
+        ) : filteredBookings.length === 0 ? (
+          <View
+            style={[
+              globalStyles.alineItemscenter,
+              globalStyles.justifycenter,
+              { paddingVertical: 40 },
+            ]}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={48}
+              color={color.neutral[300]}
+            />
+            <CustomText
               style={[
-                item.PickupDelivery?.DriverStatus === 'completed' ? globalStyles.bgneutral100 : globalStyles.bgwhite,
-                globalStyles.p4,
-                globalStyles.mt4,
-                isAnimating ? globalStyles.radius : globalStyles.card,
-                styles.cardWrapper,
+                globalStyles.f16Medium,
+                globalStyles.neutral500,
+                globalStyles.mt2,
+                globalStyles.textac,
               ]}
             >
-              <View style={[
-                styles.accent,
-                { backgroundColor: item.PickupDelivery?.DriverStatus === 'completed' ? color.alertError : color.primary }
-              ]} />
-              <View style={styles.cardContent}>
-                <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3, { flexWrap: "wrap", gap: 8 }]}>
-                  <View style={[styles.serviceTypeChip, { backgroundColor: color.primary }]}>
-                    <MaterialCommunityIcons name="wrench-outline" size={14} color={color.white} style={{ marginRight: 6 }} />
-                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                      {item.ServiceType
-                        ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
-                        : "N/A"}
-                    </CustomText>
-                  </View>
-                  <View style={[
-                    styles.statusChip,
-                    { backgroundColor: item.PickupDelivery?.DriverStatus === 'completed' ? color.alertSuccess : item.PickupDelivery?.DriverStatus === 'pickup_reached' ? color.alertInfo : color.primary }
-                  ]}>
-                    <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
-                      {/* {item.BookingStatus || "No Status"} */}
-                      {item.PickupDelivery?.DriverStatus || "No Status"}
-                    </CustomText>
-                  </View>
-                  {/* {item.TotalPrice != null && item.TotalPrice > 0 && (
-                    <CustomText style={[globalStyles.f12Bold, { color: color.primary }]}>
-                      ₹{item.TotalPrice}
-                    </CustomText>
-                  )} */}
-                </View>
-                <View style={globalStyles.flexrow}>
-                  <Image
-                    source={
-                      item.ProfileImage
-                        ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                        : defaultAvatar
-                    }
-                    style={styles.avatar}
+              {todaysBookings.length === 0
+                ? "No bookings assigned"
+                : `No ${filterType === "all" ? "" : filterType} bookings found`}
+            </CustomText>
+          </View>
+        ) : refreshing ? (
+          [0, 1, 2, 3, 4, 5].map((i) => (
+            <SkeletonBookingCard key={`s-${i}`} index={i} />
+          ))
+        ) : (
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            {filteredBookings.map((item, index) => {
+              const driverStatus = getDriverStatus(item);
+              return (
+                <Pressable
+                  onPress={() => openBooking(item)}
+                  // key={item.BookingID?.toString() || `idx-${index}`}
+                  key={`${item.BookingID ?? "booking"}-${index}`}
+                  style={[
+                    driverStatus === "completed"
+                      ? globalStyles.bgneutral100
+                      : globalStyles.bgwhite,
+                    globalStyles.p4,
+                    globalStyles.mt4,
+                    isAnimating ? globalStyles.radius : globalStyles.card,
+                    styles.cardWrapper,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.accent,
+                      {
+                        backgroundColor:
+                          driverStatus === "completed"
+                            ? color.alertError
+                            : color.primary,
+                      },
+                    ]}
                   />
-                  <View style={[globalStyles.ml3, { flex: 1 }]}>
-                    <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                      {item.CustomerName || item.Leads?.FullName || "N/A"}
-                    </CustomText>
-                    <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}>
-                      Mobile: <CustomText style={globalStyles.black}>{item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}</CustomText>
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}
-                      numberOfLines={2}
+                  <View style={styles.cardContent}>
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.alineItemscenter,
+                        globalStyles.mb3,
+                        { flexWrap: "wrap", gap: 8 },
+                      ]}
                     >
-                      {item.FullAddress || item.Leads?.City || item.Leads?.FullAddress || "N/A"}
-                    </CustomText>
-                  </View>
-                </View>
+                      <View
+                        style={[
+                          styles.serviceTypeChip,
+                          { backgroundColor: color.primary },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name="wrench-outline"
+                          size={14}
+                          color={color.white}
+                          style={{ marginRight: 6 }}
+                        />
+                        <CustomText
+                          style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                        >
+                          {item.ServiceType
+                            ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                            : "N/A"}
+                        </CustomText>
+                      </View>
+                      <View
+                        style={[
+                          styles.statusChip,
+                          {
+                            backgroundColor:
+                              driverStatus === "completed"
+                                ? color.alertSuccess
+                                : driverStatus === "pickup_reached"
+                                  ? color.alertInfo
+                                  : color.primary,
+                          },
+                        ]}
+                      >
+                        <CustomText
+                          style={[globalStyles.f10Bold, globalStyles.textWhite]}
+                        >
+                          {driverStatus || "No Status"}
+                        </CustomText>
+                      </View>
+                     
+                    </View>
+                    <View style={globalStyles.flexrow}>
+                      <Image
+                        source={
+                          item.ProfileImage
+                            ? {
+                                uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                              }
+                            : defaultAvatar
+                        }
+                        style={styles.avatar}
+                      />
+                      <View style={[globalStyles.ml3, { flex: 1 }]}>
+                        <CustomText
+                          style={[globalStyles.f16Bold, globalStyles.black]}
+                        >
+                          {item.CustomerName || item.Leads?.FullName || "N/A"}
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f12Medium,
+                            globalStyles.neutral500,
+                            globalStyles.mt1,
+                          ]}
+                        >
+                          Mobile:{" "}
+                          <CustomText style={globalStyles.black}>
+                            {item.PhoneNumber ||
+                              item.Leads?.PhoneNumber ||
+                              "N/A"}
+                          </CustomText>
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f12Medium,
+                            globalStyles.neutral500,
+                            globalStyles.mt1,
+                          ]}
+                        >
+                          RouteType:{" "}
+                          <CustomText style={globalStyles.black}>
+                          {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
+                            item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
+                            "N/A"}
+                          </CustomText>
+                        </CustomText>
+                        <CustomText
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.neutral500,
+                            globalStyles.mt1,
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {item.FullAddress ||
+                            item.Leads?.City ||
+                            item.Leads?.FullAddress ||
+                            "N/A"}
+                        </CustomText>
+                      </View>
+                    </View>
 
-                <View style={globalStyles.divider} />
-                <BookingPickDropRow booking={item} />
+                    <View style={globalStyles.divider} />
+                    {/* <BookingPickDropRow booking={item} />
 
-                <View style={globalStyles.divider} />
+                    <View style={globalStyles.divider} /> */}
 
-                <View style={styles.cardMetaRow}>
-                  <View style={styles.cardMetaCol}>
-                    <View style={styles.cardMetaItem}>
-                      <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={styles.cardMetaIcon} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
-                        {getBookingDisplayData(item).bookingTrackID}
-                      </CustomText>
-                    </View>
-                    <View style={styles.cardMetaItem}>
-                      <FontAwesome5 name="car" size={14} color={color.primary} style={styles.cardMetaIcon} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
-                        {getBookingDisplayData(item).vehicleDisplay}
-                      </CustomText>
+                    <View style={styles.cardMetaRow}>
+                      <View style={styles.cardMetaCol}>
+                        <View style={styles.cardMetaItem}>
+                          <MaterialCommunityIcons
+                            name="card-account-details-outline"
+                            size={16}
+                            color={color.primary}
+                            style={styles.cardMetaIcon}
+                          />
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.black,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {getBookingDisplayData(item).bookingTrackID}
+                          </CustomText>
+                        </View>
+                        <View style={styles.cardMetaItem}>
+                          <FontAwesome5
+                            name="car"
+                            size={14}
+                            color={color.primary}
+                            style={styles.cardMetaIcon}
+                          />
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.black,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {getBookingDisplayData(item).vehicleDisplay}
+                          </CustomText>
+                        </View>
+                      </View>
+                      <View style={styles.cardMetaCol}>
+                        <View style={styles.cardMetaItem}>
+                          <MaterialCommunityIcons
+                            name="calendar"
+                            size={16}
+                            color={color.primary}
+                            style={styles.cardMetaIcon}
+                          />
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.black,
+                            ]}
+                          >
+                            {getBookingDisplayData(item).bookingDate}
+                          </CustomText>
+                        </View>
+                        <View style={styles.cardMetaItem}>
+                          <Ionicons
+                            name="time-outline"
+                            size={16}
+                            color={color.primary}
+                            style={styles.cardMetaIcon}
+                          />
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.black,
+                              styles.timeValue,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {getBookingDisplayData(item).timeSlot}
+                          </CustomText>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.cardMetaCol}>
-                    <View style={styles.cardMetaItem}>
-                      <MaterialCommunityIcons name="calendar" size={16} color={color.primary} style={styles.cardMetaIcon} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                        {getBookingDisplayData(item).bookingDate}
-                      </CustomText>
-                    </View>
-                    <View style={styles.cardMetaItem}>
-                      <Ionicons name="time-outline" size={16} color={color.primary} style={styles.cardMetaIcon} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]} numberOfLines={1}>
-                        {getBookingDisplayData(item).timeSlot}
-                      </CustomText>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </Animated.View>
         )}
       </View>

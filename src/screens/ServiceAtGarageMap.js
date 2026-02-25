@@ -61,7 +61,14 @@ export default function ServiceAtGarageMap() {
   const carPickupDone = !!(
     displayBooking?.CarPickUpDate ?? displayBooking?.CarPickupDate
   );
-  const statusForButtons = displayBooking?.PickupDelivery?.DriverStatus;
+  const pd = displayBooking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const statusForButtons = currentLeg?.DriverStatus;
+  const pickDropId = Number(currentLeg?.Id ?? 0);
+  const routeType =
+    currentLeg?.PickFrom?.[0]?.RouteType ||
+    currentLeg?.DropAt?.RouteType ||
+    "CustomerToDealer";
 
   const fullAddress = booking?.FullAddress || booking?.Leads?.FullAddress || booking?.Leads?.City || "";
   const rawLat = booking?.latitude ?? booking?.Latitude;
@@ -147,11 +154,25 @@ export default function ServiceAtGarageMap() {
               completed: 7,
               cancelled: 8,
             };
-            const prevStatus = prev?.PickupDelivery?.DriverStatus || "assigned";
-            const apiStatus = fromApi?.PickupDelivery?.DriverStatus || "assigned";
+            const prevPD = prev?.PickupDelivery;
+            const apiPD = fromApi?.PickupDelivery;
+            const prevStatus =
+              (Array.isArray(prevPD) ? prevPD[0]?.DriverStatus : prevPD?.DriverStatus) || "assigned";
+            const apiStatus =
+              (Array.isArray(apiPD) ? apiPD[0]?.DriverStatus : apiPD?.DriverStatus) || "assigned";
             const prevOrder = statusOrder[prevStatus] ?? 0;
             const apiOrder = statusOrder[apiStatus] ?? 0;
-            if (apiOrder < prevOrder) return { ...fromApi, PickupDelivery: { ...fromApi.PickupDelivery, DriverStatus: prevStatus } };
+            if (apiOrder < prevOrder) {
+              if (Array.isArray(apiPD)) {
+                return {
+                  ...fromApi,
+                  PickupDelivery: apiPD.map((leg, i) =>
+                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                  ),
+                };
+              }
+              return { ...fromApi, PickupDelivery: { ...apiPD, DriverStatus: prevStatus } };
+            }
             return fromApi;
           });
         }
@@ -223,45 +244,33 @@ export default function ServiceAtGarageMap() {
   };
 
   const handleStartRide = async () => {
+    if (!pickDropId) {
+      console.warn("InsertTracking: no pickDropId (PickupDelivery.Id)");
+    }
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
         {
-          pickDropId: Number(displayBooking?.PickupDelivery?.Id || 0),
+          pickDropId,
           status: "pickup_started",
         },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (e) {
-      console.error("InsertTracking Error:", e);
+      console.error("InsertTracking Error:", e?.response?.data || e);
     }
 
-    try {
-      const statusPayload = {
-        bookingID: Number(displayBooking?.BookingID || 0),
-        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
-        action: "pickup_started",
-        updatedBy: Number(displayBooking?.TechID || 3),
-        role: "Technician",
-      };
-      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-        statusPayload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("UpdateBookingStatus posted for pickup_started");
-    } catch (e) {
-      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
-    }
+    // UpdateBookingStatus: backend may not accept any action for ServiceAtGarage + this RouteType; rely on InsertTracking for status.
+    // If your API supports an action for this case, call it here with the correct action value from API docs.
 
+    const currentPD = booking?.PickupDelivery;
     const next = {
       ...booking,
-      PickupDelivery: {
-        ...booking.PickupDelivery,
-        DriverStatus: "pickup_started",
-      },
+      PickupDelivery: Array.isArray(currentPD)
+        ? currentPD.map((leg, i) =>
+            i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg
+          )
+        : { ...currentPD, DriverStatus: "pickup_started" },
     };
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
@@ -272,47 +281,28 @@ export default function ServiceAtGarageMap() {
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
-    const carPickupDeliveryId = Number(displayBooking?.PickupDelivery?.Id ?? 0);
     const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
         {
-          pickDropId: Number(carPickupDeliveryId),
+          pickDropId,
           status: "pickup_reached",
         },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (e) {
-      console.error("InsertTracking Error:", e);
+      console.error("InsertTracking Error:", e?.response?.data || e);
     }
 
-    try {
-      const statusPayload = {
-        bookingID: Number(displayBooking?.BookingID || 0),
-        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
-        action: "pickup_reached",
-        updatedBy: Number(displayBooking?.TechID || 3),
-        role: "Technician",
-      };
-      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-        statusPayload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("UpdateBookingStatus posted for pickup_reached");
-    } catch (e) {
-      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
-    }
+    // UpdateBookingStatus: backend may not accept any action for ServiceAtGarage + this RouteType; rely on InsertTracking for status.
 
     try {
-      console.log("GenerateOTP==================", carPickupDeliveryId, "Pickup", phoneNumber);
+      console.log("GenerateOTP==================", pickDropId, "Pickup", phoneNumber);
       await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         {
-          carPickupDeliveryId,
+          carPickupDeliveryId: pickDropId,
           otpType: "Pickup",
           phoneNumber: String(phoneNumber).trim(),
         },
@@ -321,12 +311,14 @@ export default function ServiceAtGarageMap() {
     } catch (e) {
       console.error("GenerateOTP Error:", e);
     }
+    const currentPD = booking?.PickupDelivery;
     const next = {
       ...booking,
-      PickupDelivery: {
-        ...booking.PickupDelivery,
-        DriverStatus: "pickup_reached",
-      },
+      PickupDelivery: Array.isArray(currentPD)
+        ? currentPD.map((leg, i) =>
+            i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg
+          )
+        : { ...currentPD, DriverStatus: "pickup_reached" },
     };
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
@@ -338,13 +330,12 @@ export default function ServiceAtGarageMap() {
   };
 
   const handleDropCarAtGarage = async () => {
-    const carPickupDeliveryId = Number(displayBooking?.PickupDelivery?.Id ?? 0);
     const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         {
-          carPickupDeliveryId,
+          carPickupDeliveryId: pickDropId,
           otpType: "Delivery",
         },
         { headers: { "Content-Type": "application/json" } }
@@ -353,25 +344,7 @@ export default function ServiceAtGarageMap() {
       // continue even if OTP call fails
     }
 
-    try {
-      const statusPayload = {
-        bookingID: Number(displayBooking?.BookingID || 0),
-        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType: displayBooking?.PickupDelivery?.RouteType || "CustomerToDealer",
-        action: "in_transit",
-        updatedBy: Number(displayBooking?.TechID || 3),
-        role: "Technician",
-      };
-      console.log("UpdateBookingStatus Payload (in_transit):", JSON.stringify(statusPayload, null, 2));
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-        statusPayload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("UpdateBookingStatus posted for in_transit");
-    } catch (e) {
-      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
-    }
+    // UpdateBookingStatus with action "in_transit" not called here; backend may not support it for ServiceAtGarage.
 
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,
@@ -438,7 +411,7 @@ export default function ServiceAtGarageMap() {
           )
         ) : (
           <View style={[styles.mapPlaceholder, globalStyles.justifycenter, globalStyles.alineItemscenter]}>
-            <CustomText style={globalStyles.f14Medium}>No location available</CustomText>
+            <CustomText style={globalStyles.f12Medium}>No location available</CustomText>
           </View>
         )}
       </View>

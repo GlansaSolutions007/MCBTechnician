@@ -112,6 +112,16 @@ export default function CustomerInfo() {
     updatedBookings?.BookingID === booking?.BookingID && updatedBookings
       ? updatedBookings
       : booking;
+  const pd = displayBooking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const driverStatus =
+    displayBooking?.DriverStatus ?? currentLeg?.DriverStatus;
+  const pickDropId = Number(currentLeg?.Id ?? 0);
+  const routeType =
+    currentLeg?.PickFrom?.RouteType ??
+    (Array.isArray(currentLeg?.PickFrom) ? currentLeg?.PickFrom?.[0]?.RouteType : null) ??
+    currentLeg?.DropAt?.RouteType ??
+    "CustomerToDealer";
   const [expandedPackages, setExpandedPackages] = useState({});
   const [expandedAddOns, setExpandedAddOns] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
@@ -148,7 +158,14 @@ export default function CustomerInfo() {
     navigation.navigate("CollectPayment", { booking: booking });
   };
   const onRefresh = async () => {
-    if (!booking?.BookingID || !booking?.TechID) return;
+    if (!booking?.BookingID) {
+      setLoading(false);
+      return;
+    }
+    if (!booking?.TechID) {
+      setLoading(false);
+      return;
+    }
     setRefreshing(true);
     setLoading(true);
 
@@ -163,17 +180,38 @@ export default function CustomerInfo() {
         );
         setUpdatedBookings((prev) => {
           if (!fromApi) return prev;
-          // Don't overwrite optimistic StartJourney/Reached with stale status from API
-          const statusOrder = { Confirmed: 1, StartJourney: 2, Reached: 3, ServiceStarted: 4, Completed: 5 };
-          const prevOrder = statusOrder[prev?.PickupDelivery?.DriverStatus] || 0;
-          const apiOrder = statusOrder[fromApi?.PickupDelivery?.DriverStatus] || 0;
-          if (apiOrder < prevOrder) {
-            const merged = { 
-              ...fromApi, 
-              PickupDelivery: {
-                ...fromApi.PickupDelivery,
-                DriverStatus: prev?.PickupDelivery?.DriverStatus || fromApi.PickupDelivery?.DriverStatus
-              }
+          const getStatus = (b) =>
+            b?.DriverStatus ??
+            (Array.isArray(b?.PickupDelivery)
+              ? b.PickupDelivery[0]?.DriverStatus
+              : b?.PickupDelivery?.DriverStatus);
+          const statusOrder = {
+            assigned: 1,
+            pickup_started: 2,
+            pickup_reached: 3,
+            car_picked: 4,
+            ServiceStart: 5,
+            completed: 6,
+            ServiceComplete: 7,
+            Confirmed: 1,
+            StartJourney: 2,
+            Reached: 3,
+            ServiceStarted: 4,
+            Completed: 5,
+          };
+          const prevStatus = getStatus(prev);
+          const apiStatus = getStatus(fromApi);
+          const prevOrder = statusOrder[prevStatus] ?? 0;
+          const apiOrder = statusOrder[apiStatus] ?? 0;
+          if (apiOrder < prevOrder && prevStatus) {
+            const merged = {
+              ...fromApi,
+              DriverStatus: prevStatus,
+              PickupDelivery: Array.isArray(fromApi.PickupDelivery)
+                ? fromApi.PickupDelivery.map((leg, i) =>
+                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                  )
+                : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
             };
             navigation.setParams({ booking: merged });
             return merged;
@@ -588,25 +626,25 @@ export default function CustomerInfo() {
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
-    // Post to InsertTracking with status "pickup_started"
-    try {
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/InsertTracking`,
-        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "pickup_started" },
-        { headers: { "Content-Type": "application/json" } }
-      );
-    } catch (e) {
-      console.error("InsertTracking Error:", e);
+    if (pickDropId) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          { pickDropId, status: "pickup_started" },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } catch (e) {
+        console.error("InsertTracking Error:", e?.response?.data ?? e);
+      }
     }
 
-    // Post to UpdateBookingStatus with action "pickup_started"
     try {
       const statusPayload = {
-        bookingID: Number(booking?.BookingID || 0),
-        serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType,
         action: "pickup_started",
-        updatedBy: Number(booking?.TechID || 3),
+        updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
@@ -640,25 +678,25 @@ export default function CustomerInfo() {
   };
 
   const Reached = async () => {
-    // Post to InsertTracking with status "pickup_reached"
-    try {
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/InsertTracking`,
-        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "pickup_reached" },
-        { headers: { "Content-Type": "application/json" } }
-      );
-    } catch (e) {
-      console.error("InsertTracking Error:", e);
+    if (pickDropId) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          { pickDropId, status: "pickup_reached" },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } catch (e) {
+        console.error("InsertTracking Error:", e?.response?.data ?? e);
+      }
     }
 
-    // Post to UpdateBookingStatus with action "pickup_reached"
     try {
       const statusPayload = {
-        bookingID: Number(booking?.BookingID || 0),
-        serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType,
         action: "pickup_reached",
-        updatedBy: Number(booking?.TechID || 3),
+        updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
@@ -1503,37 +1541,8 @@ export default function CustomerInfo() {
               {/* Pickup and Delivery Details */}
               {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
                 <View style={[globalStyles.mb3]}>
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
-                    <Ionicons name="arrow-down-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                    <CustomText
-                      style={[globalStyles.f14Bold, globalStyles.black]}
-                    >
-                      Pickup
-                    </CustomText>
-                  </View>
-                  <View style={{ marginLeft: 22 }}>
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                    >
-                      {formatDate(booking.PickupDelivery[0].PickupDate)} {booking.PickupDelivery[0].PickupTime && `(${formatTime(booking.PickupDelivery[0].PickupTime)})`}
-                    </CustomText>
-                  </View>
-
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2, globalStyles.mb2]}>
-                    <Ionicons name="arrow-up-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                    <CustomText
-                      style={[globalStyles.f14Bold, globalStyles.black]}
-                    >
-                      Delivery
-                    </CustomText>
-                  </View>
-                  <View style={{ marginLeft: 22 }}>
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                    >
-                      {formatDate(booking.PickupDelivery[0].DeliveryDate)} {booking.PickupDelivery[0].DeliveryTime && `(${formatTime(booking.PickupDelivery[0].DeliveryTime)})`}
-                    </CustomText>
-                  </View>
+                 
+                
                 </View>
               ) : (
                 <View style={[globalStyles.mb3]}>
@@ -1546,7 +1555,6 @@ export default function CustomerInfo() {
               )}
 
               {/* Divider */}
-              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
 
               {/* Price - Aligned at bottom */}
               <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
@@ -1567,70 +1575,31 @@ export default function CustomerInfo() {
             </View>
           </View>
         </View>
+        {booking.Notes && booking.Notes.length > 140 && (
+          <View style={[globalStyles.container, globalStyles.pt2]}>
+            <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
+              <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500]}>
+                {isNoteExpanded ? "Show less" : "Show more"}
+              </CustomText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View
           style={[
             globalStyles.container,
-            globalStyles.bgBlack,
             globalStyles.pb5,
+            { backgroundColor: color.background || "#f5f5f5", paddingVertical: 16 },
           ]}
         >
-          {/* <CustomText
-            style={[
-              globalStyles.f16Bold,
-              globalStyles.textWhite,
-              globalStyles.mt2,
-            ]}
-          >
-            Customer Note:{" "}
-            <CustomText
-              style={[globalStyles.f12Regular, globalStyles.textyellow]}
-            >
-              {getNotePreview(booking.Notes)}
-            </CustomText>
-          </CustomText> */}
-          {booking.Notes && booking.Notes.length > 140 && (
-            <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
-              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                {isNoteExpanded ? "Show less" : "Show more"}
-              </CustomText>
-            </TouchableOpacity>
-          )}
-
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.justifysb,
-              globalStyles.mt2,
-              // globalStyles.p4,
-            ]}
-          ></View>
-
           <View style={[globalStyles.mt2]}>
             <View>
-              {/* {booking.BookingStatus === "Confirmed" && (
-                <TouchableOpacity
-                  style={styles.startride}
-                  onPress={handleStartRide}
-                >
-                  <Ionicons
-                    name="rocket"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText style={styles.startButtonText}>
-                    Start Ride
-                  </CustomText>
-                </TouchableOpacity>
-              )} */}
-
-              {/* {(booking.BookingStatus === "StartJourney" ||
-                booking.BookingStatus === "ServiceStarted") && ( */}
-              {/* <View style={styles.startreach}> */}
-              {displayBooking?.PickupDelivery?.DriverStatus !== "ServiceComplete" && (
+            
+              {driverStatus &&
+                driverStatus !== "ServiceComplete" &&
+                driverStatus !== "completed" && (
                   <>
-                    {displayBooking?.PickupDelivery?.DriverStatus === "assigned" && (
+                    {driverStatus === "assigned" && (
                       <TouchableOpacity
                         style={styles.startButton}
                         onPress={handleStartRide}
@@ -1649,8 +1618,8 @@ export default function CustomerInfo() {
                       </TouchableOpacity>
                     )}
 
-                    {(displayBooking?.PickupDelivery?.DriverStatus === "pickup_started" ||
-                      displayBooking?.PickupDelivery?.DriverStatus === "ServiceStart") && (
+                    {(driverStatus === "pickup_started" ||
+                      driverStatus === "ServiceStart") && (
                       <View style={styles.startreach}>
                         <TouchableOpacity
                           style={[styles.startButton, { flex: 1 }]}
@@ -1669,7 +1638,7 @@ export default function CustomerInfo() {
                           </CustomText>
                         </TouchableOpacity>
 
-                        {displayBooking?.PickupDelivery?.DriverStatus === "pickup_started" && (
+                        {driverStatus === "pickup_started" && (
                           <TouchableOpacity
                             style={[styles.ReachedButton, { flex: 1 }]}
                             onPress={Reached}
@@ -1696,9 +1665,7 @@ export default function CustomerInfo() {
             </View>
             {(() => {
               const currentBooking = displayBooking;
-              const DriverStatus = currentBooking?.PickupDelivery?.DriverStatus;
-              
-              if (DriverStatus === "pickup_reached") {
+              if (driverStatus === "pickup_reached") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceStart(currentBooking)}
@@ -1717,8 +1684,30 @@ export default function CustomerInfo() {
                   </TouchableOpacity>
                 );
               }
-              
-              if (DriverStatus === "ServiceStart") {
+              if (driverStatus === "car_picked") {
+                return (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("CustomerToGarageMap", {
+                        booking: currentBooking,
+                      })
+                    }
+                    style={[styles.NextButton, globalStyles.mb3]}
+                  >
+                    <CustomText
+                      style={[
+                        globalStyles.f14Bold,
+                        globalStyles.mr1,
+                        globalStyles.textWhite,
+                      ]}
+                    >
+                      Next
+                    </CustomText>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </TouchableOpacity>
+                );
+              }
+              if (driverStatus === "ServiceStart") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceEnd(currentBooking)}
@@ -1737,7 +1726,6 @@ export default function CustomerInfo() {
                   </TouchableOpacity>
                 );
               }
-              
               return null;
             })()}
 
