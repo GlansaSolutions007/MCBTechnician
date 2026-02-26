@@ -7,8 +7,9 @@ import {
   RefreshControl,
   Animated,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import {
   MaterialCommunityIcons,
   FontAwesome5,
@@ -20,7 +21,7 @@ import CustomText from "../components/CustomText";
 import { color } from "../styles/theme";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
 import BookingPickDropRow from "../components/BookingPickDropRow";
@@ -45,6 +46,12 @@ export default function Bookings() {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+    }, [])
+  );
 
   const fetchBookings = async () => {
     try {

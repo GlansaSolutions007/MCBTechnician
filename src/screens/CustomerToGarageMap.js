@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Linking,
   ScrollView,
+  BackHandler,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -125,11 +126,17 @@ export default function CustomerToGarageMap() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefresh();
-    }, [booking?.BookingID])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     onRefresh();
+  //     const onBack = () => {
+  //       navigation.navigate("Booking");
+  //       return true;
+  //     };
+  //     const subscription = BackHandler.addEventListener("hardwareBackPress", onBack);
+  //     return () => subscription.remove();
+  //   }, [booking?.BookingID, navigation])
+  // );
 
   useEffect(() => {
     (async () => {
@@ -146,46 +153,76 @@ export default function CustomerToGarageMap() {
     })();
   }, []);
 
+  useFocusEffect(
+  useCallback(() => {
+    const timer = setTimeout(() => {
+      onRefresh();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [booking?.BookingID])
+);
+
   const handleLetsStart = async () => {
-    if (carPickupDeliveryId > 0) {
-      try {
-        await axios.post(
-          `${API_BASE_URL}ServiceImages/InsertTracking`,
-          { pickDropId: carPickupDeliveryId, status: "in_transit" },
-          { headers: { "Content-Type": "application/json" } }
+  try {
+    // ✅ 1. Update UI instantly
+    setUpdatedBooking((prev) => {
+      if (!prev) return prev;
+
+      const updated = { ...prev };
+
+      if (Array.isArray(updated.PickupDelivery)) {
+        updated.PickupDelivery = updated.PickupDelivery.map((leg, index) =>
+          index === 0 ? { ...leg, DriverStatus: "in_transit" } : leg
         );
-        await onRefresh();
-      } catch (e) {
-        console.error("InsertTracking Error:", e);
+      } else if (updated.PickupDelivery) {
+        updated.PickupDelivery = {
+          ...updated.PickupDelivery,
+          DriverStatus: "in_transit",
+        };
       }
+
+      return updated;
+    });
+
+    // ✅ 2. Call InsertTracking
+    if (carPickupDeliveryId > 0) {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        { pickDropId: carPickupDeliveryId, status: "in_transit" },
+        { headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    try {
-      const statusPayload = {
+    // ✅ 3. Update booking status
+    await axios.post(
+      `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+      {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         routeType,
         action: "in_transit",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
-      };
-      console.log("UpdateBookingStatus Payload (in_transit):", JSON.stringify(statusPayload, null, 2));
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-        statusPayload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("UpdateBookingStatus posted for in_transit");
-    } catch (e) {
-      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
-    }
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
 
-    const dest = `${garageCoords.latitude},${garageCoords.longitude}`;
-    const url = location
-      ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
-      : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
-    Linking.openURL(url).catch(() => {});
-  };
+    // ✅ 4. Refresh booking from API (optional but recommended)
+    await onRefresh();
+
+  } catch (e) {
+    console.error("Error:", e);
+  }
+
+  // ✅ 5. Open maps
+  const dest = `${garageCoords.latitude},${garageCoords.longitude}`;
+  const url = location
+    ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
+    : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+
+  Linking.openURL(url).catch(() => {});
+};
 
   const handleNavigate = () => {
     if (location) {
@@ -293,6 +330,12 @@ export default function CustomerToGarageMap() {
           showsVerticalScrollIndicator={false}
         >
 
+          {driverStatus === "pickup_reached" && (
+            <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
+              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+            </TouchableOpacity>
+          )}
           {driverStatus === "car_picked" && (
             <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
               <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />

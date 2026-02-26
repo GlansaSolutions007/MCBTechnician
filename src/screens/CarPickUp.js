@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  RefreshControl,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -66,7 +67,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [carPickedUp, setCarPickedUp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-
+  const [refreshing, setRefreshing] = useState(false);
 
   const bookingParam = route?.params?.booking;
   
@@ -132,6 +133,33 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const carPickupDeliveryId = Number(
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
+  const driverStatus = currentLeg?.DriverStatus ?? (pd && !Array.isArray(pd) ? pd?.DriverStatus : null);
+
+  const refreshBooking = async () => {
+    const techId = booking?.TechID ?? bookingParam?.TechID;
+    if (!techId || !booking?.BookingID) return null;
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`,
+        { params: { Id: techId, techId } }
+      );
+      const data = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const fromApi = data.find((b) => b.BookingID === booking.BookingID);
+      if (fromApi) {
+        navigation.setParams({ booking: fromApi });
+        return fromApi;
+      }
+    } catch (e) {
+      console.error("Refresh booking error:", e);
+    }
+    return null;
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshBooking();
+    setRefreshing(false);
+  };
 
   const resendOTP = async () => {
     try {
@@ -431,6 +459,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       <ScrollView 
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <View style={globalStyles.container}>
         {/* <AvailabilityHeader /> */}
@@ -937,32 +968,36 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       } catch (e) {}
                     }
 
+                    // Reload page with latest booking (DriverStatus car_picked) so Next button shows
+                    const refreshedBooking = await refreshBooking();
+                    const bookingForNav = refreshedBooking || booking;
+
                     // Calculate estimated and actual time
-                    const estimatedTime = booking.TotalEstimatedDurationMinutes
-                      ? booking.TotalEstimatedDurationMinutes * 60
+                    const estimatedTime = bookingForNav.TotalEstimatedDurationMinutes
+                      ? bookingForNav.TotalEstimatedDurationMinutes * 60
                       : 0;
                     
                     // Calculate actual time (service just started, so it's 0 or from API if already started)
                     let actualTime = 0;
-                    const serviceStartTime = booking.ServiceStartedAt 
-                      ? new Date(booking.ServiceStartedAt)
+                    const serviceStartTime = bookingForNav.ServiceStartedAt 
+                      ? new Date(bookingForNav.ServiceStartedAt)
                       : new Date();
                     actualTime = Math.floor((new Date() - serviceStartTime) / 1000);
 
                     // Update booking with ServiceStartedAt if not already set
                     const updatedBooking = {
-                      ...booking,
-                      ServiceStartedAt: booking.ServiceStartedAt || new Date().toISOString(),
+                      ...bookingForNav,
+                      ServiceStartedAt: bookingForNav.ServiceStartedAt || new Date().toISOString(),
                     };
 
                     // Store timer state
                     await AsyncStorage.setItem(
-                      `serviceStarted_${booking.BookingID}`,
+                      `serviceStarted_${bookingForNav.BookingID}`,
                       "true"
                     );
 
                     await AsyncStorage.setItem(
-                      `timerState_${booking.BookingID}`,
+                      `timerState_${bookingForNav.BookingID}`,
                       JSON.stringify({
                         timerStarted: true,
                         elapsedTime: actualTime,
@@ -1023,114 +1058,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           </View>
         )}
 
-        {timerStarted && (
-          <View>
-            {/* <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.justifysb,
-                globalStyles.mt4,
-                globalStyles.bgprimary,
-                globalStyles.p4,
-                globalStyles.borderRadiuslarge,
-              ]}
-            >
-              <View
-                style={[
-                  globalStyles.alineSelfcenter,
-                  globalStyles.flexrow,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  Estimated Time:
-                </CustomText>
-                <CustomText
-                  style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                >
-                  {" "}
-                  {booking.TotalEstimatedDurationMinutes
-                    ? `${Math.floor(
-                        booking.TotalEstimatedDurationMinutes / 60
-                      )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
-                    : "N/A"}
-                </CustomText>
-              </View>
-            </View> */}
-
-            {/* <View style={{ alignItems: "center", marginTop: 30 }}>
-              <AnimatedCircularProgress
-                size={240}
-                width={10}
-                fill={Math.min((elapsedTime / MAX_TIME) * 100, 100)}
-                tintColor={elapsedTime > MAX_TIME ? "red" : color.primary}
-                backgroundColor={color.neutral[200]}
-                rotation={0}
-                lineCap="round"
-              >
-                {() => (
-                  <>
-                    <CustomText
-                      style={[globalStyles.f12Medium, { color: color.black }]}
-                    >
-                      {booking.TotalEstimatedDurationMinutes
-                        ? `${Math.floor(
-                            booking.TotalEstimatedDurationMinutes / 60
-                          )}h:${booking.TotalEstimatedDurationMinutes % 60}m`
-                        : "N/A"}
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f12Medium, { color: color.black }]}
-                    >
-                      Service Timing
-                    </CustomText>
-                    <CustomText
-                      style={[globalStyles.f28ExtraBold, { marginTop: 5 }]}
-                    >
-                      {formatTime(elapsedTime)}
-                    </CustomText>
-                  </>
-                )}
-              </AnimatedCircularProgress>
-
-              {timerCompleted && (
-                <>
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.w100,
-                      globalStyles.justifysb,
-                      globalStyles.mt4,
-                      globalStyles.mb2,
-                      globalStyles.bgprimary,
-                      globalStyles.p4,
-                      globalStyles.borderRadiuslarge,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        globalStyles.alineSelfcenter,
-                        globalStyles.flexrow,
-                        globalStyles.alineItemscenter,
-                      ]}
-                    >
-                      <CustomText
-                        style={[globalStyles.f24Bold, globalStyles.textWhite]}
-                      >
-                        Total Time Taken: {formatTime(elapsedTime)}
-                      </CustomText>
-                    </View>
-                  </View>
-                </>
-              )}
-            </View> */}
-
-          
-          
-
-
+                {driverStatus === "pickup_reached" 
+                // || driverStatus === "car_picked" 
+                && (
             <TouchableOpacity
               onPress={async () => {
                 setTimerCompleted(true);
@@ -1155,8 +1085,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 Next
               </CustomText>
             </TouchableOpacity>
-          </View>
-        )}
+            )}
 
         <Modal
           animationType="fade"

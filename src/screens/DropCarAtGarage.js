@@ -66,10 +66,37 @@ export default function DropCarAtGarage() {
   const carPickupDeliveryId = Number(
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
-  const bookingParam = route?.params?.booking || booking;
+  const [bookingParam, setBookingParam] = useState(route?.params?.booking || booking);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchAssigned = async () => {
+      try {
+        const techId = booking?.TechID ?? route?.params?.booking?.TechID;
+        if (!techId) return;
+        const response = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`);
+        if (response?.data && Array.isArray(response.data) && mounted) {
+          const idToMatch = booking?.BookingID ?? route?.params?.booking?.BookingID;
+          const found = response.data.find((b) => String(b.BookingID) === String(idToMatch));
+          if (found) setBookingParam(found);
+        }
+      } catch (e) {
+        console.error("Error fetching assigned bookings:", e);
+      }
+    };
+    fetchAssigned();
+    return () => {
+      mounted = false;
+    };
+  }, [booking?.BookingID, booking?.TechID]);
 
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
-  const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
+  // const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
+  const pdParam = bookingParam?.PickupDelivery;
+  const currentLegParam = Array.isArray(pdParam) ? pdParam[0] : pdParam;
+  const phoneNumber = currentLegParam?.PickFrom?.PersonNumber || bookingParam?.PickupDelivery?.PickFrom?.PersonNumber || "";
+  const DropAtphoneNumber = currentLegParam?.DropAt?.PersonNumber || bookingParam?.PickupDelivery?.DropAt?.PersonNumber || "";
+  console.log("DropAtphoneNumber===-----=====-----===:", currentLegParam);
   const profileImage = bookingParam?.ProfileImage || null;
 
   useEffect(() => {
@@ -111,7 +138,7 @@ export default function DropCarAtGarage() {
       const generateOtpPayload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Delivery",
-        phoneNumber: String(phoneNumber || "").trim(),
+        phoneNumber: String(DropAtphoneNumber || "").trim(),
       };
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
@@ -454,7 +481,7 @@ export default function DropCarAtGarage() {
                   {isLoading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>Send OTP</CustomText>
+                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>Resend OTP</CustomText>
                   )}
                 </TouchableOpacity>
               ) : (

@@ -98,12 +98,32 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="CustomerToGarageMap"
         component={CustomerToGarageMap}
-        options={{ title: "Customer to Garage" }}
+        options={({ navigation }) => ({
+          title: "Customer to Garage",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Booking")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Stack.Screen
         name="DropCarAtGarage"
         component={DropCarAtGarage}
-        options={{ title: "Car drop" }}
+        options={({ navigation }) => ({
+          title: "Car drop",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Booking")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Stack.Screen
         name="ServiceEnd"
@@ -138,7 +158,27 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="Booking"
         component={Bookings}
-        options={{ title: "Booking" }}
+        options={({ navigation }) => ({
+          title: "Booking",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: "CustomerTabNavigator",
+                      params: { screen: "Dashboard" },
+                    },
+                  ],
+                });
+              }}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Stack.Screen
         name="Notifications"
