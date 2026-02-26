@@ -53,7 +53,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [uploadDone, setUploadDone] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [carRegistrationNumber, setCarRegistrationNumber] = useState("");
+  const initialRegNo =
+    bookingParam?.CarRegistrationNumber ||
+    bookingParam?.VehicleNumber ||
+    bookingParam?.Leads?.Vehicle?.RegistrationNumber ||
+    "";
+  const [carRegistrationNumber, setCarRegistrationNumber] = useState(initialRegNo ? String(initialRegNo).trim().toUpperCase() : "");
   const [registrationError, setRegistrationError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -92,6 +97,17 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     currentLeg?.PickFrom?.RouteType ??
     currentLeg?.DropAt?.RouteType ??
     "CustomerToDealer";
+  // Pre-fill car registration from API when booking has it; if not there, leave empty
+  useEffect(() => {
+    const fromApi =
+      bookingParam?.CarRegistrationNumber ||
+      bookingParam?.VehicleNumber ||
+      bookingParam?.Leads?.Vehicle?.RegistrationNumber ||
+      "";
+    if (fromApi) setCarRegistrationNumber(String(fromApi).trim().toUpperCase());
+    else setCarRegistrationNumber("");
+  }, [bookingParam?.BookingID]);
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
@@ -948,6 +964,26 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       setModalMessage(errMsg);
                       setModalVisible(true);
                       return;
+                    }
+
+                    // OTP verified — update booking status with action "ServiceStart" (same as 452-464)
+                    try {
+                      const statusPayload = {
+                        bookingID: Number(booking?.BookingID || 0),
+                        serviceType: booking?.ServiceType || "ServiceAtHome",
+                        routeType,
+                        action: "ServiceStart",
+                        updatedBy: Number(booking?.TechID || 3),
+                        role: "Technician",
+                      };
+                      await axios.post(
+                        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+                        statusPayload,
+                        { headers: { "Content-Type": "application/json" } }
+                      );
+                      console.log("UpdateBookingStatus posted for ServiceStart (after OTP verify)");
+                    } catch (e) {
+                      console.error("UpdateBookingStatus (ServiceStart) Error:", e?.response?.data ?? e);
                     }
 
                     // OTP valid — post images to InsertPickupDeliveryImages (BeforeServiceStart), same pattern as CarPickUp

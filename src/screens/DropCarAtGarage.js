@@ -420,7 +420,7 @@ export default function DropCarAtGarage() {
               ]}
               placeholder="From pickup"
               placeholderTextColor={color.neutral[500]}
-              value={carRegistrationNumber}
+              value={bookingParam?.CarRegistrationNumber || bookingParam?.VehicleNumber || bookingParam?.Leads?.Vehicle?.RegistrationNumber || ""}
               editable={false}
               autoCapitalize="characters"
             />

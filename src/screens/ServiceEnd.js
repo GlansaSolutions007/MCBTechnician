@@ -50,7 +50,12 @@ export default function ServiceEnd() {
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
   const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
   const profileImage = booking.ProfileImage || null;
-  const carRegistrationNumber = paramRegNo || booking?.CarRegistrationNumber || "";
+  const carRegistrationNumber =
+    paramRegNo ||
+    booking?.CarRegistrationNumber ||
+    booking?.VehicleNumber ||
+    booking?.Leads?.Vehicle?.RegistrationNumber ||
+    "";
   const vehicleNumber = booking.VehicleNumber || booking.Leads?.Vehicle?.RegistrationNumber || carRegistrationNumber || "";
   const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
@@ -529,7 +534,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {carRegistrationNumber || getBookingDisplayData(booking).vehicleDisplay || "—"}
+                  {carRegistrationNumber || "—"}
                 </CustomText>
               </View>
               <View
@@ -776,7 +781,7 @@ export default function ServiceEnd() {
               ]}
             >
               <CustomText style={[globalStyles.f12Medium, globalStyles.black]}>
-                {carRegistrationNumber || getBookingDisplayData(booking).vehicleDisplay || "—"}
+                {carRegistrationNumber || "—"}
               </CustomText>
             </View>
           <CustomText

@@ -33,32 +33,79 @@ export default function CustomerToGarageMap() {
   const [location, setLocation] = useState(null);
   const [updatedBooking, setUpdatedBooking] = useState(booking);
   const displayBooking = updatedBooking || booking;
-  const driverStatus = displayBooking?.PickupDelivery?.DriverStatus || "car_picked";
   const mapRef = useRef(null);
 
-  // Dummy garage position
-  const garageCoords = location
-    ? {
-        latitude: location.latitude + GARAGE_OFFSET_LAT,
-        longitude: location.longitude + GARAGE_OFFSET_LNG,
-      }
-    : {
-        latitude: DEFAULT_REGION.latitude + GARAGE_OFFSET_LAT,
-        longitude: DEFAULT_REGION.longitude + GARAGE_OFFSET_LNG,
-      };
+  const pd = displayBooking?.PickupDelivery ?? booking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const driverStatus = currentLeg?.DriverStatus ?? (pd && !Array.isArray(pd) ? pd?.DriverStatus : null);
+  const routeType =
+    currentLeg?.PickFrom?.[0]?.RouteType ??
+    currentLeg?.PickFrom?.RouteType ??
+    currentLeg?.DropAt?.RouteType ??
+    booking?.PickupDelivery?.RouteType ??
+    "CustomerToDealer";
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      : null;
+  const carPickupDeliveryId = Number(
+    legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
+  );
 
-  const initialRegion = location
-    ? {
+  const dropAt = currentLeg?.DropAt;
+  const dropLat = dropAt?.Latitude != null ? Number(dropAt.Latitude) : NaN;
+  const dropLng = dropAt?.Longitude != null ? Number(dropAt.Longitude) : NaN;
+  const bookingLat = booking?.Latitude != null ? Number(booking.Latitude) : NaN;
+  const bookingLng = booking?.Longitude != null ? Number(booking.Longitude) : NaN;
+  const hasDropCoords = !Number.isNaN(dropLat) && !Number.isNaN(dropLng) && dropLat !== 0 && dropLng !== 0;
+  const hasBookingCoords = !Number.isNaN(bookingLat) && !Number.isNaN(bookingLng) && bookingLat !== 0 && bookingLng !== 0;
+
+  const garageCoords = hasDropCoords
+    ? { latitude: dropLat, longitude: dropLng }
+    : hasBookingCoords
+      ? { latitude: bookingLat, longitude: bookingLng }
+      : location
+        ? {
+            latitude: location.latitude + GARAGE_OFFSET_LAT,
+            longitude: location.longitude + GARAGE_OFFSET_LNG,
+          }
+        : {
+            latitude: DEFAULT_REGION.latitude + GARAGE_OFFSET_LAT,
+            longitude: DEFAULT_REGION.longitude + GARAGE_OFFSET_LNG,
+          };
+
+  const pickFrom = currentLeg?.PickFrom;
+  const pickLat = pickFrom?.Latitude != null ? Number(pickFrom.Latitude) : NaN;
+  const pickLng = pickFrom?.Longitude != null ? Number(pickFrom.Longitude) : NaN;
+  const hasPickCoords = !Number.isNaN(pickLat) && !Number.isNaN(pickLng);
+
+  const initialRegion = (() => {
+    if (location && hasDropCoords) {
+      const midLat = (location.latitude + garageCoords.latitude) / 2;
+      const midLng = (location.longitude + garageCoords.longitude) / 2;
+      const deltaLat = Math.max(0.02, Math.abs(location.latitude - garageCoords.latitude) * 1.2);
+      const deltaLng = Math.max(0.02, Math.abs(location.longitude - garageCoords.longitude) * 1.2);
+      return { latitude: midLat, longitude: midLng, latitudeDelta: deltaLat, longitudeDelta: deltaLng };
+    }
+    if (location) {
+      return {
         latitude: location.latitude,
         longitude: location.longitude,
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
-      }
-    : {
-        ...DEFAULT_REGION,
-        latitude: (DEFAULT_REGION.latitude + garageCoords.latitude) / 2,
-        longitude: (DEFAULT_REGION.longitude + garageCoords.longitude) / 2,
       };
+    }
+    return {
+      ...DEFAULT_REGION,
+      latitude: hasDropCoords ? (garageCoords.latitude + DEFAULT_REGION.latitude) / 2 : (DEFAULT_REGION.latitude + garageCoords.latitude) / 2,
+      longitude: hasDropCoords ? (garageCoords.longitude + DEFAULT_REGION.longitude) / 2 : (DEFAULT_REGION.longitude + garageCoords.longitude) / 2,
+    };
+  })();
 
   const onRefresh = async () => {
     if (!booking?.BookingID || !booking?.TechID) return;
@@ -100,22 +147,24 @@ export default function CustomerToGarageMap() {
   }, []);
 
   const handleLetsStart = async () => {
-    try {
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/InsertTracking`,
-        { pickDropId: Number(booking?.PickupDelivery?.Id || 0), status: "in_transit" },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      await onRefresh();
-    } catch (e) {
-      console.error("InsertTracking Error:", e);
+    if (carPickupDeliveryId > 0) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          { pickDropId: carPickupDeliveryId, status: "in_transit" },
+          { headers: { "Content-Type": "application/json" } }
+        );
+        await onRefresh();
+      } catch (e) {
+        console.error("InsertTracking Error:", e);
+      }
     }
 
     try {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        routeType,
         action: "in_transit",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -145,21 +194,6 @@ export default function CustomerToGarageMap() {
     }
   };
 
-  const pd = displayBooking?.PickupDelivery;
-  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
-  const legId =
-    currentLeg?.Id ??
-    currentLeg?.ID ??
-    currentLeg?.PickupDeliveryId ??
-    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
-  const fromArray =
-    Array.isArray(pd) && pd.length > 0
-      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
-      : null;
-  const carPickupDeliveryId = Number(
-    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
-  );
-
   const handleReached = async () => {
     try {
       await axios.post(
@@ -175,7 +209,7 @@ export default function CustomerToGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+        routeType,
         action: "drop_reached",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -235,10 +269,18 @@ export default function CustomerToGarageMap() {
           showsUserLocation={!!location}
           showsMyLocationButton={!!location}
         >
+          {hasPickCoords && (
+            <Marker
+              coordinate={{ latitude: pickLat, longitude: pickLng }}
+              title="Pickup (Customer)"
+              description={pickFrom?.Address || "Customer location"}
+              pinColor={color.neutral[500]}
+            />
+          )}
           <Marker
             coordinate={garageCoords}
-            title="Drop location"
-            description="Drop car at garage"
+            title="Drop location (Garage)"
+            description={dropAt?.Address || "Drop car at garage"}
             pinColor={color.primary}
           />
         </MapView>
@@ -250,14 +292,6 @@ export default function CustomerToGarageMap() {
           contentContainerStyle={styles.actionsContent}
           showsVerticalScrollIndicator={false}
         >
-          {carRegistrationNumber ? (
-            <View style={styles.regNumberBar}>
-              <Ionicons name="car" size={18} color={color.primary} style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, { color: color.primary }]}>
-                Car registration: {carRegistrationNumber}
-              </CustomText>
-            </View>
-          ) : null}
 
           {driverStatus === "car_picked" && (
             <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>

@@ -52,7 +52,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [uploadDone, setUploadDone] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [carRegistrationNumber, setCarRegistrationNumber] = useState("");
+  const initialRegNo =
+    bookingParam?.CarRegistrationNumber ||
+    bookingParam?.VehicleNumber ||
+    bookingParam?.Leads?.Vehicle?.RegistrationNumber ||
+    "";
+  const [carRegistrationNumber, setCarRegistrationNumber] = useState(initialRegNo || "");
   const [registrationError, setRegistrationError] = useState("");
   const [imageError, setImageError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -75,6 +80,16 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const fuelTypeName = bookingParam.FuelTypeName || bookingParam.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = bookingParam.VehicleImage || null;
   const fullAddress = bookingParam.FullAddress || bookingParam.Leads?.FullAddress || bookingParam.Leads?.City || "";
+  // Pre-fill car registration from API when booking has it
+  useEffect(() => {
+    const fromApi =
+      bookingParam?.CarRegistrationNumber ||
+      bookingParam?.VehicleNumber ||
+      bookingParam?.Leads?.Vehicle?.RegistrationNumber ||
+      "";
+    if (fromApi) setCarRegistrationNumber(String(fromApi).trim().toUpperCase());
+  }, [bookingParam?.BookingID]);
+
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {

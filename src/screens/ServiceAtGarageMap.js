@@ -271,8 +271,25 @@ export default function ServiceAtGarageMap() {
       console.error("InsertTracking Error:", e?.response?.data || e);
     }
 
-    // UpdateBookingStatus: backend may not accept any action for ServiceAtGarage + this RouteType; rely on InsertTracking for status.
-    // If your API supports an action for this case, call it here with the correct action value from API docs.
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType,
+        action: "pickup_started",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_started");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
 
     const currentPD = booking?.PickupDelivery;
     const next = {
@@ -306,7 +323,25 @@ export default function ServiceAtGarageMap() {
       console.error("InsertTracking Error:", e?.response?.data || e);
     }
 
-    // UpdateBookingStatus: backend may not accept any action for ServiceAtGarage + this RouteType; rely on InsertTracking for status.
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        routeType,
+        action: "pickup_reached",
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_reached");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
 
     try {
       console.log("GenerateOTP==================", pickDropId, "Pickup", phoneNumber);
@@ -356,7 +391,6 @@ export default function ServiceAtGarageMap() {
       // continue even if OTP call fails
     }
 
-    // UpdateBookingStatus with action "in_transit" not called here; backend may not support it for ServiceAtGarage.
 
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,
