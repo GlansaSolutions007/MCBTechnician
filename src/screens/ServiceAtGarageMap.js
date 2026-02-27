@@ -81,9 +81,17 @@ export default function ServiceAtGarageMap() {
     currentLeg?.DropAt?.RouteType ||
     "CustomerToDealer";
 
-  const fullAddress = booking?.FullAddress || booking?.Leads?.FullAddress || booking?.Leads?.City || "";
-  const rawLat = booking?.latitude ?? booking?.Latitude;
-  const rawLng = booking?.longitude ?? booking?.Longitude;
+  const pickFrom = currentLeg?.PickFrom ?? (Array.isArray(booking?.PickupDelivery) ? booking.PickupDelivery[0]?.PickFrom : booking?.PickupDelivery?.PickFrom);
+  const addressForMap =
+    (typeof pickFrom?.Address === "string" && pickFrom.Address.trim() !== "" ? pickFrom.Address : null) ||
+    displayBooking?.FullAddress ||
+    booking?.FullAddress ||
+    displayBooking?.Leads?.FullAddress ||
+    booking?.Leads?.City ||
+    "";
+  const fullAddress = addressForMap;
+  const rawLat = pickFrom?.Latitude ?? booking?.latitude ?? booking?.Latitude;
+  const rawLng = pickFrom?.Longitude ?? booking?.longitude ?? booking?.Longitude;
   const hasValidCoordinates =
     rawLat != null &&
     rawLng != null &&
@@ -96,26 +104,30 @@ export default function ServiceAtGarageMap() {
   const destination = hasValidCoordinates ? { Latitude: parseFloat(Latitude), Longitude: parseFloat(Longitude) } : null;
 
   const [location, setLocation] = useState(null);
-  const [addressLocation, setAddressLocation] = useState(null);
+  const [addressCoords, setAddressCoords] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [routeCoords, setRouteCoords] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const mapRef = useRef(null);
 
-  const geocodeAddress = async (address) => {
-    if (!address || address.trim() === "") return null;
+  const getCoordinatesFromAddress = async (address) => {
     try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json`,
-        { params: { address, key: GOOGLE_MAPS_APIKEY } }
-      );
-      if (response.data?.status === "OK" && response.data.results?.length > 0) {
-        const loc = response.data.results[0].geometry.location;
-        return { Latitude: loc.lat, Longitude: loc.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 };
+      if (!address || String(address).trim() === "") return;
+      const normalizedAddress = String(address).replace(/\r?\n/g, ", ").trim();
+      if (!normalizedAddress) return;
+      setIsGeocoding(true);
+      const result = await Location.geocodeAsync(normalizedAddress);
+      setIsGeocoding(false);
+      if (result && result.length > 0) {
+        const { latitude, longitude } = result[0];
+        setAddressCoords({
+          Latitude: latitude,
+          Longitude: longitude,
+        });
       }
-      return null;
-    } catch (e) {
-      return null;
+    } catch (error) {
+      setIsGeocoding(false);
+      console.log("Geocoding error:", error);
     }
   };
 
@@ -199,14 +211,10 @@ export default function ServiceAtGarageMap() {
   );
 
   useEffect(() => {
-    if (fullAddress && fullAddress.trim() !== "" && !addressLocation) {
-      setIsGeocoding(true);
-      geocodeAddress(fullAddress).then((loc) => {
-        setIsGeocoding(false);
-        if (loc) setAddressLocation(loc);
-      });
+    if (addressForMap && String(addressForMap).trim() !== "") {
+      getCoordinatesFromAddress(addressForMap);
     }
-  }, [fullAddress]);
+  }, [addressForMap]);
 
   useEffect(() => {
     let sub = null;
@@ -231,17 +239,41 @@ export default function ServiceAtGarageMap() {
     };
   }, []);
 
-  useEffect(() => {
-    const dest = addressLocation
-      ? { Latitude: addressLocation.Latitude, Longitude: addressLocation.Longitude }
-      : destination;
-    if (location && dest) fetchRoute(location, dest);
-  }, [location, addressLocation, destination]);
+  const mapDestination = addressCoords
+    ? { Latitude: addressCoords.Latitude, Longitude: addressCoords.Longitude }
+    : hasValidCoordinates
+      ? { Latitude, Longitude }
+      : null;
 
+  useEffect(() => {
+    const dest = addressCoords
+      ? { Latitude: addressCoords.Latitude, Longitude: addressCoords.Longitude }
+      : hasValidCoordinates
+        ? { Latitude, Longitude }
+        : null;
+    if (location && dest) {
+      fetchRoute(location, dest);
+    }
+  }, [location, addressCoords, hasValidCoordinates, Latitude, Longitude]);
+
+  useEffect(() => {
+    if (routeCoords.length > 0 && mapRef.current?.fitToCoordinates) {
+      mapRef.current.fitToCoordinates(
+        routeCoords.map((c) => ({
+          latitude: c.Latitude,
+          longitude: c.Longitude,
+        })),
+        {
+          edgePadding: { top: 80, right: 40, bottom: 80, left: 40 },
+          animated: true,
+        }
+      );
+    }
+  }, [routeCoords]);
 
   const openGoogleMaps = async () => {
     try {
-      const destCoords = addressLocation || (hasValidCoordinates && destination) ? addressLocation || destination : null;
+      const destCoords = addressCoords || (hasValidCoordinates && destination) ? addressCoords || destination : null;
       let url = "";
       if (location && destCoords) {
         url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destCoords.Latitude},${destCoords.Longitude}&travelmode=driving`;
@@ -409,7 +441,6 @@ export default function ServiceAtGarageMap() {
     );
   }
 
-  const mapDestination = addressLocation || (hasValidCoordinates && { Latitude, Longitude });
   const initialRegion = mapDestination
     ? {
         latitude: mapDestination.Latitude,
@@ -425,7 +456,7 @@ export default function ServiceAtGarageMap() {
         {(mapDestination || isGeocoding) ? (
           isGeocoding ? (
             <View style={[styles.mapPlaceholder, globalStyles.justifycenter, globalStyles.alineItemscenter]}>
-              <CustomText style={globalStyles.f14Medium}>Loading location...</CustomText>
+              <CustomText style={globalStyles.f24Medium}>Loading location...</CustomText>
             </View>
           ) : (
             <MapView
@@ -435,15 +466,18 @@ export default function ServiceAtGarageMap() {
               showsUserLocation={!!location}
               showsMyLocationButton={!!location}
             >
-              {addressLocation && (
+              {addressCoords && (
                 <Marker
-                  coordinate={{ latitude: addressLocation.Latitude, longitude: addressLocation.Longitude }}
+                  coordinate={{
+                    latitude: addressCoords.Latitude,
+                    longitude: addressCoords.Longitude,
+                  }}
                   title="Customer location"
-                  description="Customer / pickup location"
+                  description={fullAddress || "Pickup location"}
                   pinColor="red"
                 />
               )}
-              {hasValidCoordinates && !addressLocation && (
+              {hasValidCoordinates && !addressCoords && (
                 <Marker coordinate={{ latitude: Latitude, longitude: Longitude }} title="Customer location" description="Destination" pinColor="red" />
               )}
               {routeCoords?.length > 0 && location && mapDestination && (

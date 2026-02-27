@@ -86,13 +86,21 @@ export default function ServiceEnd() {
     // Handle BookingAddOns
     if (booking?.BookingAddOns && Array.isArray(booking.BookingAddOns)) {
       booking.BookingAddOns.forEach((addOn, addOnIndex) => {
-        if (addOn.Includes && Array.isArray(addOn.Includes)) {
+        if (addOn.Includes && Array.isArray(addOn.Includes) && addOn.Includes.length > 0) {
           addOn.Includes.forEach((inc, incIndex) => {
             servicesList.push({
               ...inc,
+              ServiceName: inc.ServiceName ?? inc.IncludeName,
               completed: true,
-              uniqueKey: `addon-${addOnIndex}-${incIndex}-${inc.IncludeID}`,
+              uniqueKey: `addon-${addOnIndex}-${incIndex}-${inc.IncludeID ?? incIndex}`,
             });
+          });
+        } else {
+          // Add-on has no Includes; treat the add-on as the service (use ServiceName from API)
+          servicesList.push({
+            ServiceName: addOn.ServiceName ?? addOn.IncludeName ?? addOn.Description ?? "Service",
+            completed: true,
+            uniqueKey: `addon-${addOnIndex}-${addOn.AddOnID ?? addOnIndex}`,
           });
         }
       });
@@ -563,12 +571,21 @@ export default function ServiceEnd() {
             </View>
           </View>
 
-          <View >
-            {/* <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
-              Please check completed services
-            </CustomText> */}
-
-            {Array.isArray(services) && services.map((service) => (
+          <View
+            style={[
+              globalStyles.mt3,
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.pt0,
+              globalStyles.pb3,
+              globalStyles.ph3,
+              globalStyles.card,
+            ]}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mt3, globalStyles.mb2]}>
+              Services included
+            </CustomText>
+            {Array.isArray(services) && services.length > 0 ? services.map((service) => (
               <View
                 key={service.uniqueKey}
                 style={{
@@ -587,11 +604,16 @@ export default function ServiceEnd() {
                   />
                 </Pressable>
                 <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
-                  {service.IncludeName}
+                  {service.ServiceName}
                 </CustomText>
               </View>
-            ))}
+            )) : (
+              <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
+                No services listed
+              </CustomText>
+            )}
           </View>
+          
 
           {/* After-service checklist — same UI as ServiceStart; images uploaded when Completed is pressed after OTP */}
           <View

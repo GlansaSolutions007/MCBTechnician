@@ -68,7 +68,6 @@ export default function CustomerInfo() {
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = booking.VehicleImage || null;
-  const fullAddress = booking.FullAddress || booking.Leads?.FullAddress || booking.Leads?.City || "";
   
   // Helper function to format date (YYYY-MM-DD to DD MMM YYYY)
   const formatDate = (dateString) => {
@@ -112,6 +111,13 @@ export default function CustomerInfo() {
     updatedBookings?.BookingID === booking?.BookingID && updatedBookings
       ? updatedBookings
       : booking;
+  // Address for display and map: prefer FullAddress (geocode when Lat/Long null)
+  const fullAddress =
+    displayBooking?.FullAddress ||
+    displayBooking?.Leads?.FullAddress ||
+    displayBooking?.Leads?.City ||
+    (Array.isArray(displayBooking?.PickupDelivery) ? displayBooking.PickupDelivery[0]?.PickFrom?.Address : displayBooking?.PickupDelivery?.PickFrom?.Address) ||
+    "";
   const pd = displayBooking?.PickupDelivery;
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
   const driverStatus =
@@ -400,11 +406,12 @@ export default function CustomerInfo() {
     };
   }, []);
 
-  // Always geocode FullAddress to show customer location on map
+  // Geocode FullAddress when Lat/Long are null so map shows customer location from address
   useEffect(() => {
+    if (!fullAddress || fullAddress.trim() === "") return;
+    setAddressLocation(null); // reset so we re-geocode when address changes
     const geocodeAddressLocation = async () => {
-      // Always geocode FullAddress when available to show customer location
-      if (fullAddress && fullAddress.trim() !== "" && !addressLocation) {
+      if (fullAddress && fullAddress.trim() !== "") {
         setIsGeocoding(true);
         try {
           const geocodedLocation = await geocodeAddress(fullAddress);
@@ -658,7 +665,7 @@ export default function CustomerInfo() {
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
@@ -697,7 +704,7 @@ export default function CustomerInfo() {
           { headers: { "Content-Type": "application/json" } }
         );
       } catch (e) {
-        console.error("InsertTracking Error:", e?.response?.data ?? e);
+        console.error("InsertTracking Error====================:", pickDropId);
       }
     }
 
@@ -728,7 +735,7 @@ export default function CustomerInfo() {
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
-      console.log("ServiceImages/UpdateBookingStatus POST data:", JSON.stringify(statusPayload, null, 2));
+      console.log("ServiceImages/UpdateBookingStatus----------------------------0000000000000000000:",statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
@@ -1119,11 +1126,19 @@ export default function CustomerInfo() {
                         {display.vehicleDisplay}
                       </CustomText>
                     </View>
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-                      <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]} numberOfLines={1}>
-                        {display.timeSlot}
-                      </CustomText>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
+                      <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+                      <View style={{ flex: 1 }}>
+                        {(display.timeSlot || "")
+                          .split(",")
+                          .map((slot) => slot.trim())
+                          .filter(Boolean)
+                          .map((s, i) => (
+                            <CustomText key={i} style={[globalStyles.f10Regular, globalStyles.black]}>
+                              {s}
+                            </CustomText>
+                          ))}
+                      </View>
                     </View>
                   </View>
                 </>
@@ -1308,10 +1323,9 @@ export default function CustomerInfo() {
               </View>
             </>
           )}
-          <View style={[globalStyles.divider, globalStyles.mt5]} />
 
           {/* Map Section - Always show, display map when coordinates or geocoded address available */}
-          <View style={[globalStyles.mt3]}>
+          {/* <View style={[globalStyles.mt3]}>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
               Location
             </CustomText>
@@ -1321,12 +1335,11 @@ export default function CustomerInfo() {
                   ref={mapRef}
                   style={{ flex: 1 }}
                   initialRegion={
-                    // Prioritize geocoded address location (customer location from FullAddress)
                     addressLocation
                       ? {
                           latitude: addressLocation.Latitude,
                           longitude: addressLocation.Longitude,
-                          latitudeDelta: 0.05, // Show area around customer location
+                          latitudeDelta: 0.05, 
                           longitudeDelta: 0.05,
                         }
                       : hasValidCoordinates
@@ -1346,7 +1359,6 @@ export default function CustomerInfo() {
                   showsUserLocation={!!location}
                   showsMyLocationButton={!!location}
                 >
-                  {/* Customer Location Marker - Always show when geocoded from FullAddress */}
                   {addressLocation && (
                     <Marker
                       coordinate={{
@@ -1359,7 +1371,6 @@ export default function CustomerInfo() {
                     />
                   )}
 
-                  {/* Destination Marker - Show if we have valid coordinates (may be same as customer location) */}
                   {hasValidCoordinates && (
                     <Marker
                       coordinate={{
@@ -1372,7 +1383,6 @@ export default function CustomerInfo() {
                     />
                   )}
 
-                  {/* Route Polyline - Show route from current location to customer location */}
                   {routeCoords && routeCoords.length > 0 && location && addressLocation && (
                     <Polyline
                       coordinates={routeCoords.map(coord => ({
@@ -1429,7 +1439,7 @@ export default function CustomerInfo() {
                 </View>
               </View>
             )}
-          </View>
+          </View> */}
 
           <View>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black,globalStyles.mt3]}>
@@ -1522,7 +1532,7 @@ export default function CustomerInfo() {
                         globalStyles.primary,
                       ]}
                     >
-                      • {addOn.ServiceName}
+                      {addOn.ServiceName}
                     </CustomText>
                     {addOn.Description && (
                       <CustomText
@@ -1530,7 +1540,7 @@ export default function CustomerInfo() {
                           globalStyles.f12Regular,
                           globalStyles.neutral500,
                           globalStyles.mt1,
-                          globalStyles.ml3,
+                         
                         ]}
                       >
                         {addOn.Description}
@@ -1564,9 +1574,6 @@ export default function CustomerInfo() {
                 )}
               </View>
 
-              {/* Divider */}
-              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
-
               {/* Pickup and Delivery Details */}
               {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
                 <View style={[globalStyles.mb3]}>
@@ -1583,24 +1590,8 @@ export default function CustomerInfo() {
                 </View>
               )}
 
-              {/* Divider */}
-
-              {/* Price - Aligned at bottom */}
-              <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
-                <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
-                  Total Price:
-                </CustomText>
-                <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
-                  {"₹"}
-                  {booking.TotalPrice ||
-                    (booking.BookingAddOns &&
-                      booking.BookingAddOns.reduce(
-                        (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
-                        0
-                      )) ||
-                    0}
-                </CustomText>
-              </View>
+              
+              
             </View>
           </View>
         </View>
@@ -1618,10 +1609,10 @@ export default function CustomerInfo() {
           style={[
             globalStyles.container,
             globalStyles.pb5,
-            { backgroundColor: color.background || "#f5f5f5", paddingVertical: 16 },
+            { backgroundColor: color.background || "#f5f5f5"},
           ]}
         >
-          <View style={[globalStyles.mt2]}>
+          <View >
             <View>
             
               {driverStatus &&

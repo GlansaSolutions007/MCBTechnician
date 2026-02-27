@@ -89,9 +89,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const fromArray = Array.isArray(pd) && pd.length > 0
     ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
     : null;
-  const carPickupDeliveryId = Number(
-    legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
-  );
+  // const carPickupDeliveryId = Number(
+  //   legId ?? booking?.PickupDelivery?.Id ?? booking?.PickupDelivery?.Id ?? fromArray ?? 0
+  // );
+  const carPickupDeliveryId =   booking?.PickupDelivery[0].Id;
+ 
+  console.log("carPickupDeliveryId===============", carPickupDeliveryId);
   const routeType =
     currentLeg?.PickFrom?.[0]?.RouteType ??
     currentLeg?.PickFrom?.RouteType ??
@@ -434,41 +437,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     checkOtpSentState();
   }, [booking.BookingID]);
 
-  // Post status "ServiceStart" when screen loads (once per mount)
-  useEffect(() => {
-    if (serviceStartStatusPosted.current || !carPickupDeliveryId) return;
-    serviceStartStatusPosted.current = true;
-    const postServiceStartStatus = async () => {
-      try {
-        await axios.post(
-          `${API_BASE_URL}ServiceImages/InsertTracking`,
-          { pickDropId: Number(carPickupDeliveryId), status: "ServiceStart" },
-          { headers: { "Content-Type": "application/json" } }
-        );
-      } catch (e) {
-        console.error("InsertTracking (ServiceStart) Error:", e?.response?.data ?? e);
-      }
-      try {
-        const statusPayload = {
-          bookingID: Number(booking?.BookingID || 0),
-          serviceType: booking?.ServiceType || "ServiceAtHome",
-          routeType,
-          action: "ServiceStart",
-          updatedBy: Number(booking?.TechID || 3),
-          role: "Technician",
-        };
-        await axios.post(
-          `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-          statusPayload,
-          { headers: { "Content-Type": "application/json" } }
-        );
-        console.log("UpdateBookingStatus posted for ServiceStart");
-      } catch (e) {
-        console.error("UpdateBookingStatus (ServiceStart) Error:", e?.response?.data ?? e);
-      }
-    };
-    postServiceStartStatus();
-  }, [carPickupDeliveryId, booking?.BookingID, booking?.ServiceType, booking?.TechID, routeType]);
 
   // Refresh timer when screen comes back into focus
   useFocusEffect(
@@ -482,16 +450,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes])
   );
 
-  const formatTime = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600)
-      .toString()
-      .padStart(2, "0");
-    const minutes = Math.floor((totalSeconds % 3600) / 60)
-      .toString()
-      .padStart(2, "0");
-    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
-  };
+
 
 
   return (
@@ -913,23 +872,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Mandatory: POST to api/ServiceImages/GenerateOTP before Verify (carPickupDeliveryId, otpType, phoneNumber)
-                    const generateOtpPayload = {
-                      carPickupDeliveryId: Number(carPickupDeliveryId),
-                      otpType: "Pickup",
-                      phoneNumber: phoneNumberForSubmit,
-                    };
-                    try {
-                      await axios.post(
-                        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-                        generateOtpPayload,
-                        { headers: { "Content-Type": "application/json" } }
-                      );
-                    } catch (genErr) {
-                      console.log("ServiceImages/GenerateOTP on Submit:", genErr?.response?.data ?? genErr?.message);
-                    }
+                  
 
-                    // Verify OTP via api/ServiceImages/VerifyOTP (otpType must match GenerateOTP: Pickup)
                     const verifyPayload = {
                       carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
                       otp: String(otp).trim(),
@@ -966,25 +910,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // OTP verified — update booking status with action "ServiceStart" (same as 452-464)
-                    try {
-                      const statusPayload = {
-                        bookingID: Number(booking?.BookingID || 0),
-                        serviceType: booking?.ServiceType || "ServiceAtHome",
-                        routeType,
-                        action: "ServiceStart",
-                        updatedBy: Number(booking?.TechID || 3),
-                        role: "Technician",
-                      };
-                      await axios.post(
-                        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-                        statusPayload,
-                        { headers: { "Content-Type": "application/json" } }
-                      );
-                      console.log("UpdateBookingStatus posted for ServiceStart (after OTP verify)");
-                    } catch (e) {
-                      console.error("UpdateBookingStatus (ServiceStart) Error:", e?.response?.data ?? e);
-                    }
+                    
 
                     // OTP valid — post images to InsertPickupDeliveryImages (BeforeServiceStart), same pattern as CarPickUp
                     try {
@@ -1006,11 +932,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtHome",
                         routeType,
-                        action: "ServiceStarted",
+                        action: "ServiceStart",
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",
                       };
-                      console.log("UpdateBookingStatus Payload (ServiceStarted):", JSON.stringify(statusPayload, null, 2));
+                      console.log("UpdateBookingStatus Payload (ServiceStart)=========================:", statusPayload);
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                         statusPayload,

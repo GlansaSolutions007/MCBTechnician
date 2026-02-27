@@ -245,12 +245,12 @@ export default function DropCarAtGarage() {
         const statusPayload = {
           bookingID: Number(booking?.BookingID || 0),
           serviceType: booking?.ServiceType || "ServiceAtGarage",
-          routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+          routeType: booking?.PickupDelivery[0].PickFrom.RouteType ,
           action: "completed",
           updatedBy: Number(booking?.TechID || 3),
           role: "Technician",
         };
-        console.log("UpdateBookingStatus Payload (completed):", JSON.stringify(statusPayload, null, 2));
+        console.log("UpdateBookingStatus Payload (completed):",statusPayload);
         await axios.post(
           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
           statusPayload,
@@ -447,7 +447,8 @@ export default function DropCarAtGarage() {
               ]}
               placeholder="From pickup"
               placeholderTextColor={color.neutral[500]}
-              value={bookingParam?.CarRegistrationNumber || bookingParam?.VehicleNumber || bookingParam?.Leads?.Vehicle?.RegistrationNumber || ""}
+              value={bookingParam?.Leads?.Vehicle?.RegistrationNumber || ""}
+              // value={"ABC123"}
               editable={false}
               autoCapitalize="characters"
             />

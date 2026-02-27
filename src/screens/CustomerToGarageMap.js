@@ -8,14 +8,45 @@ import {
   ScrollView,
   BackHandler,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL, GOOGLE_MAPS_APIKEY } from "@env";
+
+function decodePolyline(t) {
+  const points = [];
+  let index = 0;
+  const len = t.length;
+  let lat = 0;
+  let lng = 0;
+  while (index < len) {
+    let b;
+    let shift = 0;
+    let result = 0;
+    do {
+      b = t.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+    shift = 0;
+    result = 0;
+    do {
+      b = t.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+    points.push({ Latitude: lat / 1e5, Longitude: lng / 1e5 });
+  }
+  return points;
+}
 
 // Dummy garage offset from current location
 const GARAGE_OFFSET_LAT = 0.015;
@@ -35,6 +66,10 @@ export default function CustomerToGarageMap() {
   const [updatedBooking, setUpdatedBooking] = useState(booking);
   const displayBooking = updatedBooking || booking;
   const mapRef = useRef(null);
+  const [addressCoords, setAddressCoords] = useState(null);
+  const [dropAddressCoords, setDropAddressCoords] = useState(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [routeCoords, setRouteCoords] = useState([]);
 
   const pd = displayBooking?.PickupDelivery ?? booking?.PickupDelivery;
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
@@ -58,7 +93,19 @@ export default function CustomerToGarageMap() {
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
 
-  const dropAt = currentLeg?.DropAt;
+  const dropAt = currentLeg?.DropAt ?? (Array.isArray(booking?.PickupDelivery) ? booking.PickupDelivery[0]?.DropAt : booking?.PickupDelivery?.DropAt);
+  const pickFrom = currentLeg?.PickFrom ?? (Array.isArray(booking?.PickupDelivery) ? booking.PickupDelivery[0]?.PickFrom : booking?.PickupDelivery?.PickFrom);
+  const addressForPickup =
+    (typeof pickFrom?.Address === "string" && pickFrom.Address.trim() !== "" ? pickFrom.Address : null) ||
+    displayBooking?.FullAddress ||
+    booking?.FullAddress ||
+    displayBooking?.Leads?.FullAddress ||
+    booking?.Leads?.City ||
+    "";
+  const addressForDrop =
+    (typeof dropAt?.Address === "string" && dropAt.Address.trim() !== "" ? dropAt.Address : null) ||
+    "";
+
   const dropLat = dropAt?.Latitude != null ? Number(dropAt.Latitude) : NaN;
   const dropLng = dropAt?.Longitude != null ? Number(dropAt.Longitude) : NaN;
   const bookingLat = booking?.Latitude != null ? Number(booking.Latitude) : NaN;
@@ -66,23 +113,54 @@ export default function CustomerToGarageMap() {
   const hasDropCoords = !Number.isNaN(dropLat) && !Number.isNaN(dropLng) && dropLat !== 0 && dropLng !== 0;
   const hasBookingCoords = !Number.isNaN(bookingLat) && !Number.isNaN(bookingLng) && bookingLat !== 0 && bookingLng !== 0;
 
-  const garageCoords = hasDropCoords
-    ? { latitude: dropLat, longitude: dropLng }
-    : hasBookingCoords
-      ? { latitude: bookingLat, longitude: bookingLng }
-      : location
-        ? {
-            latitude: location.latitude + GARAGE_OFFSET_LAT,
-            longitude: location.longitude + GARAGE_OFFSET_LNG,
-          }
-        : {
-            latitude: DEFAULT_REGION.latitude + GARAGE_OFFSET_LAT,
-            longitude: DEFAULT_REGION.longitude + GARAGE_OFFSET_LNG,
-          };
+  const getCoordinatesFromAddress = async (address, setter) => {
+    try {
+      if (!address || String(address).trim() === "") return;
+      const normalizedAddress = String(address).replace(/\r?\n/g, ", ").trim();
+      if (!normalizedAddress) return;
+      setIsGeocoding(true);
+      const result = await Location.geocodeAsync(normalizedAddress);
+      setIsGeocoding(false);
+      if (result && result.length > 0) {
+        const { latitude, longitude } = result[0];
+        setter({ Latitude: latitude, Longitude: longitude });
+      }
+    } catch (error) {
+      setIsGeocoding(false);
+      console.log("Geocoding error:", error);
+    }
+  };
 
-  const pickFrom = currentLeg?.PickFrom;
-  const pickLat = pickFrom?.Latitude != null ? Number(pickFrom.Latitude) : NaN;
-  const pickLng = pickFrom?.Longitude != null ? Number(pickFrom.Longitude) : NaN;
+  useEffect(() => {
+    if (addressForPickup && addressForPickup.trim() !== "") {
+      getCoordinatesFromAddress(addressForPickup, setAddressCoords);
+    }
+  }, [addressForPickup]);
+
+  useEffect(() => {
+    if (addressForDrop && addressForDrop.trim() !== "") {
+      getCoordinatesFromAddress(addressForDrop, setDropAddressCoords);
+    }
+  }, [addressForDrop]);
+
+  const garageCoords = dropAddressCoords
+    ? { latitude: dropAddressCoords.Latitude, longitude: dropAddressCoords.Longitude }
+    : hasDropCoords
+      ? { latitude: dropLat, longitude: dropLng }
+      : hasBookingCoords
+        ? { latitude: bookingLat, longitude: bookingLng }
+        : location
+          ? {
+              latitude: location.latitude + GARAGE_OFFSET_LAT,
+              longitude: location.longitude + GARAGE_OFFSET_LNG,
+            }
+          : {
+              latitude: DEFAULT_REGION.latitude + GARAGE_OFFSET_LAT,
+              longitude: DEFAULT_REGION.longitude + GARAGE_OFFSET_LNG,
+            };
+
+  const pickLat = pickFrom?.Latitude != null ? Number(pickFrom.Latitude) : addressCoords?.Latitude ?? NaN;
+  const pickLng = pickFrom?.Longitude != null ? Number(pickFrom.Longitude) : addressCoords?.Longitude ?? NaN;
   const hasPickCoords = !Number.isNaN(pickLat) && !Number.isNaN(pickLng);
 
   const initialRegion = (() => {
@@ -114,8 +192,10 @@ export default function CustomerToGarageMap() {
       const response = await axios.get(
         `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${booking.TechID}`
       );
-      if (response.data && response.data.length > 0) {
-        const fromApi = response.data.find((b) => b.BookingID === booking.BookingID);
+      const raw = response?.data?.data ?? response?.data;
+      const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+      if (list.length > 0) {
+        const fromApi = list.find((b) => b.BookingID === booking.BookingID);
         if (fromApi) {
           setUpdatedBooking(fromApi);
           navigation.setParams({ booking: fromApi });
@@ -138,6 +218,35 @@ export default function CustomerToGarageMap() {
   //   }, [booking?.BookingID, navigation])
   // );
 
+  const fetchRoute = async (origin, dest) => {
+    const hasOrigin = origin != null && Number.isFinite(origin.Latitude) && Number.isFinite(origin.Longitude);
+    const hasDest = dest != null && Number.isFinite(dest.Latitude) && Number.isFinite(dest.Longitude);
+    if (!hasOrigin || !hasDest) {
+      setRouteCoords([]);
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `https://maps.googleapis.com/maps/api/directions/json`,
+        {
+          params: {
+            origin: `${origin.Latitude},${origin.Longitude}`,
+            destination: `${dest.Latitude},${dest.Longitude}`,
+            key: GOOGLE_MAPS_APIKEY,
+          },
+        }
+      );
+      const { status, routes } = res?.data || {};
+      if (status !== "OK" || !routes?.[0]?.overview_polyline?.points) {
+        setRouteCoords([]);
+        return;
+      }
+      setRouteCoords(decodePolyline(routes[0].overview_polyline.points));
+    } catch (e) {
+      setRouteCoords([]);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -152,6 +261,23 @@ export default function CustomerToGarageMap() {
       } catch (e) {}
     })();
   }, []);
+
+  useEffect(() => {
+    if (location && garageCoords) {
+      const origin = { Latitude: location.latitude, Longitude: location.longitude };
+      const dest = { Latitude: garageCoords.latitude, Longitude: garageCoords.longitude };
+      fetchRoute(origin, dest);
+    }
+  }, [location, garageCoords?.latitude, garageCoords?.longitude]);
+
+  useEffect(() => {
+    if (routeCoords.length > 0 && mapRef.current?.fitToCoordinates) {
+      mapRef.current.fitToCoordinates(
+        routeCoords.map((c) => ({ latitude: c.Latitude, longitude: c.Longitude })),
+        { edgePadding: { top: 80, right: 40, bottom: 80, left: 40 }, animated: true }
+      );
+    }
+  }, [routeCoords]);
 
   useFocusEffect(
   useCallback(() => {
@@ -200,13 +326,14 @@ export default function CustomerToGarageMap() {
       {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType,
+        routeType: booking?.PickupDelivery[0].PickFrom.RouteType,
         action: "in_transit",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
       },
       { headers: { "Content-Type": "application/json" } }
     );
+    console.log("routeType===============",routeType)
 
     // ✅ 4. Refresh booking from API (optional but recommended)
     await onRefresh();
@@ -299,28 +426,47 @@ export default function CustomerToGarageMap() {
   return (
     <View style={styles.container}>
       <View style={styles.mapWrap}>
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFill}
-          initialRegion={initialRegion}
-          showsUserLocation={!!location}
-          showsMyLocationButton={!!location}
-        >
-          {hasPickCoords && (
-            <Marker
-              coordinate={{ latitude: pickLat, longitude: pickLng }}
-              title="Pickup (Customer)"
-              description={pickFrom?.Address || "Customer location"}
-              pinColor={color.neutral[500]}
-            />
-          )}
-          <Marker
-            coordinate={garageCoords}
-            title="Drop location (Garage)"
-            description={dropAt?.Address || "Drop car at garage"}
-            pinColor={color.primary}
-          />
-        </MapView>
+        {(dropAt && (addressForDrop || hasDropCoords)) || dropAddressCoords || addressCoords || isGeocoding ? (
+          isGeocoding && !addressCoords && !dropAddressCoords && !hasDropCoords ? (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: color.background, justifyContent: "center", alignItems: "center" }]}>
+              <CustomText style={globalStyles.f14Medium}>Loading location...</CustomText>
+            </View>
+          ) : (
+            <MapView
+              ref={mapRef}
+              style={StyleSheet.absoluteFill}
+              initialRegion={initialRegion}
+              showsUserLocation={true}
+              showsMyLocationButton={true}
+            >
+              {(hasPickCoords || addressCoords) && (
+                <Marker
+                  coordinate={{ latitude: pickLat, longitude: pickLng }}
+                  title="Pickup (Customer)"
+                  description={pickFrom?.Address || addressForPickup || "Customer location"}
+                  pinColor={color.neutral[500]}
+                />
+              )}
+              <Marker
+                coordinate={garageCoords}
+                title="Drop location (Garage)"
+                description={dropAt?.Address || addressForDrop || "Drop car at garage"}
+                pinColor={color.primary}
+              />
+              {routeCoords?.length > 0 && location && (
+                <Polyline
+                  coordinates={routeCoords.map((c) => ({ latitude: c.Latitude, longitude: c.Longitude }))}
+                  strokeColor="#0000FF"
+                  strokeWidth={3}
+                />
+              )}
+            </MapView>
+          )
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: color.background, justifyContent: "center", alignItems: "center" }]}>
+            <CustomText style={globalStyles.f12Medium}>No location available</CustomText>
+          </View>
+        )}
       </View>
 
       <View style={styles.buttonsSection}>

@@ -36,7 +36,7 @@ export default function CarPickUp() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  // console.log("booking", booking);
+
 const [isLoading, setIsLoading] = useState(false);
 const [otpCooldown, setOtpCooldown] = useState(0);
 const [cooldownTimer, setCooldownTimer] = useState(null);
@@ -401,16 +401,16 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes, booking.CarPickUpDate])
   );
 
-  const formatTime = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600)
-      .toString()
-      .padStart(2, "0");
-    const minutes = Math.floor((totalSeconds % 3600) / 60)
-      .toString()
-      .padStart(2, "0");
-    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
-  };
+  // const formatTime = (totalSeconds) => {
+  //   const hours = Math.floor(totalSeconds / 3600)
+  //     .toString()
+  //     .padStart(2, "0");
+  //   const minutes = Math.floor((totalSeconds % 3600) / 60)
+  //     .toString()
+  //     .padStart(2, "0");
+  //   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  //   return `${hours}:${minutes}:${seconds}`;
+  // };
 
   const updateTechnicianTracking = async (actionType) => {
     try {
@@ -618,7 +618,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           </View>
         </View>
 
-        {!timerStarted && booking.ServiceStartedAt === null && (
+        {booking?.PickupDelivery[0].PickFrom?.PickupOTPVerified === false && (
           <View>
             <View
               style={[
@@ -928,7 +928,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     }
 
                     // Then update tracking: CarPickUp, ServiceStarted
-                    if (!booking.CarPickUpDate && !carPickedUp) {
+                    // if (!booking.CarPickUpDate && !carPickedUp) {
                       try {
                         await axios.post(
                           `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -946,12 +946,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         const statusPayload = {
                           bookingID: Number(booking?.BookingID || 0),
                           serviceType: booking?.ServiceType || "ServiceAtGarage",
-                          routeType: booking?.PickupDelivery?.RouteType || "CustomerToDealer",
+                          routeType: booking?.PickupDelivery[0].PickFrom.RouteType ,
                           action: "car_picked",
                           updatedBy: Number(booking?.TechID || 3),
                           role: "Technician",
                         };
-                        console.log("UpdateBookingStatus Payload (car_picked):", JSON.stringify(statusPayload, null, 2));
+                        console.log("UpdateBookingStatus==========:",statusPayload);
                         await axios.post(
                           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                           statusPayload,
@@ -966,7 +966,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       try {
                         await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
                       } catch (e) {}
-                    }
+                    // }
 
                     // Reload page with latest booking (DriverStatus car_picked) so Next button shows
                     const refreshedBooking = await refreshBooking();
@@ -1056,10 +1056,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
               </TouchableOpacity>
             </View>
           </View>
-        )}
+        )} 
 
-                {driverStatus === "pickup_reached" 
-                // || driverStatus === "car_picked" 
+                {driverStatus === "car_picked" 
                 && (
             <TouchableOpacity
               onPress={async () => {
