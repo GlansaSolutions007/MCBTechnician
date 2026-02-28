@@ -99,7 +99,7 @@ export default function CustomerStackNavigator() {
         name="CustomerToGarageMap"
         component={CustomerToGarageMap}
         options={({ navigation }) => ({
-          title: "Customer to Garage",
+          title: "Tracking Map",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.navigate("Booking")}

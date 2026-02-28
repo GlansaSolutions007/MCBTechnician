@@ -389,11 +389,8 @@ export default function CustomerToGarageMap() {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
-    const phoneNumber =
-      displayBooking?.PhoneNumber ||
-      displayBooking?.Leads?.PhoneNumber ||
-      displayBooking?.PickupDelivery?.DropAt?.PersonNumber ||
-      "";
+    const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber ||"";
+    console.log("phoneNumber===============",phoneNumber)
     try {
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),

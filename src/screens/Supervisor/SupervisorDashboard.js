@@ -12,7 +12,7 @@ import { color } from "../../styles/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../../components/CustomText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import axios from "axios";
 
@@ -122,12 +122,11 @@ export default function SupervisorDashboard() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadSupervisorInfo();
-      fetchDashboardCounts();
-    }, [loadSupervisorInfo, fetchDashboardCounts])
-  );
+  // Load once on mount; reload only on pull-to-refresh
+  useEffect(() => {
+    loadSupervisorInfo();
+    fetchDashboardCounts();
+  }, [loadSupervisorInfo, fetchDashboardCounts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -202,7 +201,7 @@ export default function SupervisorDashboard() {
             >
               <TouchableOpacity
                 style={[styles.statCard, { backgroundColor: color.primary }]}
-                onPress={() => navigation.navigate("Bookings", { filter: "users" })}
+                onPress={() => navigation.navigate("Customers")}
                 activeOpacity={0.85}
               >
                 <MaterialCommunityIcons
@@ -324,6 +323,8 @@ export default function SupervisorDashboard() {
                 borderRadius: 10,
               },
             ]}
+            onPress={() => navigation.navigate("Customers")}
+            activeOpacity={0.7}
           >
             <Ionicons name="people-outline" size={24} color={color.primary} />
             <CustomText

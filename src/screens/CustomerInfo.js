@@ -735,7 +735,7 @@ export default function CustomerInfo() {
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
-      console.log("ServiceImages/UpdateBookingStatus----------------------------0000000000000000000:",statusPayload);
+      console.log("ServiceImages/UpdateBookingStatus---:",statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,

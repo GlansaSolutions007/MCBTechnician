@@ -66,7 +66,9 @@ function TaskReportsScreen() {
         }
       );
 
-      setBookings(response.data || []);
+      const raw = response?.data?.data ?? response?.data;
+      const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+      setBookings(list);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
       setError("Failed to load bookings. Please try again.");
@@ -111,15 +113,18 @@ function TaskReportsScreen() {
     }
   };
 
-  // Show all bookings with future BookingDate (tomorrow and beyond)
+  const getAssignDate = (booking) => {
+    const pd = booking?.PickupDelivery;
+    const firstLeg = Array.isArray(pd) ? pd[0] : pd;
+    return firstLeg?.AssignDate ?? booking?.TechAssignDate ?? booking?.BookingDate ?? null;
+  };
+
+  // Show only bookings whose AssignDate (from PickupDelivery) is a future date; hide today and yesterday
   const upcomingBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        // Prioritize BookingDate over TechAssignDate for filtering
-        const serviceDate = booking.BookingDate || booking.TechAssignDate;
-        if (!serviceDate) return false;
-
-        // Use the helper function to check if date is future
-        return isFutureDate(serviceDate);
+        const assignDate = getAssignDate(booking);
+        if (!assignDate) return false;
+        return isFutureDate(assignDate);
       })
     : [];
 

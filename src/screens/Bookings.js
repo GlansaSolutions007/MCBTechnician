@@ -632,20 +632,6 @@ export default function Bookings() {
                         </CustomText>
                         <CustomText
                           style={[
-                            globalStyles.f12Medium,
-                            globalStyles.neutral500,
-                            globalStyles.mt1,
-                          ]}
-                        >
-                          RouteType:{" "}
-                          <CustomText style={globalStyles.black}>
-                          {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
-                            item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
-                            "N/A"}
-                          </CustomText>
-                        </CustomText>
-                        <CustomText
-                          style={[
                             globalStyles.f10Regular,
                             globalStyles.neutral500,
                             globalStyles.mt1,
