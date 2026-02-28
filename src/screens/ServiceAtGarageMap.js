@@ -341,7 +341,8 @@ export default function ServiceAtGarageMap() {
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
-    const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
+    const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber ;
+    console.log("phoneNumber===========-----------",phoneNumber)
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,

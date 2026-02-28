@@ -74,6 +74,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   // Merge booking data with Leads data for missing fields
   const customerName = bookingParam.CustomerName || bookingParam.Leads?.FullName || "";
   const phoneNumber = bookingParam.PhoneNumber || bookingParam.Leads?.PhoneNumber || "";
+  const dealerpersonnumber =  bookingParam.PickupDelivery[0].PickFrom?.PersonNumber || "";
   const profileImage = bookingParam.ProfileImage || null;
   const vehicleNumber = bookingParam.VehicleNumber || bookingParam.Leads?.Vehicle?.RegistrationNumber || "";
   const brandName = bookingParam.BrandName || bookingParam.Leads?.Vehicle?.BrandName || "";
@@ -173,8 +174,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Pickup",
-        phoneNumber: String(phoneNumber || "").trim(),
+        phoneNumber: String(dealerpersonnumber || "").trim(),
       };
+      console.log("payload===========-----------",payload)
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         payload,

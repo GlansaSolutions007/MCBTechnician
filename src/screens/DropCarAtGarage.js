@@ -67,7 +67,7 @@ export default function DropCarAtGarage() {
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
   const [bookingParam, setBookingParam] = useState(route?.params?.booking || booking);
-
+  console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
   useEffect(() => {
     let mounted = true;
     const fetchAssigned = async () => {

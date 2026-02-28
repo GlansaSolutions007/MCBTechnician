@@ -618,7 +618,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           </View>
         </View>
 
-        {!timerStarted && booking.ServiceStartedAt === null && (
+        { booking.PickupDelivery[0].DriverStatus === "pickup_reached" && (
           <View>
             <View
               style={[
@@ -1033,7 +1033,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           </View>
         )}
 
-        {timerStarted && (
+        {booking.PickupDelivery[0].DriverStatus === "ServiceStart" && (
           <View>
             <TouchableOpacity
                 onPress={async () => {
