@@ -36,7 +36,7 @@ export default function CarPickUp() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-
+console.log("booking===============", booking);
 const [isLoading, setIsLoading] = useState(false);
 const [otpCooldown, setOtpCooldown] = useState(0);
 const [cooldownTimer, setCooldownTimer] = useState(null);

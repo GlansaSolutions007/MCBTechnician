@@ -58,7 +58,6 @@ export default function CustomerInfo() {
 
   // Merge booking data with Leads data for missing fields
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
-  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
   const profileImage = booking.ProfileImage || null;
   // Vehicle number: Use booking.VehicleNumber if available, otherwise use Leads.Vehicle.RegistrationNumber
   const vehicleNumber = booking.VehicleNumber 
@@ -120,6 +119,17 @@ export default function CustomerInfo() {
     "";
   const pd = displayBooking?.PickupDelivery;
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  // const pickupPhoneNumber =
+  //   currentLeg?.PickFrom?.PersonNumber ??
+  //   (Array.isArray(displayBooking?.PickupDelivery) && displayBooking.PickupDelivery[0]
+  //     ? displayBooking.PickupDelivery[0]?.PickFrom?.PersonNumber
+  //     : null) ??
+  //   displayBooking?.Leads?.PhoneNumber ??
+  //   booking?.PhoneNumber ??
+  //   "";
+    const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
+console.log("pickupPhoneNumber===============", pickupPhoneNumber);
+
   const driverStatus =
     displayBooking?.DriverStatus ?? currentLeg?.DriverStatus;
   const legId =
@@ -708,11 +718,11 @@ export default function CustomerInfo() {
       }
     }
 
-    const phoneNumber = displayBooking?.PhoneNumber || displayBooking?.Leads?.PhoneNumber || "";
+    const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
     const generateOtpPayload = {
       carPickupDeliveryId: pickDropId,
       otpType: "Pickup",
-      phoneNumber: String(phoneNumber).trim(),
+      phoneNumber: String(pickupPhoneNumber).trim(),
     };
     console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
     try {
@@ -1072,15 +1082,15 @@ export default function CustomerInfo() {
                 <CustomText
                   style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
-                  Mobile: {phoneNumber}
+                  Mobile: {pickupPhoneNumber || "N/A"}
                 </CustomText>
               </View>
               <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
+                  if (pickupPhoneNumber) {
+                    Linking.openURL(`tel:${pickupPhoneNumber}`);
                   } else {
                     Alert.alert("Error", "Phone number not available");
                   }
@@ -1532,7 +1542,7 @@ export default function CustomerInfo() {
                         globalStyles.primary,
                       ]}
                     >
-                      {addOn.ServiceName}
+                      • {addOn.ServiceName}
                     </CustomText>
                     {addOn.Description && (
                       <CustomText

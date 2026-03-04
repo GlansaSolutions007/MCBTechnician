@@ -124,6 +124,9 @@ export default StyleSheet.create({
   textWhite: {
     color: color.white,
   },
+  textblack: {
+    color: color.black,
+  },
   textyellow: {
     color: color.yellow,
   },
@@ -173,8 +176,14 @@ export default StyleSheet.create({
   bgprimary: {
     backgroundColor: color.primary,
   },
+  bgsecondary: {
+    backgroundColor: color.secondary,
+  },
   bgwhite: {
     backgroundColor: color.white,
+  },
+  bgyellow: {
+    backgroundColor: color.yellow,
   },
   bgBlack: {
     backgroundColor: color.black,

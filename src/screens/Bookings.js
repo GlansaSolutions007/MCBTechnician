@@ -8,6 +8,10 @@ import {
   Animated,
   TouchableOpacity,
   ActivityIndicator,
+  Button,
+  Linking,
+  Alert,
+  Vibration,
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import {
@@ -111,7 +115,7 @@ export default function Bookings() {
     return () => {
       try {
         loop.stop();
-      } catch (_) {}
+      } catch (_) { }
     };
   }, [pulse]);
 
@@ -550,62 +554,14 @@ export default function Bookings() {
                     ]}
                   />
                   <View style={styles.cardContent}>
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.alineItemscenter,
-                        globalStyles.mb3,
-                        { flexWrap: "wrap", gap: 8 },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.serviceTypeChip,
-                          { backgroundColor: color.primary },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name="wrench-outline"
-                          size={14}
-                          color={color.white}
-                          style={{ marginRight: 6 }}
-                        />
-                        <CustomText
-                          style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                        >
-                          {item.ServiceType
-                            ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
-                            : "N/A"}
-                        </CustomText>
-                      </View>
-                      <View
-                        style={[
-                          styles.statusChip,
-                          {
-                            backgroundColor:
-                              driverStatus === "completed"
-                                ? color.alertSuccess
-                                : driverStatus === "pickup_reached"
-                                  ? color.alertInfo
-                                  : color.primary,
-                          },
-                        ]}
-                      >
-                        <CustomText
-                          style={[globalStyles.f10Bold, globalStyles.textWhite]}
-                        >
-                          {driverStatus || "No Status"}
-                        </CustomText>
-                      </View>
-                     
-                    </View>
+
                     <View style={globalStyles.flexrow}>
                       <Image
                         source={
                           item.ProfileImage
                             ? {
-                                uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
-                              }
+                              uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                            }
                             : defaultAvatar
                         }
                         style={styles.avatar}
@@ -614,117 +570,273 @@ export default function Bookings() {
                         <CustomText
                           style={[globalStyles.f16Bold, globalStyles.black]}
                         >
-                          {item.CustomerName || item.Leads?.FullName || "N/A"}
+                          {item.CustomerName || "N/A"}
                         </CustomText>
-                        <CustomText
+                        <View
                           style={[
-                            globalStyles.f12Medium,
-                            globalStyles.neutral500,
+                            globalStyles.flexrow,
+                            globalStyles.alineItemscenter,
+                            { flexWrap: "wrap", gap: 8 },
+                          ]}
+                        >
+
+                          <CustomText
+                            style={[globalStyles.f12Bold, globalStyles.secondary]}
+                          >
+                            {item.ServiceType
+                              ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                              : "N/A"}
+                          </CustomText>
+
+
+                        </View>
+                        <View >
+                          <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
+                            <MaterialCommunityIcons
+                              name="card-account-details-outline"
+                              size={16}
+                              color={color.primary}
+                              style={styles.cardMetaIcon}
+                            />
+                            <CustomText
+                              style={[globalStyles.f10Regular, globalStyles.black]}
+                              numberOfLines={1}
+                            >
+                              {getBookingDisplayData(item).bookingTrackID}
+                            </CustomText>
+                          </View>
+                          <View style={styles.cardMetaItem}>
+                            <FontAwesome5
+                              name="car"
+                              size={14}
+                              color={color.primary}
+                              style={styles.cardMetaIcon}
+                            />
+                            <CustomText
+                              style={[globalStyles.f10Regular, globalStyles.black]}
+                              numberOfLines={1}
+                            >
+                              {getBookingDisplayData(item).vehicleDisplay}
+                            </CustomText>
+                          </View>
+                          <View style={styles.cardMetaItem}>
+                            <MaterialCommunityIcons
+                              name="calendar"
+                              size={16}
+                              color={color.primary}
+                              style={styles.cardMetaIcon}
+                            />
+                            <CustomText
+                              style={[globalStyles.f10Regular, globalStyles.black]}
+                              numberOfLines={1}
+                            >
+                              {getBookingDisplayData(item).bookingDate}
+                            </CustomText>
+                          </View>
+                          <View style={styles.cardMetaItem}>
+                            <Ionicons
+                              name="time-outline"
+                              size={16}
+                              color={color.primary}
+                              style={styles.cardMetaIcon}
+                            />
+                            <CustomText
+                              style={[globalStyles.f10Regular, globalStyles.black]}
+                            >
+                              {(getBookingDisplayData(item).timeSlot || "")
+                                .split(",")
+                                .map((s) => s.trim())
+                                .filter(Boolean)
+                                .join("\n") || "N/A"}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        {/* <CustomText
+                            style={[globalStyles.f12Bold, globalStyles.textblack,
                             globalStyles.mt1,
                           ]}
                         >
                           Mobile:{" "}
-                          <CustomText style={globalStyles.black}>
-                            {item.PhoneNumber ||
-                              item.Leads?.PhoneNumber ||
-                              "N/A"}
+                          <CustomText style={globalStyles.textblack}>
+                            {item.PhoneNumber || "N/A"}
                           </CustomText>
-                        </CustomText>
-                        <CustomText
-                          style={[
-                            globalStyles.f10Regular,
-                            globalStyles.neutral500,
-                            globalStyles.mt1,
-                          ]}
-                          numberOfLines={2}
-                        >
-                          {item.FullAddress ||
-                            item.Leads?.City ||
-                            item.Leads?.FullAddress ||
-                            "N/A"}
-                        </CustomText>
+                        </CustomText> */}
+
                       </View>
                     </View>
 
-                    <View style={globalStyles.divider} />
-                    {/* <BookingPickDropRow booking={item} />
 
-                    <View style={globalStyles.divider} /> */}
+                    {/* From / Address / To / Drop card (per sketch) */}
+                    {
+                      item.ServiceType === "ServiceAtGarage" && (
+                        <View style={styles.fromToCard}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              Vibration.vibrate([0, 200, 100, 300]);
 
-                    <View style={styles.cardMetaRow}>
-                      <View style={styles.cardMetaCol}>
-                        <View style={styles.cardMetaItem}>
-                          <MaterialCommunityIcons
-                            name="card-account-details-outline"
-                            size={16}
-                            color={color.primary}
-                            style={styles.cardMetaIcon}
-                          />
-                          <CustomText
+                              const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
+                              if (phoneNumber) {
+                                Linking.openURL(`tel:${phoneNumber}`);
+                              } else {
+                                Alert.alert("Error", "Phone number not available");
+                              }
+                            }}
                             style={[
-                              globalStyles.f10Regular,
-                              globalStyles.black,
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {getBookingDisplayData(item).bookingTrackID}
-                          </CustomText>
-                        </View>
-                        <View style={styles.cardMetaItem}>
-                          <FontAwesome5
-                            name="car"
-                            size={14}
-                            color={color.primary}
-                            style={styles.cardMetaIcon}
-                          />
-                          <CustomText
-                            style={[
-                              globalStyles.f10Regular,
-                              globalStyles.black,
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {getBookingDisplayData(item).vehicleDisplay}
-                          </CustomText>
-                        </View>
-                      </View>
-                      <View style={styles.cardMetaCol}>
-                        <View style={styles.cardMetaItem}>
-                          <MaterialCommunityIcons
-                            name="calendar"
-                            size={16}
-                            color={color.primary}
-                            style={styles.cardMetaIcon}
-                          />
-                          <CustomText
-                            style={[
-                              globalStyles.f10Regular,
-                              globalStyles.black,
+                              styles.callbutton,
+                              globalStyles.flexrow,
+                              globalStyles.justifysb,
+                              { backgroundColor: color.primary },
                             ]}
                           >
-                            {getBookingDisplayData(item).bookingDate}
-                          </CustomText>
+
+                            <CustomText
+                              style={[
+                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2,
+                              ]}
+                            >
+                              Car Drop call
+                            </CustomText>
+
+                            <Ionicons
+                              style={[
+                                globalStyles.p2,
+                                globalStyles.ml2,
+                                globalStyles.bgsecondary,
+                                globalStyles.borderRadiuslarge,
+                              ]}
+                              name="call"
+                              size={20}
+                              color={color.white}
+                            />
+                          </TouchableOpacity>
+                          <View style={styles.addressLine}>
+                            <View style={styles.addressIconWrap}>
+                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
+                            </View>
+                            <CustomText style={styles.addressValue} numberOfLines={2}>
+                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
+                            </CustomText>
+                          </View>
+                          <View style={styles.addressUnderline} />
+                          <View style={styles.addressLine}>
+                            <View style={styles.addressIconWrap}>
+                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
+                            </View>
+                            <CustomText style={styles.addressValue} numberOfLines={2}>
+                              {item.PickupDelivery?.[0]?.DropAt?.Address || "N/A"}
+                            </CustomText>
+                          </View>
+                          <View style={[globalStyles.flexrow, globalStyles.justifyend, globalStyles.alineItemscenter]}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                Vibration.vibrate([0, 200, 100, 300]);
+
+                                const phoneNumber = item.PickupDelivery[0].DropAt?.PersonNumber;
+                                if (phoneNumber) {
+                                  Linking.openURL(`tel:${phoneNumber}`);
+                                } else {
+                                  Alert.alert("Error", "Phone number not available");
+                                }
+                              }}
+                              style={[
+                                styles.callbutton,
+                                globalStyles.flexrow,
+                                globalStyles.justifysb,
+                                { backgroundColor: color.primary },
+                              ]}
+                            >
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.mr2,
+                                  globalStyles.bgsecondary,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="call"
+                                size={20}
+                                color={color.white}
+                              />
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
+                                ]}
+                              >
+                                Car Drop call
+                              </CustomText>
+
+
+                            </TouchableOpacity>
+
+                          </View>
                         </View>
-                        <View style={styles.cardMetaItem}>
-                          <Ionicons
-                            name="time-outline"
-                            size={16}
-                            color={color.primary}
-                            style={styles.cardMetaIcon}
-                          />
-                          <CustomText
-                            style={[
-                              globalStyles.f10Regular,
-                              globalStyles.black,
-                              styles.timeValue,
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {getBookingDisplayData(item).timeSlot}
-                          </CustomText>
+                      )
+                    }
+
+
+
+
+                    {
+                      item.ServiceType === "ServiceAtHome" && (
+                        <View style={styles.fromToCard}>
+
+                          <View style={styles.addressLine}>
+                            <View style={styles.addressIconWrap}>
+                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
+                            </View>
+                            <CustomText style={styles.addressValue} numberOfLines={2}>
+                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
+                            </CustomText>
+                          </View>
+                          
+                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifycenter, globalStyles.alineItemscenter]}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                Vibration.vibrate([0, 200, 100, 300]);
+
+                                const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
+                                if (phoneNumber) {
+                                  Linking.openURL(`tel:${phoneNumber}`);
+                                } else {
+                                  Alert.alert("Error", "Phone number not available");
+                                }
+                              }}
+                              style={[
+                                styles.callbuttontocustomer,
+                                globalStyles.flexrow,
+                                globalStyles.justifysb,
+                                { backgroundColor: color.primary },
+                              ]}
+                            >
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.mr2,
+                                  globalStyles.bgsecondary,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="call"
+                                size={20}
+                                color={color.white}
+                              />
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
+                                ]}
+                              >
+                                Customer call
+                              </CustomText>
+
+
+                            </TouchableOpacity>
+
+                          </View>
                         </View>
-                      </View>
-                    </View>
+                      )
+                    }
+
+
+
                   </View>
                 </Pressable>
               );
@@ -786,6 +898,9 @@ const styles = StyleSheet.create({
   cardContent: {
     paddingLeft: 4,
   },
+  cardMetaBlock: {
+    marginTop: 8,
+  },
   cardMetaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -800,10 +915,11 @@ const styles = StyleSheet.create({
   cardMetaItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    minHeight: 20,
   },
   cardMetaIcon: {
-    marginRight: 6,
+    marginRight: 8,
+    width: 20,
   },
   statusChip: {
     flexDirection: "row",
@@ -825,11 +941,119 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  callbutton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 50,
+    width: "58%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  callbuttontocustomer: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 50,
+    width: "60%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  fromToCard: {
+    marginTop: 14,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: color.primary,
+    backgroundColor: color.white,
+  },
+  fromToLabel: {
+    fontSize: 12,
+    color: color.neutral[500],
+    marginBottom: 8,
+  },
+  fromToTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderWidth: 2,
+    borderColor: color.primary,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  fromToTagDrop: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: color.primary,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  fromToTagArrow: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: color.primary,
+    marginHorizontal: 6,
+  },
+  fromToTagText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: color.primary,
+  },
+  fromToTagIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: color.neutral[100],
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 6,
+  },
+  addressLine: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 4,
+  },
+  addressLabel: {
+    fontSize: 13,
+    color: color.neutral[500],
+    width: 72,
+    marginRight: 8,
+  },
+  addressIconWrap: {
+    marginRight: 8,
+    justifyContent: "center",
+  },
+  addressValue: {
+    flex: 1,
+    fontSize: 13,
+    color: color.black,
+  },
+  addressUnderline: {
+    height: 1,
+    backgroundColor: color.neutral[200],
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  toRow: {
+    marginTop: 14,
+  },
   chipCompleted: { backgroundColor: "#4CAF50" },
   chipPending: { backgroundColor: color.primary },
   avatar: {
-    width: 70,
-    height: 100,
+    width: 100,
+    height: 120,
     borderRadius: 8,
     borderWidth: 4,
     borderColor: color.white,

@@ -872,7 +872,26 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                  
+                    // Send OTP to customer when Submit is clicked
+                    try {
+                      const otpPayload = {
+                        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
+                        otpType: "Pickup",
+                        phoneNumber: phoneNumberForSubmit,
+                      };
+                      console.log("ServiceImages/GenerateOTP POST (Submit):", JSON.stringify(otpPayload, null, 2));
+                      await axios.post(
+                        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+                        otpPayload,
+                        { headers: { "Content-Type": "application/json" } }
+                      );
+                      console.log("OTP sent to customer on Submit");
+                    } catch (otpErr) {
+                      console.error("GenerateOTP Error (Submit):", otpErr?.response?.data ?? otpErr);
+                      setModalMessage(otpErr?.response?.data?.message || "Failed to send OTP to customer. Please try again.");
+                      setModalVisible(true);
+                      return;
+                    }
 
                     const verifyPayload = {
                       carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
@@ -912,7 +931,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
                     
 
-                    // OTP valid — post images to InsertPickupDeliveryImages (BeforeServiceStart), same pattern as CarPickUp
+                    // OTP valid — upload images to InsertPickupDeliveryImages (BeforeServiceStart)
                     try {
                       setIsUploading(true);
                       await uploadDeliveryImages();
@@ -926,7 +945,22 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Update booking status (same pattern as CarPickUp)
+                    // Update tracking (InsertTracking) for ServiceStart
+                    try {
+                      await axios.post(
+                        `${API_BASE_URL}ServiceImages/InsertTracking`,
+                        {
+                          pickDropId: Number(carPickupDeliveryId) || 0,
+                          status: "ServiceStart",
+                        },
+                        { headers: { "Content-Type": "application/json" } }
+                      );
+                      console.log("InsertTracking posted for ServiceStart");
+                    } catch (trackErr) {
+                      console.error("InsertTracking Error:", trackErr?.response?.data || trackErr);
+                    }
+
+                    // Update booking status (UpdateBookingStatus)
                     try {
                       const statusPayload = {
                         bookingID: Number(booking?.BookingID || 0),
@@ -936,7 +970,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",
                       };
-                      console.log("UpdateBookingStatus Payload (ServiceStart)=========================:", statusPayload);
+                      console.log("ServiceImages/UpdateBookingStatus>>>>>>>>>>>>>>>>>>>>>", statusPayload);
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                         statusPayload,
