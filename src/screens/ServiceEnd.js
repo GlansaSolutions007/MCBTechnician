@@ -47,8 +47,8 @@ export default function ServiceEnd() {
   console.log("booking=================", booking);
 
   // Merge booking data with Leads data for missing fields (same as ServiceStart.js)
-  const customerName = booking.CustomerName || booking.Leads?.FullName || "";
-  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
+  const customerName = booking.PickupDelivery[0]?.PickFrom?.PersonName;
+  const phoneNumber = booking.PickupDelivery[0]?.PickFrom?.PersonNumber;
   const profileImage = booking.ProfileImage || null;
   const carRegistrationNumber =
     paramRegNo ||
@@ -171,32 +171,38 @@ export default function ServiceEnd() {
     if (!images.length) return;
     setIsUploadingImages(true);
     try {
+      const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+      const vehicleNum = carRegistrationNumber || vehicleNumber || "";
       for (let i = 0; i < images.length; i++) {
         const formData = new FormData();
         formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
-        formData.append("VehicleNumber", carRegistrationNumber || vehicleNumber || "");
+        formData.append("VehicleNumber", vehicleNum);
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
-        formData.append("TechID", booking.TechID ?? "");
-        formData.append("ImageUploadType", "completedservice");
+        formData.append("TechID", String(booking.TechID ?? ""));
+        formData.append("ImageUploadType", "Delivery");
         formData.append("ImagesType", "tech");
         formData.append("ImageURL1", {
           uri: images[i],
           type: "image/jpeg",
           name: `delivery_${i + 1}.jpg`,
         });
-        await fetch(`${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`, {
+        const res = await fetch(`${baseUrl}ServiceImages/InsertPickupDeliveryImages`, {
           method: "POST",
-          headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
+          headers: { Accept: "application/json" },
           body: formData,
         });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || `Upload failed ${res.status}`);
+        }
       }
       setImages([]);
       setModalMessage("Images uploaded successfully.");
       setModalVisible(true);
     } catch (err) {
       console.error("Upload after-service images error:", err);
-      setModalMessage("Failed to upload images. Please try again.");
+      setModalMessage(err?.message || err?.response?.data?.message || "Failed to upload images. Please try again.");
       setModalVisible(true);
     } finally {
       setIsUploadingImages(false);
@@ -352,7 +358,6 @@ export default function ServiceEnd() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType,
         action: "ServiceComplete",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -366,7 +371,7 @@ export default function ServiceEnd() {
       console.error("UpdateBookingStatus (ServiceComplete) Error:", e?.response?.data ?? e);
     }
 
-    // No payment flow — always complete tracking and navigate to home
+    // Complete tracking then navigate to Collect Payment (QR and amount)
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -379,15 +384,8 @@ export default function ServiceEnd() {
     } catch (e) {
       console.error("InsertTracking Completed Error:", e);
     }
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: "CustomerTabNavigator",
-          params: { screen: "Dashboard" },
-        },
-      ],
-    });
+
+    navigation.navigate("CollectPayment", { booking });
   };
   useEffect(() => {
     const fetchLeads = async () => {
@@ -865,7 +863,7 @@ export default function ServiceEnd() {
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  {isLoading ? "Sending OTP" : "Resend OTP"}  
+                  {isLoading ? "Sending OTP" : "Send OTP"}  
                 </CustomText>
               </TouchableOpacity>
             ) : (

@@ -740,7 +740,6 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType,
         action: "pickup_reached",
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",

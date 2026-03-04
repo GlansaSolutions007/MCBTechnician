@@ -36,9 +36,9 @@ export default function ServiceStart() {
   const route = useRoute();
   const { booking } = route.params;
   // console.log("booking", booking);
-const [isLoading, setIsLoading] = useState(false);
-const [otpCooldown, setOtpCooldown] = useState(0);
-const [cooldownTimer, setCooldownTimer] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [cooldownTimer, setCooldownTimer] = useState(null);
 
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState("");
@@ -68,7 +68,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const serviceStartStatusPosted = useRef(false);
 
   const bookingParam = route?.params?.booking;
-  
+
   // Merge booking data with Leads data for missing fields
   const customerName = bookingParam.CustomerName || bookingParam.Leads?.FullName || "";
   const phoneNumber = bookingParam.PhoneNumber || bookingParam.Leads?.PhoneNumber || "";
@@ -92,9 +92,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   // const carPickupDeliveryId = Number(
   //   legId ?? booking?.PickupDelivery?.Id ?? booking?.PickupDelivery?.Id ?? fromArray ?? 0
   // );
-  const carPickupDeliveryId =   booking?.PickupDelivery[0].Id;
- 
-  console.log("carPickupDeliveryId===============", carPickupDeliveryId);
+  const carPickupDeliveryId = booking?.PickupDelivery[0].Id;
+
   const routeType =
     currentLeg?.PickFrom?.[0]?.RouteType ??
     currentLeg?.PickFrom?.RouteType ??
@@ -121,8 +120,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   }, [cooldownTimer]);
 
   const startCooldownTimer = () => {
-    setOtpCooldown(60); 
-    
+    setOtpCooldown(60);
+
     const timer = setInterval(() => {
       setOtpCooldown((prev) => {
         if (prev <= 1) {
@@ -133,12 +132,13 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         return prev - 1;
       });
     }, 1000);
-    
+
     setCooldownTimer(timer);
   };
 
 
   const uploadDeliveryImages = async () => {
+    const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
     const regNo = carRegistrationNumber?.trim() || "";
     for (let i = 0; i < images.length; i++) {
       const formData = new FormData();
@@ -146,35 +146,23 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       formData.append("VehicleNumber", regNo);
       formData.append("BookingID", booking.BookingID);
       formData.append("UploadedBy", 1);
-      formData.append("TechID", booking.TechID ?? "");
-      formData.append("ImageUploadType", "BeforeServiceStart");
+      formData.append("TechID", String(booking.TechID ?? ""));
+      formData.append("ImageUploadType", "Pickup");
       formData.append("ImagesType", "tech");
       formData.append("ImageURL1", {
         uri: images[i],
         type: "image/jpeg",
-        name: `before_${i + 1}.jpg`,
+        name: `pickup_${i + 1}.jpg`,
       });
-      console.log("ServiceImages/InsertPickupDeliveryImages POST (image " + (i + 1) + "):", {
-        CarPickupDeliveryId: Number(carPickupDeliveryId) || 0,
-        VehicleNumber: regNo,
-        BookingID: booking.BookingID,
-        UploadedBy: 1,
-        TechID: booking.TechID ?? "",
-        ImageUploadType: "BeforeServiceStart",
-        ImagesType: "tech",
-        ImageURL1: "(file)",
+      const res = await fetch(`${baseUrl}ServiceImages/InsertPickupDeliveryImages`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData,
       });
-      await fetch(
-        `${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "multipart/form-data",
-          },
-          body: formData,
-        }
-      );
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || `Upload failed ${res.status}`);
+      }
     }
   };
 
@@ -187,7 +175,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         setIsLoading(false);
         return;
       }
-      const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
+      const phoneNumber = bookingParam?.PickupDelivery[0]?.PickFrom?.PersonNumber;
+      console.log("phoneNumber===============",phoneNumber)
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Pickup",
@@ -260,41 +249,30 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       if (!images.length) return;
       setIsUploading(true);
 
+      const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+
       for (let i = 0; i < images.length; i++) {
         const formData = new FormData();
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
-        formData.append("TechID", booking.TechID);
+        formData.append("TechID", String(booking.TechID ?? ""));
         formData.append("ImageUploadType", "before");
         formData.append("ImagesType", "tech");
-
         formData.append("ImageURL1", {
           uri: images[i],
           type: "image/jpeg",
           name: `upload_${i + 1}.jpg`,
         });
 
-        const response = await fetch(
-          `${API_BASE_URL}/ServiceImages/InsertServiceImages`,
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "multipart/form-data",
-            },
-            body: formData,
-          }
-        );
-
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = text;
+        const res = await fetch(`${baseUrl}ServiceImages/InsertServiceImages`, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: formData,
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || `Upload failed ${res.status}`);
         }
-
-        console.log(`Image ${i + 1} uploaded:`, data);
       }
       setIsUploading(false);
       setUploadDone(true);
@@ -302,8 +280,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       Alert.alert("Success", "Images uploaded successfully!");
     } catch (error) {
       setIsUploading(false);
-      Alert.alert("Error", "Failed to upload images. Please try again.");
-      console.error("Upload error:", error);
+      setModalMessage("Image upload failed. Please try again.");
+      setModalVisible(true);
+      console.error("Upload error:", error?.message ?? error);
     }
   };
 
@@ -363,7 +342,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           setMaxTime(maxTimeSeconds);
           setTimerStarted(true);
           setTimerCompleted(maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds);
-          
+
           // Update stored state with current API data
           await AsyncStorage.setItem(
             `timerState_${booking.BookingID}`,
@@ -433,7 +412,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         console.error("Error checking OTP sent state:", error);
       }
     };
-    
+
     checkOtpSentState();
   }, [booking.BookingID]);
 
@@ -459,25 +438,25 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
     >
-      <ScrollView 
+      <ScrollView
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
       >
         <View style={globalStyles.container}>
-        {/* <AvailabilityHeader /> */}
+          {/* <AvailabilityHeader /> */}
 
-        {/* Booking Summary */}
-        <View
-          style={[
-            globalStyles.bgwhite,
-            globalStyles.radius,
-            globalStyles.card,
-            globalStyles.p3,
-            globalStyles.mt3,
-          ]}
-        >
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            {/* <Image
+          {/* Booking Summary */}
+          <View
+            style={[
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.card,
+              globalStyles.p3,
+              globalStyles.mt3,
+            ]}
+          >
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              {/* <Image
               source={{
                 uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   booking.CustomerName
@@ -485,194 +464,194 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
               }}
               style={{ width: 46, height: 46, borderRadius: 10 }}
             /> */}
-            <Image
-              source={
-                profileImage
-                  ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
-                  : defaultAvatar
-              }
-              style={{ width: 46, height: 46, borderRadius: 10 }}
-            />
-            <View style={[globalStyles.ml3, { flex: 1 }]}>
-              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                {customerName || "N/A"}
-              </CustomText>
-              <CustomText
-                style={[globalStyles.f12Medium, globalStyles.neutral500]}
-              >
-                Mobile: {phoneNumber || "N/A"}
-              </CustomText>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                Vibration.vibrate([0, 200, 100, 300]);
-
-                if (phoneNumber) {
-                  Linking.openURL(`tel:${phoneNumber}`);
-                } else {
-                  Alert.alert("Error", "Phone number not available");
+              <Image
+                source={
+                  profileImage
+                    ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
+                    : defaultAvatar
                 }
-              }}
-            >
-              <Ionicons
-                style={[
-                  globalStyles.p2,
-                  globalStyles.bgprimary,
-                  globalStyles.borderRadiuslarge,
-                ]}
-                name="call"
-                size={20}
-                color={color.white}
+                style={{ width: 46, height: 46, borderRadius: 10 }}
               />
-            </TouchableOpacity>
-          </View>
-          <View style={[globalStyles.divider, globalStyles.mt2]} />
-          {/* <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} /> */}
-          <View style={[globalStyles.flexrow]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={16}
-                color={color.primary}
-                style={{ marginRight: 6 }}
-              />
-              <CustomText
+              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {customerName || "N/A"}
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                >
+                  Mobile: {phoneNumber || "N/A"}
+                </CustomText>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <Ionicons
+                  style={[
+                    globalStyles.p2,
+                    globalStyles.bgprimary,
+                    globalStyles.borderRadiuslarge,
+                  ]}
+                  name="call"
+                  size={20}
+                  color={color.white}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={[globalStyles.divider, globalStyles.mt2]} />
+            {/* <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} /> */}
+            <View style={[globalStyles.flexrow]}>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).bookingTrackID}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Ionicons name="calendar" size={16} color={color.primary} />
-              <CustomText
+                <MaterialCommunityIcons
+                  name="card-account-details-outline"
+                  size={16}
+                  color={color.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).bookingTrackID}
+                </CustomText>
+              </View>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).bookingDate}
-              </CustomText>
+                <Ionicons name="calendar" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).bookingDate}
+                </CustomText>
+              </View>
             </View>
-          </View>
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-              <Ionicons name="car" size={16} color={color.primary} />
-              <CustomText
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).vehicleDisplay}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Ionicons name="time-outline" size={16} color={color.primary} />
-              <View style={{ flexDirection: "column" }}>
-                {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
-                  <CustomText
-                    key={index}
-                    style={[
-                      globalStyles.f10Regular,
-                      globalStyles.black,
-                      globalStyles.ml1,
-                    ]}
-                  >
-                    {slot.trim()}
-                  </CustomText>
-                ))}
+                <Ionicons name="car" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).vehicleDisplay}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="time-outline" size={16} color={color.primary} />
+                <View style={{ flexDirection: "column" }}>
+                  {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
+                    <CustomText
+                      key={index}
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                      {slot.trim()}
+                    </CustomText>
+                  ))}
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        { booking.PickupDelivery[0].DriverStatus === "pickup_reached" && (
-          <View>
-            <View
-              style={[
-                globalStyles.mt3,
-                globalStyles.bgwhite,
-                globalStyles.radius,
-                globalStyles.pt0,
-                globalStyles.pb3,
-                globalStyles.ph3,
-                globalStyles.card,
-              ]}
-            >
-              <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                Pre-service checklist
-              </CustomText>
-              <CustomText
+          {(booking.PickupDelivery[0].DriverStatus === "pickup_started" || booking.PickupDelivery[0].DriverStatus === "pickup_reached") && (
+            <View>
+              <View
                 style={[
-                  globalStyles.f10Light,
-                  globalStyles.neutral500,
-                  globalStyles.mt1,
-                ]}
-              >
-                At least one image required. Choose files, then enter OTP and tap Submit.
-              </CustomText>
-              <TouchableOpacity
-                style={[
-                  globalStyles.inputBox,
                   globalStyles.mt3,
-                  { borderColor: imageError ? color.alertError : "#ccc", borderWidth: imageError ? 2 : 1 },
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.pt0,
+                  globalStyles.pb3,
+                  globalStyles.ph3,
+                  globalStyles.card,
                 ]}
-                onPress={pickImage}
               >
+                <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+                  Pre-service checklist
+                </CustomText>
                 <CustomText
-                  style={[globalStyles.f16Light, globalStyles.neutral500]}
-                >
-                  Choose Files
-                </CustomText>
-              </TouchableOpacity>
-              {imageError ? (
-                <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
-                  {imageError}
-                </CustomText>
-              ) : null}
-
-              {images.length > 0 && (
-                <View
                   style={[
-                    globalStyles.flexrow,
-                    globalStyles.justifycenter,
-                    globalStyles.mt3,
-                    { flexWrap: "wrap" },
+                    globalStyles.f10Light,
+                    globalStyles.neutral500,
+                    globalStyles.mt1,
                   ]}
                 >
-                  {images.map((uri, index) => (
+                  At least one image required. Choose files, then enter OTP and tap Submit.
+                </CustomText>
+                <TouchableOpacity
+                  style={[
+                    globalStyles.inputBox,
+                    globalStyles.mt3,
+                    { borderColor: imageError ? color.alertError : "#ccc", borderWidth: imageError ? 2 : 1 },
+                  ]}
+                  onPress={pickImage}
+                >
+                  <CustomText
+                    style={[globalStyles.f16Light, globalStyles.neutral500]}
+                  >
+                    Choose Files
+                  </CustomText>
+                </TouchableOpacity>
+                {imageError ? (
+                  <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
+                    {imageError}
+                  </CustomText>
+                ) : null}
+
+                {images.length > 0 && (
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.justifycenter,
+                      globalStyles.mt3,
+                      { flexWrap: "wrap" },
+                    ]}
+                  >
+                    {images.map((uri, index) => (
                       <View
                         key={index}
                         style={{
@@ -701,11 +680,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         </TouchableOpacity>
                       </View>
                     ))}
-                </View>
-              )}
-            </View>
-            {/* OTP + Submit (Service at Home only - this screen is not used for Service at Garage) */}
-            <>
+                  </View>
+                )}
+              </View>
+              {/* OTP + Submit (Service at Home only - this screen is not used for Service at Garage) */}
+              <>
                 <CustomText
                   style={[
                     globalStyles.f16Light,
@@ -748,78 +727,76 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   Enter OTP
                 </CustomText>
 
-<View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-  <TextInput
-    style={[
-      globalStyles.inputBox,
-      {
-        flex: 1,
-        borderColor: error ? "red" : "#ccc",
-        borderWidth: 1,
-      },
-    ]}
-    placeholder="Enter OTP"
-    value={otp}
-    onChangeText={(text) => {
-      if (/^\d{0,6}$/.test(text)) {
-        setOtp(text);
-        setError("");
-      }
-    }}
-    keyboardType="numeric"
-    maxLength={6}
-  />
+                <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                  <TextInput
+                    style={[
+                      globalStyles.inputBox,
+                      {
+                        flex: 1,
+                        borderColor: error ? "red" : "#ccc",
+                        borderWidth: 1,
+                      },
+                    ]}
+                    placeholder="Enter OTP"
+                    value={otp}
+                    onChangeText={(text) => {
+                      if (/^\d{0,6}$/.test(text)) {
+                        setOtp(text);
+                        setError("");
+                      }
+                    }}
+                    keyboardType="numeric"
+                    maxLength={6}
+                  />
 
-  {otpCooldown === 0 ? (
-    <TouchableOpacity
-      onPress={resendOTP}
-      disabled={isLoading}
-      style={[
-        {
-          marginLeft: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 8,
-          backgroundColor: color.yellow,
-          opacity: isLoading ? 0.6 : 1,
-        },
-      ]}
-    >
-      <CustomText
-        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-      >
-        {isLoading ? "Sending OTP" : "Resend OTP"}  
-      </CustomText>
-    </TouchableOpacity>
-  ) : (
-    <View
-      style={[
-        {
-          marginLeft: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 8,
-          backgroundColor: color.neutral[300],
-          opacity: 0.6,
-        },
-      ]}
-    >
-      <CustomText
-        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-      >
-        Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
-      </CustomText>
-    </View>
-  )}
-</View>
+                  {otpCooldown === 0 ? (
+                    <TouchableOpacity
+                      onPress={resendOTP}
+                      disabled={isLoading}
+                      style={[
+                        {
+                          marginLeft: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                          backgroundColor: color.yellow,
+                          opacity: isLoading ? 0.6 : 1,
+                        },
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        {isLoading ? "Sending OTP" : "Resend OTP"}
+                      </CustomText>
+                    </TouchableOpacity>
+                  ) : (
+                    <View
+                      style={[
+                        {
+                          marginLeft: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                          backgroundColor: color.neutral[300],
+                          opacity: 0.6,
+                        },
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
+                      </CustomText>
+                    </View>
+                  )}
+                </View>
 
-{error ? (
-  <CustomText style={{ color: "red", marginTop: 5 }}>
-    {error}
-  </CustomText>
-) : null}
-
-   
+                {error ? (
+                  <CustomText style={{ color: "red", marginTop: 5 }}>
+                    {error}
+                  </CustomText>
+                ) : null}
 
                 <TouchableOpacity
                   style={[
@@ -847,7 +824,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // At least one image required
                     if (!images || images.length < 1) {
                       setImageError("At least one image is required.");
                       return;
@@ -868,27 +844,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     if (!phoneNumberForSubmit) {
                       setError("Customer phone number is required for OTP.");
                       setModalMessage("Customer phone number is required for OTP.");
-                      setModalVisible(true);
-                      return;
-                    }
-
-                    // Send OTP to customer when Submit is clicked
-                    try {
-                      const otpPayload = {
-                        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
-                        otpType: "Pickup",
-                        phoneNumber: phoneNumberForSubmit,
-                      };
-                      console.log("ServiceImages/GenerateOTP POST (Submit):", JSON.stringify(otpPayload, null, 2));
-                      await axios.post(
-                        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-                        otpPayload,
-                        { headers: { "Content-Type": "application/json" } }
-                      );
-                      console.log("OTP sent to customer on Submit");
-                    } catch (otpErr) {
-                      console.error("GenerateOTP Error (Submit):", otpErr?.response?.data ?? otpErr);
-                      setModalMessage(otpErr?.response?.data?.message || "Failed to send OTP to customer. Please try again.");
                       setModalVisible(true);
                       return;
                     }
@@ -929,9 +884,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    
-
-                    // OTP valid — upload images to InsertPickupDeliveryImages (BeforeServiceStart)
                     try {
                       setIsUploading(true);
                       await uploadDeliveryImages();
@@ -945,7 +897,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Update tracking (InsertTracking) for ServiceStart
                     try {
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -960,12 +911,10 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       console.error("InsertTracking Error:", trackErr?.response?.data || trackErr);
                     }
 
-                    // Update booking status (UpdateBookingStatus)
                     try {
                       const statusPayload = {
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtHome",
-                        routeType,
                         action: "ServiceStart",
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",
@@ -981,25 +930,21 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
                     }
 
-                    // Calculate estimated and actual time
                     const estimatedTime = booking.TotalEstimatedDurationMinutes
                       ? booking.TotalEstimatedDurationMinutes * 60
                       : 0;
-                    
-                    // Calculate actual time (service just started, so it's 0 or from API if already started)
+
                     let actualTime = 0;
-                    const serviceStartTime = booking.ServiceStartedAt 
+                    const serviceStartTime = booking.ServiceStartedAt
                       ? new Date(booking.ServiceStartedAt)
                       : new Date();
                     actualTime = Math.floor((new Date() - serviceStartTime) / 1000);
 
-                    // Update booking with ServiceStartedAt if not already set
                     const updatedBooking = {
                       ...booking,
                       ServiceStartedAt: booking.ServiceStartedAt || new Date().toISOString(),
                     };
 
-                    // Store timer state
                     await AsyncStorage.setItem(
                       `serviceStarted_${booking.BookingID}`,
                       "true"
@@ -1015,7 +960,6 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       })
                     );
 
-                    // Service at Home only: go to ServiceEnd (garage flow uses separate screens)
                     navigation.navigate("ServiceEnd", {
                       booking: updatedBooking,
                       estimatedTime: estimatedTime,
@@ -1030,99 +974,99 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 </TouchableOpacity>
 
               </>
+              <View>
+                <TouchableOpacity
+                  style={[
+                    globalStyles.flex1,
+                    globalStyles.bgBlack,
+                    globalStyles.borderRadiuslarge,
+                    globalStyles.p4,
+                    globalStyles.justifycenter,
+                    globalStyles.alineItemscenter,
+                    globalStyles.mt4,
+                  ]}
+                  onPress={() => {
+                    Vibration.vibrate([0, 200, 100, 300]);
+
+                    const phoneNumber = 7075243939;
+                    if (phoneNumber) {
+                      Linking.openURL(`tel:${phoneNumber}`);
+                    } else {
+                      Alert.alert("Error", "Phone number not available");
+                    }
+                  }}
+                >
+                  <View
+                    style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                  >
+                    <Image source={helpcall} />
+                    <CustomText
+                      style={[globalStyles.textWhite, globalStyles.ml2]}
+                    >
+                      Call help line
+                    </CustomText>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {booking.PickupDelivery[0].DriverStatus === "ServiceStart" && (
             <View>
               <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  globalStyles.bgBlack,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.p4,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                  globalStyles.mt4,
-                ]}
-                onPress={() => {
-                  Vibration.vibrate([0, 200, 100, 300]);
-
-                  const phoneNumber = 7075243939;
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
-                  } else {
-                    Alert.alert("Error", "Phone number not available");
-                  }
-                }}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Image source={helpcall} />
-                  <CustomText
-                    style={[globalStyles.textWhite, globalStyles.ml2]}
-                  >
-                    Call help line
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {booking.PickupDelivery[0].DriverStatus === "ServiceStart" && (
-          <View>
-            <TouchableOpacity
                 onPress={async () => {
-                navigation.navigate("ServiceEnd", {
-                  estimatedTime: MAX_TIME,
-                  actualTime: elapsedTime,
-                  booking: booking,
-                  carRegistrationNumber: carRegistrationNumber?.trim() || "",
-                });
-                setTimerCompleted(true);
-                setTimeTaken(elapsedTime);
-                await AsyncStorage.removeItem("serviceTimerState");
-              }}
-              style={[globalStyles.blackButton, globalStyles.mb3]}
-            >
-              <CustomText
-                style={[globalStyles.f12Bold, globalStyles.textWhite]}
-              >
-                Next
-              </CustomText>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <CustomText
-                style={[
-                  globalStyles.f16Bold,
-                  globalStyles.textac,
-                  { marginTop: 10 },
-                ]}
-              >
-                {modalMessage}
-              </CustomText>
-
-              <TouchableOpacity
-                style={styles.okButton}
-                onPress={() => setModalVisible(false)}
+                  navigation.navigate("ServiceEnd", {
+                    estimatedTime: MAX_TIME,
+                    actualTime: elapsedTime,
+                    booking: booking,
+                    carRegistrationNumber: carRegistrationNumber?.trim() || "",
+                  });
+                  setTimerCompleted(true);
+                  setTimeTaken(elapsedTime);
+                  await AsyncStorage.removeItem("serviceTimerState");
+                }}
+                style={[globalStyles.blackButton, globalStyles.mb3]}
               >
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  OK
+                  Next
                 </CustomText>
               </TouchableOpacity>
             </View>
-          </View>
-        </Modal>
+          )}
+
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <CustomText
+                  style={[
+                    globalStyles.f16Bold,
+                    globalStyles.textac,
+                    { marginTop: 10 },
+                  ]}
+                >
+                  {modalMessage}
+                </CustomText>
+
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  >
+                    OK
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

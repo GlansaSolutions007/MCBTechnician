@@ -13,7 +13,6 @@ import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
-// import AvailabilityHeader from "../components/AvailabilityHeader";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
@@ -22,11 +21,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 import { API_BASE_URL_IMAGE } from "@env";
 import { RefreshControl } from "react-native";
-import TrackingStatusIndicator from "../components/TrackingStatusIndicator";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
 import BookingPickDropRow from "../components/BookingPickDropRow";
 export default function Dashboard() {
-  // const [isOnline, setIsOnline] = useState(true);
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -48,11 +45,50 @@ export default function Dashboard() {
     );
   };
 
+  const getDriverStatus = (booking) => {
+    const pd = booking?.PickupDelivery;
+    if (!pd) return null;
+    if (Array.isArray(pd)) {
+      const found = pd.find((p) => p?.DriverStatus);
+      return found?.DriverStatus ?? pd[0]?.DriverStatus ?? null;
+    }
+    return pd?.DriverStatus ?? null;
+  };
+  const isFutureDate = (dateString) => {
+    if (!dateString) return false;
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const bookingDate = new Date(dateString);
+      if (isNaN(bookingDate.getTime())) return false;
+      bookingDate.setHours(0, 0, 0, 0);
+      return bookingDate > today;
+    } catch {
+      return false;
+    }
+  };
+  const isBookingCompleted = (booking) => {
+    const status = booking?.BookingStatus;
+    if (status === "Completed" || status === "ServiceComplete") return true;
+    const driverStatus = getDriverStatus(booking);
+    return driverStatus === "completed" || driverStatus === "ServiceComplete";
+  };
+
+  const getAssignDate = (booking) => {
+    const pd = booking?.PickupDelivery;
+    if (!pd) return booking?.BookingDate || booking?.TechAssignDate || null;
+    if (Array.isArray(pd) && pd.length > 0) {
+      const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
+      return sorted[0]?.AssignDate || booking?.BookingDate || booking?.TechAssignDate || null;
+    }
+    return pd?.AssignDate || booking?.BookingDate || booking?.TechAssignDate || null;
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          await Promise.all([fetchBookingCounts(), fetchBookings(), fetchActiveServices()]);
+          await Promise.all([fetchActiveServices()]);
           setInitialLoading(false);
         } catch (error) {
           console.error("Error refreshing data:", error);
@@ -68,21 +104,16 @@ export default function Dashboard() {
   };
 
   const [bookings, setBookings] = useState([]);
+  const [assignedBookingsCount, setAssignedBookingsCount] = useState(0);
+  const [schedulesCount, setSchedulesCount] = useState(0);
+  const [reportsListCount, setReportsListCount] = useState(0);
   const [activeServices, setActiveServices] = useState([]);
-  const [bookingCounts, setBookingCounts] = useState({
-    TodayAssignedBookingsCount: 0,
-    ScheduledBookingsCount: 0,
-    TodayCustomerCount: 0,
-    CompletedBookingsCount: 0,
-  });
+
   const CollectPayment = async (item) => {
     navigation.navigate("CollectPayment", { booking: item });
   };
   const CustomerInfo = async (item) => {
     navigation.navigate("customerInfo", { booking: item });
-  };
-  const ServiceStart = async (item) => {
-    navigation.navigate(item.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: item });
   };
   const Schedules = () => {
     navigation.navigate("Schedules");
@@ -91,39 +122,7 @@ export default function Dashboard() {
     navigation.navigate("Reports");
   };
 
-  useEffect(() => {
-    const fetchBookingCounts = async () => {
-      try {
-        const techID = await AsyncStorage.getItem("techID");
-        // alert(`Tech ID: ${techID}`);
-        const token = await AsyncStorage.getItem("token");
 
-        if (techID) {
-          try {
-            const res = await axios.get(
-              `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
-              `${API_BASE_URL}Dashboard/TechnicianPayments?techid=${techID}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (Array.isArray(res.data) && res.data.length > 0) {
-              setBookingCounts(res.data[0]);
-            }
-          } catch (error) {
-            console.error("No bookings found for this technician");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching booking counts:", err);
-      }
-    };
-
-    fetchBookingCounts();
-  }, []);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -195,75 +194,44 @@ export default function Dashboard() {
     }
   }, [techID, bookings]);
 
-  // Fetch booking counts
-  const fetchBookingCounts = async () => {
-    try {
-      const techID = await AsyncStorage.getItem("techID");
-      const token = await AsyncStorage.getItem("token");
-
-      if (techID) {
-        const res = await axios.get(
-          `${API_BASE_URL}Bookings/GetTechBookingCounts?techId=${techID}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setBookingCounts(res.data[0]);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching booking counts:", err);
-    }
-  };
-
-  const fetchBookings = async () => {
-    try {
-      const techID = await AsyncStorage.getItem("techID");
-      const token = await AsyncStorage.getItem("token");
-      if (techID) {
-        const res = await axios.get(
-          `${API_BASE_URL}Bookings/GetTechTodayBookings?Id=${techID}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const allBookingsData = Array.isArray(res.data) ? res.data : [];
-        setBookings(allBookingsData);
-      }
-    } catch (err) {
-      console.error("fetchBookings error", err);
-    }
-  };
-
-  // Fetch active services from GetAssignedBookings API
   const fetchActiveServices = async () => {
     try {
       const techID = await AsyncStorage.getItem("techID");
       const token = await AsyncStorage.getItem("token");
       if (techID) {
         const res = await axios.get(
-          `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `${API_BASE_URL}Bookings/GetAssignedBookings`,
+          { params: { Id: techID, techId: techID }, headers: { Authorization: `Bearer ${token}` } }
         );
-        const allAssignedBookings = Array.isArray(res.data) ? res.data : [];
-        // Filter only active services based on isActiveService logic
+        const allAssignedBookings = Array.isArray(res.data) ? res.data : res?.data?.data || [];
+        const completedCount = allAssignedBookings.filter(isBookingCompleted).length;
+        setReportsListCount(completedCount);
+        const futureCount = allAssignedBookings.filter((b) => isFutureDate(getAssignDate(b))).length;
+        setSchedulesCount(futureCount);
+        const nonFutureBookings = allAssignedBookings.filter((booking) => {
+          const serviceDate = getAssignDate(booking);
+          if (!serviceDate) return true;
+          return !isFutureDate(serviceDate);
+        });
+        const pendingCount = nonFutureBookings.filter((b) => !isBookingCompleted(b)).length;
+        setAssignedBookingsCount(pendingCount);
         const activeBookings = allAssignedBookings.filter(isActiveService);
         setActiveServices(activeBookings);
       }
     } catch (err) {
       console.error("fetchActiveServices error", err);
+      setAssignedBookingsCount(0);
+      setSchedulesCount(0);
+      setReportsListCount(0);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([fetchBookingCounts(), fetchBookings(), fetchActiveServices()]);
-    setRefreshing(false);
-  };
-
   useEffect(() => {
-    onRefresh();
+    refreshData();
   }, []);
 
   const refreshData = async () => {
-    await Promise.all([fetchBookingCounts(), fetchBookings(), fetchActiveServices()]);
+    await Promise.all([fetchActiveServices()]);
   };
 
   useEffect(() => {
@@ -276,7 +244,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Start skeleton pulse for initial load
   useEffect(() => {
     if (initialLoading) {
       Animated.loop(
@@ -515,14 +482,10 @@ export default function Dashboard() {
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30 }}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} />
       }
     >
       <View style={[globalStyles.container]}>
-        {/* <AvailabilityHeader /> */}
-
-        {/* Location Tracking Status */}
-        {/* <TrackingStatusIndicator technicianId={techID} /> */}
 
         <View
           style={[
@@ -565,7 +528,7 @@ export default function Dashboard() {
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  {bookingCounts.ScheduledBookingsCount}
+                  {schedulesCount}
                 </CustomText>
               </View>
             </Pressable>
@@ -605,7 +568,7 @@ export default function Dashboard() {
                 <CustomText
                   style={[globalStyles.f32Bold, globalStyles.textWhite]}
                 >
-                  {bookingCounts.CompletedBookingsCount}
+                  {reportsListCount}
                 </CustomText>
               </View>
             </Pressable>
@@ -641,7 +604,7 @@ export default function Dashboard() {
                   globalStyles.alineSelfend,
                 ]}
               >
-                {bookingCounts.ReportsCount}
+                {assignedBookingsCount}
               </CustomText>
             </View>
           </View>
@@ -649,24 +612,14 @@ export default function Dashboard() {
           <View style={globalStyles.divider} />
 
           <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-            {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              <IconLabel icon="time-outline" />
-              <CustomText style={globalStyles.f12Bold}>
-                {bookingCounts.TodayCustomerCount} hrs
-              </CustomText>
-            </View> */}
+
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="people-outline" />
               <CustomText style={globalStyles.f16Bold}>
-                {bookingCounts.ReportsCount} customers
+                {assignedBookingsCount} customers
               </CustomText>
             </View>
-            {/* <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              <IconLabel icon="checkmark-circle-outline" />
-              <CustomText style={globalStyles.f12Bold}>
-                {bookingCounts.CompletedBookingsCount} Active
-              </CustomText>
-            </View> */}
+
           </View>
         </Pressable>
 
@@ -755,38 +708,27 @@ export default function Dashboard() {
           {activeServices.length > 0 ? (
             <View style={[globalStyles.mt3]}>
 
-
-
-
-
-
-
-
-
-
-
-
               {activeServices.map((item, index) => {
-                  const lastPaymentStatus = getLastPaymentStatus(item);
-                  const totalPaidAmount = (item?.Payments || []).reduce(
-                    (sum, payment) =>
-                      payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid"
-                        ? sum + Number(payment.AmountPaid || 0)
-                        : sum,
-                    0
-                  );
-                  const totalPrice =
-                    item.TotalPrice ||
-                    (item.BookingAddOns &&
-                      item.BookingAddOns.reduce(
-                        (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
-                        0
-                      )) ||
-                    0;
-                  const amountPending = totalPrice - totalPaidAmount;
-                  const display = getBookingDisplayData(item);
+                const lastPaymentStatus = getLastPaymentStatus(item);
+                const totalPaidAmount = (item?.Payments || []).reduce(
+                  (sum, payment) =>
+                    payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid"
+                      ? sum + Number(payment.AmountPaid || 0)
+                      : sum,
+                  0
+                );
+                const totalPrice =
+                  item.TotalPrice ||
+                  (item.BookingAddOns &&
+                    item.BookingAddOns.reduce(
+                      (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
+                      0
+                    )) ||
+                  0;
+                const amountPending = totalPrice - totalPaidAmount;
+                const display = getBookingDisplayData(item);
 
-                  return (
+                return (
                   <Pressable
                     onPress={() => CustomerInfo(item)}
                     key={index}
@@ -798,7 +740,6 @@ export default function Dashboard() {
                       styles.activeServiceCard,
                     ]}
                   >
-                    {/* Status Indicator */}
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2, { flexWrap: "wrap", gap: 8 }]}>
                       <View style={[
                         globalStyles.p1,
@@ -807,18 +748,18 @@ export default function Dashboard() {
                           borderRadius: 8,
                           backgroundColor:
                             item.BookingStatus === "ServiceStarted" ? color.alertSuccess :
-                            item.BookingStatus === "StartJourney" ? color.alertInfo :
-                            item.BookingStatus === "Reached" ? color.primary :
-                            lastPaymentStatus === "Pending" ? color.alertWarning :
-                            color.neutral[300],
+                              item.BookingStatus === "StartJourney" ? color.alertInfo :
+                                item.BookingStatus === "Reached" ? color.primary :
+                                  lastPaymentStatus === "Pending" ? color.alertWarning :
+                                    color.neutral[300],
                         },
                       ]}>
                         <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
                           {item.BookingStatus === "ServiceStarted" ? "In Progress" :
-                           item.BookingStatus === "StartJourney" ? "On Journey" :
-                           item.BookingStatus === "Reached" ? "Reached" :
-                           lastPaymentStatus === "Pending" ? "Payment Pending" :
-                           display.bookingStatus}
+                            item.BookingStatus === "StartJourney" ? "On Journey" :
+                              item.BookingStatus === "Reached" ? "Reached" :
+                                lastPaymentStatus === "Pending" ? "Payment Pending" :
+                                  display.bookingStatus}
                         </CustomText>
                       </View>
                       {display.totalPrice != null && (
@@ -866,95 +807,91 @@ export default function Dashboard() {
 
                     <View style={[globalStyles.divider, globalStyles.mt3]} />
 
-                    {/* Payment Section - Show if payment is not completed */}
                     {(lastPaymentStatus !== "Success" && lastPaymentStatus !== "Partialpaid") &&
                       amountPending > 0 && (
-                      <View
-                        style={[
-                          globalStyles.flexrow,
-                          globalStyles.justifysb,
-                          globalStyles.alineItemscenter,
-                          globalStyles.mt3,
-                          globalStyles.p3,
-                          {
-                            backgroundColor: color.alertWarning + "15",
-                            borderRadius: 8,
-                          },
-                        ]}
-                      >
                         <View
                           style={[
                             globalStyles.flexrow,
+                            globalStyles.justifysb,
                             globalStyles.alineItemscenter,
-                            { flex: 1 },
+                            globalStyles.mt3,
+                            globalStyles.p3,
+                            {
+                              backgroundColor: color.alertWarning + "15",
+                              borderRadius: 8,
+                            },
                           ]}
                         >
-                        
-                          <View>
-                            <CustomText
-                              style={[
-                                globalStyles.f10Regular,
-                                globalStyles.neutral500,
-                              ]}
-                            >
-                              Amount Pending
-                            </CustomText>
-                            <CustomText
-                              style={[
-                                globalStyles.f16Bold,
-                                globalStyles.primary,
-                                globalStyles.mt1,
-                              ]}
-                            >
-                              ₹{amountPending}
-                            </CustomText>
-                          </View>
-                        </View>
-                       
-                        {(item.PaymentMode === "COS" ||
-                          item.PaymentMode === "cos") &&
-                          item.BookingStatus === "Completed" && (
-                            <TouchableOpacity
-                              onPress={() => CollectPayment(item)}
-                              style={[
-                                styles.actionButton,
-                                { backgroundColor: color.primary },
-                              ]}
-                            >
-                              <MaterialCommunityIcons
-                                name="currency-inr"
-                                size={20}
-                                color={color.white}
-                              />
-                            </TouchableOpacity>
-                          )}
-
-                        {(item.BookingStatus === "Confirmed" ||
-                          item.BookingStatus === "StartJourney" ||
-                          item.BookingStatus === "ServiceStarted" ||
-                          item.BookingStatus === "Reached") && (
-                          <TouchableOpacity
-                            onPress={() => CustomerInfo(item)}
+                          <View
                             style={[
-                              styles.actionButton,
-                              { backgroundColor: color.primary },
+                              globalStyles.flexrow,
+                              globalStyles.alineItemscenter,
+                              { flex: 1 },
                             ]}
                           >
-                            <Ionicons
-                              name="navigate-outline"
-                              size={20}
-                              color={color.white}
-                            />
-                          </TouchableOpacity>
-                        )}
 
-                      </View>
-                    )}
+                            <View>
+                              <CustomText
+                                style={[
+                                  globalStyles.f10Regular,
+                                  globalStyles.neutral500,
+                                ]}
+                              >
+                                Amount Pending
+                              </CustomText>
+                              <CustomText
+                                style={[
+                                  globalStyles.f16Bold,
+                                  globalStyles.primary,
+                                  globalStyles.mt1,
+                                ]}
+                              >
+                                ₹{amountPending}
+                              </CustomText>
+                            </View>
+                          </View>
 
-                 
+                          {(item.PaymentMode === "COS" ||
+                            item.PaymentMode === "cos") &&
+                            item.BookingStatus === "Completed" && (
+                              <TouchableOpacity
+                                onPress={() => CollectPayment(item)}
+                                style={[
+                                  styles.actionButton,
+                                  { backgroundColor: color.primary },
+                                ]}
+                              >
+                                <MaterialCommunityIcons
+                                  name="currency-inr"
+                                  size={20}
+                                  color={color.white}
+                                />
+                              </TouchableOpacity>
+                            )}
+
+                          {(item.BookingStatus === "Confirmed" ||
+                            item.BookingStatus === "StartJourney" ||
+                            item.BookingStatus === "ServiceStarted" ||
+                            item.BookingStatus === "Reached") && (
+                              <TouchableOpacity
+                                onPress={() => CustomerInfo(item)}
+                                style={[
+                                  styles.actionButton,
+                                  { backgroundColor: color.primary },
+                                ]}
+                              >
+                                <Ionicons
+                                  name="navigate-outline"
+                                  size={20}
+                                  color={color.white}
+                                />
+                              </TouchableOpacity>
+                            )}
+                        </View>
+                      )}
                   </Pressable>
-                  );
-                })}
+                );
+              })}
             </View>
           ) : (
             <View>

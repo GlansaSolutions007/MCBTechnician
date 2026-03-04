@@ -6,16 +6,19 @@ import {
   Dimensions,
   FlatList,
   Animated,
+  Image,
+  Pressable,
 } from "react-native";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_URL } from "@env";
+import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import { color } from "../styles/theme";
 import { useNavigation } from "@react-navigation/native";
-import schedule from "../../assets/icons/Navigation/schedule.png";
+import defaultAvatar from "../../assets/images/buddy.png";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
 
 const { width } = Dimensions.get("window");
 
@@ -79,7 +82,7 @@ function TaskReportsScreen() {
 
   const customerInfo = (booking) => {
     if (navigation && navigation.navigate) {
-      navigation.navigate("customerInfo", { booking });
+      // navigation.navigate("customerInfo", { booking });
     }
   };
 
@@ -115,103 +118,213 @@ function TaskReportsScreen() {
 
   const getAssignDate = (booking) => {
     const pd = booking?.PickupDelivery;
-    const firstLeg = Array.isArray(pd) ? pd[0] : pd;
-    return firstLeg?.AssignDate ?? booking?.TechAssignDate ?? booking?.BookingDate ?? null;
+    if (!pd) return booking?.BookingDate ?? booking?.TechAssignDate ?? null;
+    if (Array.isArray(pd) && pd.length > 0) {
+      const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
+      return sorted[0]?.AssignDate ?? booking?.BookingDate ?? booking?.TechAssignDate ?? null;
+    }
+    return pd?.AssignDate ?? booking?.BookingDate ?? booking?.TechAssignDate ?? null;
   };
 
-  // Show only bookings whose AssignDate (from PickupDelivery) is a future date; hide today and yesterday
+  const getDriverStatus = (booking) => {
+    const pd = booking?.PickupDelivery;
+    if (!pd) return null;
+    if (Array.isArray(pd)) {
+      const found = pd.find((p) => p?.DriverStatus);
+      return found?.DriverStatus ?? pd[0]?.DriverStatus ?? null;
+    }
+    return pd?.DriverStatus ?? null;
+  };
+
+  const isBookingCompleted = (booking) => {
+    const status = booking?.BookingStatus;
+    if (status === "Completed" || status === "ServiceComplete") return true;
+    const driverStatus = getDriverStatus(booking);
+    return driverStatus === "completed" || driverStatus === "ServiceComplete";
+  };
+
+  // Show only pending bookings whose AssignDate is a future date
   const upcomingBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
         const assignDate = getAssignDate(booking);
         if (!assignDate) return false;
-        return isFutureDate(assignDate);
+        if (!isFutureDate(assignDate)) return false;
+        return !isBookingCompleted(booking); // pending only
       })
     : [];
 
-  const renderBookingCard = ({ item, index }) => (
-    <TouchableOpacity
-      key={item.BookingID?.toString() || index.toString()}
-      onPress={() => customerInfo(item)}
-      style={[styles.cardContainer, index !== 0 && { marginTop: 20 }]}
-      activeOpacity={0.8}
-    >
-      <View style={styles.header}>
-        <CustomText style={globalStyles.f16Bold}>
-          <CustomText style={[globalStyles.primary, globalStyles.f16Bold]}>
-            Booking ID:
-          </CustomText>{" "}
-          {item.BookingTrackID}
-        </CustomText>
-        <Ionicons name="chevron-forward" size={20} color="#000" />
-      </View>
-
-      <View style={globalStyles.dividerWhite} />
-
-      {/* Date */}
-      <View style={styles.infoRow}>
-        <FontAwesome5 style={[styles.icon]} name="calendar-alt" size={16} />
-        <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-          Assigned on:
-        </CustomText>
-        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
-          {item.BookingDate
-            ? new Date(item.BookingDate).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-            : "N/A"}
-        </CustomText>
-      </View>
-
-      {/* Time Slot */}
-      <View style={styles.infoRow}>
-        <FontAwesome5 style={[styles.icon]} name="clock" size={16} />
-        <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-          Time Slot:
-        </CustomText>
-        <CustomText style={[globalStyles.f10Regular, styles.infoValue]}>
-          {item.TimeSlot || "N/A"}
-        </CustomText>
-      </View>
-
-      {/* Category */}
-      {/* <View style={styles.infoRow}>
-        <FontAwesome5 style={[styles.icon]} name="th-list" size={16} />
-        <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-          Category:
-        </CustomText>
-        <View style={{ flex: 1 }}>
-          {item.Packages?.map((pkg, idx) => (
-            <CustomText
-              key={`category-${item.BookingID}-${idx}`}
-              style={globalStyles.f10Regular}
+  const renderBookingCard = ({ item, index }) => {
+    const driverStatus = getDriverStatus(item);
+    return (
+      <Pressable
+        onPress={() => customerInfo(item)}
+        style={[
+          globalStyles.bgwhite,
+          globalStyles.p4,
+          globalStyles.mt4,
+          globalStyles.card,
+          styles.cardWrapper,
+          index !== 0 && { marginTop: 4 },
+        ]}
+      >
+        <View
+          style={[
+            styles.accent,
+            { backgroundColor: color.primary },
+          ]}
+        />
+        <View style={styles.cardContent}>
+          <View
+            style={[
+              globalStyles.flexrow,
+              globalStyles.alineItemscenter,
+              globalStyles.mb3,
+              { flexWrap: "wrap", gap: 8 },
+            ]}
+          >
+            <View style={[styles.serviceTypeChip, { backgroundColor: color.primary }]}>
+              <MaterialCommunityIcons
+                name="wrench-outline"
+                size={14}
+                color={color.white}
+                style={{ marginRight: 6 }}
+              />
+              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                {item.ServiceType
+                  ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                  : "N/A"}
+              </CustomText>
+            </View>
+            <View
+              style={[
+                styles.statusChip,
+                {
+                  backgroundColor:
+                    driverStatus === "pickup_reached"
+                      ? color.alertInfo
+                      : color.primary,
+                },
+              ]}
             >
-              {pkg?.Category?.CategoryName || "N/A"}
-            </CustomText>
-          ))}
-        </View>
-      </View> */}
+              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
+                {driverStatus || "Pending"}
+              </CustomText>
+            </View>
+          </View>
+          <View style={globalStyles.flexrow}>
+            <Image
+              source={
+                item.ProfileImage
+                  ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
+                  : defaultAvatar
+              }
+              style={styles.avatar}
+            />
+            <View style={[globalStyles.ml3, { flex: 1 }]}>
+              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                {item.CustomerName || item.Leads?.FullName || "N/A"}
+              </CustomText>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}
+              >
+                Mobile:{" "}
+                <CustomText style={globalStyles.black}>
+                  {item.PhoneNumber || item.Leads?.PhoneNumber || "N/A"}
+                </CustomText>
+              </CustomText>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}
+              >
+                RouteType:{" "}
+                <CustomText style={globalStyles.black}>
+                  {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
+                    item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
+                    "N/A"}
+                </CustomText>
+              </CustomText>
+              <CustomText
+                style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}
+                numberOfLines={2}
+              >
+                {item.FullAddress ||
+                  item.Leads?.City ||
+                  item.Leads?.FullAddress ||
+                  "N/A"}
+              </CustomText>
+            </View>
+          </View>
 
-      {/* Package */}
-      {/* <View style={styles.infoRow}>
-        <FontAwesome5 style={[styles.icon]} name="spa" size={16} />
-        <CustomText style={[globalStyles.f10Bold, styles.infoLabel]}>
-          Package:
-        </CustomText>
-        <View style={{ flex: 1 }}>
-          {item.Packages?.map((pkg, idx) => (
-            <CustomText
-              key={`package-${item.BookingID}-${idx}`}
-              style={globalStyles.f10Regular}
-            >
-              {pkg?.PackageName || "N/A"}
-            </CustomText>
-          ))}
+          <View style={globalStyles.divider} />
+
+          <View style={styles.cardMetaRow}>
+            <View style={styles.cardMetaCol}>
+              <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
+                <MaterialCommunityIcons
+                  name="card-account-details-outline"
+                  size={16}
+                  color={color.primary}
+                  style={styles.cardMetaIcon}
+                />
+                <CustomText
+                  style={[globalStyles.f10Regular, globalStyles.black]}
+                  numberOfLines={1}
+                >
+                  {getBookingDisplayData(item).bookingTrackID}
+                </CustomText>
+              </View>
+              <View style={styles.cardMetaItem}>
+                <FontAwesome5
+                  name="car"
+                  size={14}
+                  color={color.primary}
+                  style={styles.cardMetaIcon}
+                />
+                <CustomText
+                  style={[globalStyles.f10Regular, globalStyles.black]}
+                  numberOfLines={1}
+                >
+                  {getBookingDisplayData(item).vehicleDisplay}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.cardMetaCol}>
+              <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
+                <MaterialCommunityIcons
+                  name="calendar"
+                  size={16}
+                  color={color.primary}
+                  style={styles.cardMetaIcon}
+                />
+                <CustomText
+                  style={[globalStyles.f10Regular, globalStyles.black]}
+                >
+                  {getBookingDisplayData(item).bookingDate}
+                </CustomText>
+              </View>
+              <View style={styles.cardMetaItem}>
+                <Ionicons
+                  name="time-outline"
+                  size={16}
+                  color={color.primary}
+                  style={styles.cardMetaIcon}
+                />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    styles.timeValue,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {getBookingDisplayData(item).timeSlot}
+                </CustomText>
+              </View>
+            </View>
+          </View>
         </View>
-      </View> */}
-    </TouchableOpacity>
-  );
+      </Pressable>
+    );
+  };
 
   const SkeletonCard = ({ index }) => {
     const bg = pulse.interpolate({
@@ -407,6 +520,72 @@ const styles = StyleSheet.create({
     backgroundColor: color.neutral[200],
     borderRadius: 16,
     padding: 16,
+  },
+  cardWrapper: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: 16,
+  },
+  accent: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: color.primary,
+  },
+  cardContent: {
+    paddingLeft: 4,
+  },
+  serviceTypeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  statusChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  avatar: {
+    width: 70,
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 4,
+    borderColor: color.white,
+  },
+  cardMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginTop: 8,
+    gap: 12,
+  },
+  cardMetaCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardMetaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  cardMetaIcon: {
+    marginRight: 6,
+  },
+  timeValue: {
+    flex: 1,
+    flexWrap: "wrap",
   },
   // skeleton primitives
   skelLineMedium: {

@@ -307,7 +307,6 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType,
         action: "pickup_started",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -360,7 +359,6 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType,
         action: "pickup_reached",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",

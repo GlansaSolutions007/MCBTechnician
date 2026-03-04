@@ -91,6 +91,7 @@ export default function DropCarAtGarage() {
   }, [booking?.BookingID, booking?.TechID]);
 
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
+  const GarageName = bookingParam?.PickupDelivery[0]?.DropAt?.PersonName ;
   // const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
   const pdParam = bookingParam?.PickupDelivery;
   const currentLegParam = Array.isArray(pdParam) ? pdParam[0] : pdParam;
@@ -316,16 +317,16 @@ export default function DropCarAtGarage() {
               />
               <View style={[globalStyles.ml3, { flex: 1 }]}>
                 <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                  {customerName || "N/A"}
+                  {GarageName || "N/A"}
                 </CustomText>
                 <CustomText style={[globalStyles.f12Medium, globalStyles.neutral500]}>
-                  Mobile: {phoneNumber || "N/A"}
+                  Mobile: {DropAtphoneNumber || "N/A"}
                 </CustomText>
               </View>
               <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
-                  if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
+                  if (DropAtphoneNumber) Linking.openURL(`tel:${DropAtphoneNumber}`);
                   else Alert.alert("Error", "Phone number not available");
                 }}
               >

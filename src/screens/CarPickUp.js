@@ -890,9 +890,10 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return; // do not upload images, do not clear images
                     }
 
-                    // OTP is valid — post images to api/ServiceImages/InsertPickupDeliveryImages (ImageUploadType=Pickup)
+                    // Post images only after OTP is valid (above verify step passed)
                     try {
                       setIsUploading(true);
+                      const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
                       for (let i = 0; i < images.length; i++) {
                         const formData = new FormData();
                         formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
@@ -907,15 +908,14 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                           type: "image/jpeg",
                           name: `pickup_${i + 1}.jpg`,
                         });
-                        await fetch(
-                          `${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`,
+                        await axios.post(
+                          `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
+                          formData,
                           {
-                            method: "POST",
                             headers: {
                               Accept: "application/json",
                               "Content-Type": "multipart/form-data",
                             },
-                            body: formData,
                           }
                         );
                       }
@@ -924,7 +924,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       setImages([]);
                     } catch (uploadErr) {
                       setIsUploading(false);
-                      setModalMessage("Image upload failed. Please try again.");
+                      setModalMessage(uploadErr?.response?.data?.message || "Image upload failed. Please try again.");
                       setModalVisible(true);
                       return; // do not clear images so user can retry
                     }

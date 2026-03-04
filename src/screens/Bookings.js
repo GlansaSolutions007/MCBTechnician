@@ -548,8 +548,8 @@ export default function Bookings() {
                       {
                         backgroundColor:
                           driverStatus === "completed"
-                            ? color.alertError
-                            : color.primary,
+                            ? color.primary
+                            : color.alertError,
                       },
                     ]}
                   />
