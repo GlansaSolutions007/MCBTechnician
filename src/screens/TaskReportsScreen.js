@@ -201,8 +201,8 @@ function TaskReportsScreen() {
                 {
                   backgroundColor:
                     driverStatus === "pickup_reached"
-                      ? color.alertInfo
-                      : color.primary,
+                      ? color.primary
+                      : color.alertError,
                 },
               ]}
             >

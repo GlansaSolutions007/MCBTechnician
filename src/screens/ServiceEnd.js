@@ -33,9 +33,8 @@ const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${
-    secs > 0 ? ` ${secs} sec` : ""
-  }`;
+  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${secs > 0 ? ` ${secs} sec` : ""
+    }`;
 };
 
 export default function ServiceEnd() {
@@ -44,7 +43,6 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0, carRegistrationNumber: paramRegNo = "" } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  console.log("booking=================", booking);
 
   // Merge booking data with Leads data for missing fields (same as ServiceStart.js)
   const customerName = booking.PickupDelivery[0]?.PickFrom?.PersonName;
@@ -63,7 +61,7 @@ export default function ServiceEnd() {
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(() => {
     const servicesList = [];
-    
+
     // Handle Packages
     if (booking?.Packages && Array.isArray(booking.Packages)) {
       booking.Packages.forEach((pkg, pkgIndex) => {
@@ -82,7 +80,7 @@ export default function ServiceEnd() {
         }
       });
     }
-    
+
     // Handle BookingAddOns
     if (booking?.BookingAddOns && Array.isArray(booking.BookingAddOns)) {
       booking.BookingAddOns.forEach((addOn, addOnIndex) => {
@@ -105,7 +103,7 @@ export default function ServiceEnd() {
         }
       });
     }
-    
+
     return servicesList;
   });
 
@@ -233,8 +231,8 @@ export default function ServiceEnd() {
   }, [cooldownTimer]);
 
   const startCooldownTimer = () => {
-    setOtpCooldown(60); 
-    
+    setOtpCooldown(60);
+
     const timer = setInterval(() => {
       setOtpCooldown((prev) => {
         if (prev <= 1) {
@@ -245,7 +243,7 @@ export default function ServiceEnd() {
         return prev - 1;
       });
     }, 1000);
-    
+
     setCooldownTimer(timer);
   };
 
@@ -569,49 +567,130 @@ export default function ServiceEnd() {
             </View>
           </View>
 
-          <View
-            style={[
-              globalStyles.mt3,
-              globalStyles.bgwhite,
-              globalStyles.radius,
-              globalStyles.pt0,
-              globalStyles.pb3,
-              globalStyles.ph3,
-              globalStyles.card,
-            ]}
-          >
-            <CustomText style={[globalStyles.f14Bold, globalStyles.mt3, globalStyles.mb2]}>
-              Services included
-            </CustomText>
-            {Array.isArray(services) && services.length > 0 ? services.map((service) => (
-              <View
-                key={service.uniqueKey}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <Pressable
-                // onPress={() => toggleService(service.IncludeID)}
-                >
-                  <Ionicons
-                    name={service.completed ? "checkbox" : "square-outline"}
-                    size={30}
-                    color={service.completed ? "#0D9276" : "#999"}
-                  />
-                </Pressable>
-                <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
-                  {service.ServiceName}
-                </CustomText>
-              </View>
-            )) : (
-              <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                No services listed
+          <View>
+
+            <View >
+              <CustomText style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}>
+                Service Details
               </CustomText>
-            )}
+
+              <View
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.p4,
+                  globalStyles.card,
+                ]}
+              >
+
+                <View>
+                  <CustomText
+                    style={[
+                      globalStyles.f14Bold,
+                      globalStyles.black,
+                      globalStyles.mb2,
+                    ]}
+                  >
+                    Services:
+                  </CustomText>
+                  {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
+                    <View key={pkg.PackageID} style={[globalStyles.mb3]}>
+                      {pkg.Category?.CategoryName && (
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.primary, globalStyles.mb1]}>
+                          {pkg.Category.CategoryName}
+                        </CustomText>
+                      )}
+                      {pkg.Category?.SubCategories?.map((sub) => (
+                        <View key={sub.SubCategoryID} style={[globalStyles.ml2, globalStyles.mb1]}>
+                          {sub.Includes?.map((inc) => (
+                            <CustomText
+                              key={inc.IncludeID}
+                              style={[globalStyles.f12Regular, globalStyles.neutral500, globalStyles.ml2]}
+                            >
+                              - {inc.IncludeName}
+                            </CustomText>
+                          ))}
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+
+                  {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+                        <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
+                          <CustomText
+                            style={[
+                              globalStyles.f12Bold,
+                              globalStyles.primary,
+                            ]}
+                          >
+                            • {addOn.ServiceName}
+                          </CustomText>
+                          {addOn.Description && (
+                            <CustomText
+                              style={[
+                                globalStyles.f12Regular,
+                                globalStyles.neutral500,
+                                globalStyles.mt1,
+
+                              ]}
+                            >
+                              {addOn.Description}
+                            </CustomText>
+                          )}
+                          {addOn.Includes && addOn.Includes.length > 0 && (
+                            <View style={[globalStyles.ml3, globalStyles.mt1]}>
+                              {addOn.Includes.map((inc) => (
+                                <CustomText
+                                  key={inc.IncludeID}
+                                  style={[
+                                    globalStyles.f12Regular,
+                                    globalStyles.neutral500,
+                                  ]}
+                                >
+                                  - {inc.IncludeName}
+                                </CustomText>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      ))}
+
+                      {(!booking.Packages || booking.Packages.length === 0) &&
+                        (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
+                          <CustomText
+                            style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                          >
+                            No services available
+                          </CustomText>
+                        )}
+
+
+
+                </View>
+              </View>
+            </View>
           </View>
-          
+
+
+
+
+
+
+          {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
+            <View style={[globalStyles.mb3]}>
+
+
+            </View>
+          ) : (
+            <View style={[globalStyles.mb3]}>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500]}
+              >
+                No pickup/delivery scheduled
+              </CustomText>
+            </View>
+          )}
 
           {/* After-service checklist — same UI as ServiceStart; images uploaded when Completed is pressed after OTP */}
           <View
@@ -634,7 +713,7 @@ export default function ServiceEnd() {
               At least one image required. Choose files, then enter OTP and tap Completed.
             </CustomText>
 
-            
+
 
             <TouchableOpacity
               style={[
@@ -789,21 +868,21 @@ export default function ServiceEnd() {
           {/* {otpSent && ( */}
           {/* <> */}
           <CustomText
-              style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.neutral500]}
-            >
-              Car Registration Number
+            style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.neutral500]}
+          >
+            Car Registration Number
+          </CustomText>
+          <View
+            style={[
+              globalStyles.inputBox,
+              globalStyles.mt2,
+              { borderColor: "#ccc", borderWidth: 1, paddingVertical: 12, paddingHorizontal: 12 },
+            ]}
+          >
+            <CustomText style={[globalStyles.f12Medium, globalStyles.black]}>
+              {carRegistrationNumber || "—"}
             </CustomText>
-            <View
-              style={[
-                globalStyles.inputBox,
-                globalStyles.mt2,
-                { borderColor: "#ccc", borderWidth: 1, paddingVertical: 12, paddingHorizontal: 12 },
-              ]}
-            >
-              <CustomText style={[globalStyles.f12Medium, globalStyles.black]}>
-                {carRegistrationNumber || "—"}
-              </CustomText>
-            </View>
+          </View>
           <CustomText
             style={[
               globalStyles.f16Light,
@@ -863,7 +942,7 @@ export default function ServiceEnd() {
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  {isLoading ? "Sending OTP" : "Send OTP"}  
+                  {isLoading ? "Sending OTP" : "Send OTP"}
                 </CustomText>
               </TouchableOpacity>
             ) : (
@@ -891,7 +970,7 @@ export default function ServiceEnd() {
           </View>
 
           {error ? (
-            <CustomText style={{ color: "red"}}>
+            <CustomText style={{ color: "red" }}>
               {error}
             </CustomText>
           ) : null}
@@ -952,64 +1031,64 @@ export default function ServiceEnd() {
             </Pressable>
           </Modal>
 
-        {/* Payment Completion Modal for Razorpay */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={showPaymentModal}
-          onRequestClose={() => setShowPaymentModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Ionicons
-                name="checkmark-circle"
-                size={64}
-                color="#4CAF50"
-                style={{ alignSelf: "center", marginBottom: 16 }}
-              />
-              <CustomText
-                style={[
-                  globalStyles.f20Bold,
-                  globalStyles.textac,
-                  { marginBottom: 8 },
-                ]}
-              >
-                Payment Completed!
-              </CustomText>
-              <CustomText
-                style={[
-                  globalStyles.f12Regular,
-                  globalStyles.textac,
-                  globalStyles.neutral500,
-                  { marginBottom: 24, textAlign: "center" },
-                ]}
-              >
-                Your service has been completed successfully. Payment has been processed through Razorpay.
-              </CustomText>
-              <TouchableOpacity
-                style={styles.okButton}
-                onPress={() => {
-                  setShowPaymentModal(false);
-                  navigation.reset({
-                    index: 0,
-                    routes: [
-                      {
-                        name: "CustomerTabNavigator",
-                        params: { screen: "Dashboard" },
-                      },
-                    ],
-                  });
-                }}
-              >
+          {/* Payment Completion Modal for Razorpay */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showPaymentModal}
+            onRequestClose={() => setShowPaymentModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={64}
+                  color="#4CAF50"
+                  style={{ alignSelf: "center", marginBottom: 16 }}
+                />
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  style={[
+                    globalStyles.f20Bold,
+                    globalStyles.textac,
+                    { marginBottom: 8 },
+                  ]}
                 >
-                  Go to Dashboard
+                  Payment Completed!
                 </CustomText>
-              </TouchableOpacity>
+                <CustomText
+                  style={[
+                    globalStyles.f12Regular,
+                    globalStyles.textac,
+                    globalStyles.neutral500,
+                    { marginBottom: 24, textAlign: "center" },
+                  ]}
+                >
+                  Your service has been completed successfully. Payment has been processed through Razorpay.
+                </CustomText>
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => {
+                    setShowPaymentModal(false);
+                    navigation.reset({
+                      index: 0,
+                      routes: [
+                        {
+                          name: "CustomerTabNavigator",
+                          params: { screen: "Dashboard" },
+                        },
+                      ],
+                    });
+                  }}
+                >
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  >
+                    Go to Dashboard
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -1045,7 +1124,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 8,
   },
-  
+
   // Time Summary Card Styles
   timeSummaryCard: {
     backgroundColor: "#fff",

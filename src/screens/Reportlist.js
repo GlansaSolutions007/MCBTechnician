@@ -174,7 +174,7 @@ function Reportlist() {
             styles.accent,
             {
               backgroundColor:
-                driverStatus === "completed" ? color.alertError : color.primary,
+                driverStatus === "completed" ? color.primary : color.alertError,
             },
           ]}
         />
