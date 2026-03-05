@@ -25,20 +25,28 @@ import { API_BASE_URL } from "@env";
 import { color } from "../styles/theme";
 import { encode } from "base64-arraybuffer";
 import helpcall from "../../assets/icons/Customer Care.png";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { booking } = route.params;
+  const { booking, amount: amountFromParams } = route.params || {};
   const [qrImage, setQrImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [qrId, setQrId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
-  console.log("qrId", qrId)
-  const collectAmount = booking?.PickupDelivery[0]?.TotalPrice;
-  console.log("collectAmount", collectAmount)
+  // Amount: from params (Dashboard) or from booking (ServiceEnd etc.)
+  const collectAmount =
+    amountFromParams != null && amountFromParams !== ""
+      ? Number(amountFromParams)
+      : booking?.PickupDelivery?.[0]?.TotalPrice ??
+        booking?.TotalPrice ??
+        getBookingDisplayData(booking)?.totalPrice ??
+        (booking?.BookingAddOns?.length
+          ? booking.BookingAddOns.reduce((sum, a) => sum + Number(a?.TotalPrice || 0), 0)
+          : null);
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -81,12 +89,14 @@ export default function CollectPayment() {
 
   useEffect(() => {
     const generateQR = async () => {
+      if (!booking?.BookingID) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-
-        const bookingID = booking?.BookingID;
-        console.log("bookingID", bookingID)
-        const amount = Math.round(Number(collectAmount));
+        const bookingID = booking.BookingID;
+        const amount = Math.round(Number(collectAmount)) || 0;
 
         const qrResponse = await axios.post(
           // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
@@ -148,7 +158,7 @@ export default function CollectPayment() {
     };
 
     generateQR();
-  }, [booking]);
+  }, [booking, collectAmount]);
 
   useEffect(() => {
     if (!qrId) return;
@@ -159,7 +169,7 @@ export default function CollectPayment() {
         const res = await axios.get(`${API_BASE_URL}Payments/status/${qrId}`);
         const status = res?.data?.status || res?.data?.Status;
         const success = res?.data?.success;
-        console.log("status", status);
+        console.log("status==========", status);
         if (!isActive) return;
         if (status) {
           setPaymentStatus(status);
@@ -216,7 +226,7 @@ export default function CollectPayment() {
               { marginTop: 4 },
             ]}
           >
-            ₹{collectAmount}
+            ₹{collectAmount != null && collectAmount !== "" ? Number(collectAmount) : "—"}
           </CustomText>
         </View>
 
@@ -315,7 +325,7 @@ export default function CollectPayment() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={handleCompletePayment}
           style={[
             globalStyles.blackButton,
@@ -326,7 +336,7 @@ export default function CollectPayment() {
           <CustomText style={[globalStyles.textWhite, globalStyles.f16Bold]}>
             Mark as Completed
           </CustomText>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <Modal

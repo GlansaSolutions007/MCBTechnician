@@ -48,8 +48,8 @@ export default function Dashboard() {
       item.PickupDelivery[0].DriverStatus === "in_transit" ||
       item.PickupDelivery[0].DriverStatus === "drop_reached"
     ) && (
-      lastPaymentStatus !== "Pending"
-    );
+        lastPaymentStatus !== "Pending"
+      );
   };
 
   const getDriverStatus = (booking) => {
@@ -115,8 +115,8 @@ export default function Dashboard() {
   const [reportsListCount, setReportsListCount] = useState(0);
   const [activeServices, setActiveServices] = useState([]);
 
-  const CollectPayment = async (item) => {
-    navigation.navigate("CollectPayment", { booking: item });
+  const CollectPayment = (item, amount) => {
+    navigation.navigate("CollectPayment", { booking: item, amount });
   };
   const CustomerInfo = async (item) => {
     navigation.navigate("customerInfo", { booking: item });
@@ -720,22 +720,7 @@ export default function Dashboard() {
               {activeServices.map((item, index) => {
                 const driverStatus = getDriverStatus(item);
                 const lastPaymentStatus = getLastPaymentStatus(item);
-                const totalPaidAmount = (item?.Payments || []).reduce(
-                  (sum, payment) =>
-                    payment.PaymentStatus === "Success" || payment.PaymentStatus === "Partialpaid"
-                      ? sum + Number(payment.AmountPaid || 0)
-                      : sum,
-                  0
-                );
-                const totalPrice =
-                  item.TotalPrice ||
-                  (item.BookingAddOns &&
-                    item.BookingAddOns.reduce(
-                      (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
-                      0
-                    )) ||
-                  0;
-                const amountPending = totalPrice - totalPaidAmount;
+                const amountPending = item?.PickupDelivery[0]?.AddOns[0]?.TotalPrice;
                 const display = getBookingDisplayData(item);
 
                 return (
@@ -946,7 +931,7 @@ export default function Dashboard() {
                               {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
                             </CustomText>
                           </View>
-                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifycenter, globalStyles.alineItemscenter]}>
+                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifysb, globalStyles.alineItemscenter]}>
                             <TouchableOpacity
                               onPress={() => {
                                 Vibration.vibrate([0, 200, 100, 300]);
@@ -957,7 +942,6 @@ export default function Dashboard() {
                               style={[
                                 styles.callbuttontocustomer,
                                 globalStyles.flexrow,
-                                globalStyles.justifysb,
                                 { backgroundColor: color.primary },
                               ]}
                             >
@@ -969,20 +953,51 @@ export default function Dashboard() {
                                   globalStyles.borderRadiuslarge,
                                 ]}
                                 name="call"
-                                size={20}
+                                size={16}
                                 color={color.white}
                               />
                               <CustomText
-                                style={[globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2]}
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
+                                ]}
                               >
-                                Customer call
+                                Call customer
                               </CustomText>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              onPress={() => CustomerInfo(item)}
+                              key={`${item.BookingID ?? "active"}-${index}`}
+                              style={[
+                                styles.ViewCarDetails,
+                                globalStyles.flexrow,
+                              ]}
+                            >
+
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite
+                                ]}
+                              >
+                                View
+                              </CustomText>
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.bgwhite,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="chevron-forward-outline"
+                                size={16}
+                                color={color.yellow}
+                              />
+
                             </TouchableOpacity>
                           </View>
                         </View>
                       )}
 
-                      <View style={[globalStyles.divider, globalStyles.mt3]} />
+                      {/* <View style={[globalStyles.divider, globalStyles.mt3]} /> */}
 
                       {(lastPaymentStatus !== "Success" && lastPaymentStatus !== "Partialpaid") &&
                         amountPending > 0 && (
@@ -991,38 +1006,58 @@ export default function Dashboard() {
                               globalStyles.flexrow,
                               globalStyles.justifysb,
                               globalStyles.alineItemscenter,
-                              globalStyles.mt3,
                               globalStyles.p3,
                               { backgroundColor: color.alertWarning + "15", borderRadius: 8 },
                             ]}
                           >
-                            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flex: 1 }]}>
-                              <View>
-                                <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500]}>
-                                  Amount Pending
-                                </CustomText>
-                                <CustomText style={[globalStyles.f16Bold, globalStyles.primary, globalStyles.mt1]}>
-                                  ₹{amountPending}
-                                </CustomText>
-                              </View>
+                            <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, { flex: 1 }]}>
+                              <CustomText style={[globalStyles.f10Regular, globalStyles.f16Bold, globalStyles.neutral500]}>
+                                Amount Pending:
+                              </CustomText>
+                              {item.PickupDelivery[0].DriverStatus === "pickup_started" ||
+                                item.PickupDelivery[0].DriverStatus === "pickup_reached"                               
+                                && (item) && (
+
+                                  <CustomText style={[globalStyles.f20Bold, globalStyles.primary, globalStyles.mt1]}>
+                                    ₹{amountPending}
+                                  </CustomText>
+                                )}
                             </View>
-                            {(item.PaymentMode === "COS" || item.PaymentMode === "cos") &&
-                              isBookingCompleted(item) && (
-                                <TouchableOpacity
-                                  onPress={() => CollectPayment(item)}
-                                  style={[styles.actionButton, { backgroundColor: color.primary }]}
-                                >
-                                  <MaterialCommunityIcons name="currency-inr" size={20} color={color.white} />
-                                </TouchableOpacity>
-                              )}
-                            {isActiveService(item) && (
+
+                            {/* {(item.PaymentMode === "COS" || item.PaymentMode === "cos") &&
+                              isBookingCompleted(item) && ( */}
+
+
+                            {item.PickupDelivery[0].DriverStatus === "ServiceStart" || item.PickupDelivery[0].DriverStatus === "ServiceComplete" && (item) && (
+                            <TouchableOpacity
+                              onPress={() => CollectPayment(item, amountPending)}
+                              style={[styles.actionButton, { backgroundColor: color.primary }]}
+                            >
+                              <CustomText style={[globalStyles.f16Bold,globalStyles.mr2, globalStyles.textWhite]}>
+                                ₹ {amountPending}
+                              </CustomText>
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.bgsecondary,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="chevron-forward-outline"
+                                size={16}
+                                color={color.white}
+                              />
+                            </TouchableOpacity>
+                           )} 
+
+                            {/* )} */}
+                            {/* {isActiveService(item) && (
                               <TouchableOpacity
                                 onPress={() => CustomerInfo(item)}
                                 style={[styles.actionButton, { backgroundColor: color.primary }]}
                               >
                                 <Ionicons name="navigate-outline" size={20} color={color.white} />
                               </TouchableOpacity>
-                            )}
+                            )} */}
                           </View>
                         )}
                     </View>
@@ -1072,6 +1107,34 @@ function IconLabel({ icon, label }) {
 }
 
 const styles = StyleSheet.create({
+  callbuttontocustomer: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 50,
+    width: "55%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  ViewCarDetails: {
+    backgroundColor: color.yellow,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 35,
+    paddingRight: 6,
+    paddingVertical: 4,
+    borderRadius: 50,
+    width: "42%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   Pcicon: {
     width: 70,
     height: 70,
@@ -1194,19 +1257,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  callbuttontocustomer: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 50,
-    width: "60%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
-  },
+
 
   startButton: {
     backgroundColor: "#000",
@@ -1262,16 +1313,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    borderRadius: 50,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: color.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    flexDirection: "row",
   },
   // Skeleton primitives
   skelLineSmall: { height: 12, borderRadius: 6 },

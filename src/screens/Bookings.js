@@ -695,7 +695,7 @@ export default function Bookings() {
                                 globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2,
                               ]}
                             >
-                              Car Drop call
+                              Car pickup call
                             </CustomText>
 
                             <Ionicons
@@ -788,8 +788,8 @@ export default function Bookings() {
                               {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
                             </CustomText>
                           </View>
-                          
-                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifycenter, globalStyles.alineItemscenter]}>
+
+                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifysb, globalStyles.alineItemscenter]}>
                             <TouchableOpacity
                               onPress={() => {
                                 Vibration.vibrate([0, 200, 100, 300]);
@@ -804,7 +804,6 @@ export default function Bookings() {
                               style={[
                                 styles.callbuttontocustomer,
                                 globalStyles.flexrow,
-                                globalStyles.justifysb,
                                 { backgroundColor: color.primary },
                               ]}
                             >
@@ -816,7 +815,7 @@ export default function Bookings() {
                                   globalStyles.borderRadiuslarge,
                                 ]}
                                 name="call"
-                                size={20}
+                                size={16}
                                 color={color.white}
                               />
                               <CustomText
@@ -824,9 +823,39 @@ export default function Bookings() {
                                   globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
                                 ]}
                               >
-                                Customer call
+                                Call customer
                               </CustomText>
 
+
+                            </TouchableOpacity>
+
+
+                            <TouchableOpacity
+                              onPress={() => openBooking(item)}
+                              key={`${item.BookingID ?? "booking"}-${index}`}
+                              style={[
+                                styles.ViewCarDetails,
+                                globalStyles.flexrow,
+                              ]}
+                            >
+
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite
+                                ]}
+                              >
+                                View
+                              </CustomText>
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.bgwhite,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="chevron-forward-outline"
+                                size={16}
+                                color={color.yellow}
+                              />
 
                             </TouchableOpacity>
 
@@ -960,7 +989,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 50,
-    width: "60%",
+    width: "55%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  ViewCarDetails: {
+    backgroundColor: color.yellow,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 35,
+    paddingRight: 6,
+    paddingVertical: 4,
+    borderRadius: 50,
+    width: "42%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
