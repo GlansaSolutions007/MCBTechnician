@@ -373,6 +373,7 @@ export default function CustomerToGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
+          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "drop_reached",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",

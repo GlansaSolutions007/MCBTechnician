@@ -99,13 +99,11 @@ export default function LoginScreen() {
   };
 
   const handleLoginWithPassword = async () => {
-    // Validate form before proceeding
     if (!validateForm()) {
       return;
     }
     setLoading(true);
     try {
-      // Continue with normal technician login flow
       const response = await axios.post(
         `${API_BASE_URL}Auth/Technician-login`,
         {
@@ -116,7 +114,7 @@ export default function LoginScreen() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       console.log("Login response:", response.data);
@@ -139,45 +137,48 @@ export default function LoginScreen() {
           if (techID) {
             startTechnicianLocationTracking(techID);
           }
-        } catch (e) { }
+        } catch (e) {}
         try {
           const tokens = await registerForPushNotificationsAsync();
-          console.log("Tokens Vishal:", tokens);
+          // console.log("Tokens Vishal:", tokens);
           if (tokens) {
             const { expoPushToken, fcmToken } = tokens;
-            if (expoPushToken) {
-              await set(
-                ref(
-                  db,
-                  `technicianPushTokens/${techID}/expo/${encodeURIComponent(
-                    expoPushToken
-                  )}`
-                ),
-                true
-              );
-            }
-            if (fcmToken) {
-              await set(
-                ref(
-                  db,
-                  `technicianPushTokens/${techID}/fcm/${encodeURIComponent(
-                    fcmToken
-                  )}`
-                ),
-                true
-              );
-            }
+            // if (expoPushToken) {
+            //   await set(
+            //     ref(
+            //       db,
+            //       `technicianPushTokens/${techID}/expo/${encodeURIComponent(
+            //         expoPushToken
+            //       )}`
+            //     ),
+            //     true
+            //   );
+            // }
+            // if (fcmToken) {
+            //   await set(
+            //     ref(
+            //       db,
+            //       `technicianPushTokens/${techID}/fcm/${encodeURIComponent(
+            //         fcmToken
+            //       )}`
+            //     ),
+            //     true
+            //   );
+            // }
+            // try {
+            //   await AsyncStorage.setItem(
+            //     "pushToken",
+            //     fcmToken || expoPushToken || ""
+            //   );
+            //   await AsyncStorage.setItem(
+            //     "pushTokenType",
+            //     fcmToken ? "fcm" : expoPushToken ? "expo" : "unknown"
+            //   );
+            // } catch (_) { }
+            console.log("helloooo", fcmToken);
             try {
-              await AsyncStorage.setItem(
-                "pushToken",
-                fcmToken || expoPushToken || ""
-              );
-              await AsyncStorage.setItem(
-                "pushTokenType",
-                fcmToken ? "fcm" : expoPushToken ? "expo" : "unknown"
-              );
-            } catch (_) { }
-            try {
+              console.log("Tryyyyyy", fcmToken);
+
               await axios.post(`${API_BASE_URL}Push/register`, {
                 userRole: "technician",
                 userId: Number(techID),
@@ -185,9 +186,10 @@ export default function LoginScreen() {
                 expoToken: expoPushToken || null,
                 platform: Platform.OS,
               });
-            } catch (_) { }
+              console.log("userRole======", userRole);
+            } catch (_) {}
           }
-        } catch (_) { }
+        } catch (_) {}
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
@@ -238,7 +240,7 @@ export default function LoginScreen() {
             useNativeDriver: true,
           }),
         ]).start();
-      }
+      },
     );
     const hideSub = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -264,7 +266,7 @@ export default function LoginScreen() {
             useNativeDriver: true,
           }),
         ]).start();
-      }
+      },
     );
 
     return () => {
@@ -365,10 +367,12 @@ export default function LoginScreen() {
               <CustomText style={styles.formTitle}>Technician Login</CustomText>
               {/* Phone Number Input */}
               <View style={styles.inputContainer}>
-                <View style={[
-                  styles.inputWrapper,
-                  phoneError && styles.inputWrapperError
-                ]}>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    phoneError && styles.inputWrapperError,
+                  ]}
+                >
                   <Ionicons
                     name="call-outline"
                     size={20}
@@ -382,7 +386,7 @@ export default function LoginScreen() {
                     onChangeText={handlePhoneNumberChange}
                     style={[
                       styles.modernInput,
-                      phoneError && styles.inputError
+                      phoneError && styles.inputError,
                     ]}
                     keyboardType="phone-pad"
                     autoCapitalize="none"
@@ -390,18 +394,18 @@ export default function LoginScreen() {
                   />
                 </View>
                 {phoneError ? (
-                  <CustomText style={styles.errorText}>
-                    {phoneError}
-                  </CustomText>
+                  <CustomText style={styles.errorText}>{phoneError}</CustomText>
                 ) : null}
               </View>
 
               {/* Password Input */}
               <View style={styles.inputContainer}>
-                <View style={[
-                  styles.inputWrapper,
-                  passwordError && styles.inputWrapperError
-                ]}>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    passwordError && styles.inputWrapperError,
+                  ]}
+                >
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -416,7 +420,7 @@ export default function LoginScreen() {
                     secureTextEntry={!showPassword}
                     style={[
                       styles.modernInput,
-                      passwordError && styles.inputError
+                      passwordError && styles.inputError,
                     ]}
                     editable={!inputsDisabled}
                   />
@@ -487,7 +491,11 @@ export default function LoginScreen() {
                   onPress={() => navigation.replace("SupervisorLogin")}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="person-outline" size={18} color={color.primary} />
+                  <Ionicons
+                    name="person-outline"
+                    size={18}
+                    color={color.primary}
+                  />
                   <CustomText style={styles.roleSwitcherButtonText}>
                     Login as Supervisor
                   </CustomText>
@@ -605,7 +613,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: color.black,
     paddingVertical: 16,
-    ...globalStyles.f12Regular
+    ...globalStyles.f12Regular,
   },
   inputError: {
     color: color.error || "#FF4444",
@@ -614,7 +622,7 @@ const styles = StyleSheet.create({
     color: color.error || "#FF4444",
     marginTop: 4,
     marginLeft: 4,
-    ...globalStyles.f10Medium
+    ...globalStyles.f10Medium,
   },
   eyeIcon: {
     padding: 4,

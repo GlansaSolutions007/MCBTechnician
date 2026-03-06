@@ -722,7 +722,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType,
+         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
@@ -801,6 +801,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_reached",
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
@@ -1539,7 +1540,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 </CustomText>
                 
                 {/* Packages - Point-wise */}
-                {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
+                {/* {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
                   <View key={pkg.PackageID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
@@ -1591,10 +1592,10 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                       </View>
                     )}
                   </View>
-                ))}
+                ))} */}
 
                 {/* BookingAddOns - Point-wise */}
-                {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+                {booking.PickupDelivery?.[0]?.AddOns && booking.PickupDelivery?.[0]?.AddOns?.length > 0 && booking.PickupDelivery?.[0]?.AddOns?.map((addOn) => (
                   <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
@@ -1604,7 +1605,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                     >
                       • {addOn.ServiceName}
                     </CustomText>
-                    {addOn.Description && (
+                    {/* {addOn.Description && (
                       <CustomText
                         style={[
                           globalStyles.f12Regular,
@@ -1615,12 +1616,12 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                       >
                         {addOn.Description}
                       </CustomText>
-                    )}
+                    )} */}
                     {addOn.Includes && addOn.Includes.length > 0 && (
                       <View style={[globalStyles.ml3, globalStyles.mt1]}>
                         {addOn.Includes.map((inc) => (
                           <CustomText
-                            key={inc.IncludeID}
+                            key={inc.AddOnID}
                             style={[
                               globalStyles.f12Regular,
                               globalStyles.neutral500,

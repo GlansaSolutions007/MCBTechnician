@@ -247,7 +247,7 @@ export default function DropCarAtGarage() {
         const statusPayload = {
           bookingID: Number(booking?.BookingID || 0),
           serviceType: booking?.ServiceType || "ServiceAtGarage",
-          routeType: booking?.PickupDelivery[0].PickFrom.RouteType ,
+          routeType: booking?.PickupDelivery[0].DropAt.RouteType ,
           action: "completed",
           updatedBy: Number(booking?.TechID || 3),
           role: "Technician",

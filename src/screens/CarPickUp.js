@@ -1084,8 +1084,7 @@ export default function CarPickUp() {
                       const statusPayload = {
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtGarage",
-                        routeType:
-                          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
                         action: "car_picked",
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",

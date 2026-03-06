@@ -940,6 +940,7 @@ export default function ServiceStart() {
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtHome",
                         action: "ServiceStart",
+                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",
                       };

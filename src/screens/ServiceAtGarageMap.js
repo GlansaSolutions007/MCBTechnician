@@ -76,10 +76,6 @@ export default function ServiceAtGarageMap() {
   const pickDropId = Number(
     legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
-  const routeType =
-    currentLeg?.PickFrom?.[0]?.RouteType ||
-    currentLeg?.DropAt?.RouteType ||
-    "CustomerToDealer";
 
   const pickFrom = currentLeg?.PickFrom ?? (Array.isArray(booking?.PickupDelivery) ? booking.PickupDelivery[0]?.PickFrom : booking?.PickupDelivery?.PickFrom);
   const addressForMap =
@@ -307,6 +303,7 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
+         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -359,6 +356,7 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
+          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_reached",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
