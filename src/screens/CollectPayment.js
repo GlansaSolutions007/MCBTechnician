@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
@@ -21,6 +21,7 @@ import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/nativ
 import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
 import base64 from "react-native-base64";
 import { API_BASE_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // import qrImage from "../../assets/images/QrCode.jpeg.jpg";
 import { color } from "../styles/theme";
 import { encode } from "base64-arraybuffer";
@@ -47,6 +48,34 @@ export default function CollectPayment() {
         (booking?.BookingAddOns?.length
           ? booking.BookingAddOns.reduce((sum, a) => sum + Number(a?.TotalPrice || 0), 0)
           : null);
+  const refreshBooking = useCallback(async () => {
+    const currentBooking = route.params?.booking;
+    if (!currentBooking?.BookingID) return;
+    const techID = currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    if (!techID) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings`, {
+        params: { Id: techID, techId: techID },
+      });
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const fromApi = list.find((b) => b.BookingID === currentBooking.BookingID);
+      if (fromApi) {
+        navigation.setParams({
+          ...route.params,
+          booking: fromApi,
+        });
+      }
+    } catch (e) {
+      if (__DEV__) console.warn("CollectPayment refreshBooking:", e?.response?.data ?? e?.message);
+    }
+  }, [route.params?.booking?.BookingID, navigation]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshBooking();
+    }, [refreshBooking])
+  );
+
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {

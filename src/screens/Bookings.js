@@ -47,17 +47,7 @@ export default function Bookings() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchBookings();
-    }, [])
-  );
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -65,7 +55,6 @@ export default function Bookings() {
       const techID = techIdFromParams ?? techIDFromStorage;
 
       if (!techID) {
-        console.log("Tech ID not found");
         setTodaysBookings([]);
         return;
       }
@@ -77,14 +66,11 @@ export default function Bookings() {
         },
       );
 
-      // ✅ ALWAYS ensure array
       const bookingsData = Array.isArray(response?.data)
         ? response.data
         : response?.data?.data || [];
 
       setTodaysBookings(bookingsData);
-      console.log("Bookings Data==============>", bookingsData);
-      console.log("Bookings Data=> ServiceType ServiceAtGarage:", bookingsData);
     } catch (error) {
       console.error(
         "Error fetching bookings:",
@@ -94,7 +80,13 @@ export default function Bookings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [techIdFromParams]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+    }, [fetchBookings])
+  );
 
   useEffect(() => {
     const loop = Animated.loop(

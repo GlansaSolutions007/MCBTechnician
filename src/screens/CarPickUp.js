@@ -24,7 +24,11 @@ import { AnimatedCircularProgress } from "react-native-circular-progress";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
@@ -36,10 +40,10 @@ export default function CarPickUp() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-console.log("booking===============", booking);
-const [isLoading, setIsLoading] = useState(false);
-const [otpCooldown, setOtpCooldown] = useState(0);
-const [cooldownTimer, setCooldownTimer] = useState(null);
+  console.log("booking===============", booking);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [cooldownTimer, setCooldownTimer] = useState(null);
 
   const [images, setImages] = useState([]);
   const [reason, setReason] = useState("");
@@ -58,7 +62,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     bookingParam?.VehicleNumber ||
     bookingParam?.Leads?.Vehicle?.RegistrationNumber ||
     "";
-  const [carRegistrationNumber, setCarRegistrationNumber] = useState(initialRegNo || "");
+  const [carRegistrationNumber, setCarRegistrationNumber] = useState(
+    initialRegNo || "",
+  );
   const [registrationError, setRegistrationError] = useState("");
   const [imageError, setImageError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -70,18 +76,33 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const bookingParam = route?.params?.booking;
-  
+
   // Merge booking data with Leads data for missing fields
-  const customerName = bookingParam.CustomerName || bookingParam.Leads?.FullName || "";
-  const phoneNumber = bookingParam.PhoneNumber || bookingParam.Leads?.PhoneNumber || "";
-  const dealerpersonnumber = bookingParam?.PickupDelivery?.[0]?.PickFrom?.PersonNumber || "";
+  const customerName =
+    bookingParam.PickupDelivery?.[0]?.PickFrom?.PersonName || "";
+  const phoneNumber =
+    bookingParam.PickupDelivery?.[0]?.PickFrom?.PersonNumber || "";
+  const dealerpersonnumber =
+    bookingParam?.PickupDelivery?.[0]?.PickFrom?.PersonNumber || "";
   const profileImage = bookingParam.ProfileImage || null;
-  const vehicleNumber = bookingParam.VehicleNumber || bookingParam.Leads?.Vehicle?.RegistrationNumber || "";
-  const brandName = bookingParam.BrandName || bookingParam.Leads?.Vehicle?.BrandName || "";
-  const modelName = bookingParam.ModelName || bookingParam.Leads?.Vehicle?.ModelName || "";
-  const fuelTypeName = bookingParam.FuelTypeName || bookingParam.Leads?.Vehicle?.FuelTypeName || "";
+  const vehicleNumber =
+    bookingParam.VehicleNumber ||
+    bookingParam.Leads?.Vehicle?.RegistrationNumber ||
+    "";
+  const brandName =
+    bookingParam.BrandName || bookingParam.Leads?.Vehicle?.BrandName || "";
+  const modelName =
+    bookingParam.ModelName || bookingParam.Leads?.Vehicle?.ModelName || "";
+  const fuelTypeName =
+    bookingParam.FuelTypeName ||
+    bookingParam.Leads?.Vehicle?.FuelTypeName ||
+    "";
   const vehicleImage = bookingParam.VehicleImage || null;
-  const fullAddress = bookingParam.FullAddress || bookingParam.Leads?.FullAddress || bookingParam.Leads?.City || "";
+  const fullAddress =
+    bookingParam.FullAddress ||
+    bookingParam.Leads?.FullAddress ||
+    bookingParam.Leads?.City ||
+    "";
   // Pre-fill car registration from API when booking has it
   useEffect(() => {
     const fromApi =
@@ -102,8 +123,8 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   }, [cooldownTimer]);
 
   const startCooldownTimer = () => {
-    setOtpCooldown(60); 
-    
+    setOtpCooldown(60);
+
     const timer = setInterval(() => {
       setOtpCooldown((prev) => {
         if (prev <= 1) {
@@ -114,10 +135,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         return prev - 1;
       });
     }, 1000);
-    
+
     setCooldownTimer(timer);
   };
-
 
   // carPickupDeliveryId for ServiceImages OTP APIs (multiple fallbacks so Resend OTP works)
   const pd = booking?.PickupDelivery;
@@ -126,15 +146,20 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     currentLeg?.Id ??
     currentLeg?.ID ??
     currentLeg?.PickupDeliveryId ??
-    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+    (pd && !Array.isArray(pd)
+      ? (pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId)
+      : undefined);
   const fromArray =
     Array.isArray(pd) && pd.length > 0
-      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      ? pd.reduce(
+          (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
+          null,
+        )
       : null;
-  const carPickupDeliveryId = Number(
-    legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
-  );
-  const driverStatus = currentLeg?.DriverStatus ?? (pd && !Array.isArray(pd) ? pd?.DriverStatus : null);
+  const carPickupDeliveryId = booking?.PickupDelivery?.[0]?.Id;
+  const driverStatus =
+    currentLeg?.DriverStatus ??
+    (pd && !Array.isArray(pd) ? pd?.DriverStatus : null);
 
   const refreshBooking = async () => {
     const techId = booking?.TechID ?? bookingParam?.TechID;
@@ -142,9 +167,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
     try {
       const res = await axios.get(
         `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`,
-        { params: { Id: techId, techId } }
+        { params: { Id: techId, techId } },
       );
-      const data = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const data = Array.isArray(res?.data)
+        ? res.data
+        : (res?.data?.data ?? []);
       const fromApi = data.find((b) => b.BookingID === booking.BookingID);
       if (fromApi) {
         navigation.setParams({ booking: fromApi });
@@ -176,11 +203,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         otpType: "Pickup",
         phoneNumber: String(dealerpersonnumber || "").trim(),
       };
-      console.log("payload===========-----------",payload)
+      console.log("payload===========-----------", payload);
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         payload,
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" } },
       );
       if (response?.data?.status === true || response?.data?.success === true) {
         setOtpSent(true);
@@ -189,11 +216,16 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         startCooldownTimer();
         await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
       } else {
-        setModalMessage(response?.data?.message || "Failed to send OTP. Please try again.");
+        setModalMessage(
+          response?.data?.message || "Failed to send OTP. Please try again.",
+        );
         setModalVisible(true);
       }
     } catch (error) {
-      setModalMessage(error?.response?.data?.message || "Failed to send OTP. Please try again.");
+      setModalMessage(
+        error?.response?.data?.message ||
+          "Failed to send OTP. Please try again.",
+      );
       setModalVisible(true);
     } finally {
       setIsLoading(false);
@@ -202,10 +234,10 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
-      setKeyboardVisible(true)
+      setKeyboardVisible(true),
     );
     const hideListener = Keyboard.addListener("keyboardDidHide", () =>
-      setKeyboardVisible(false)
+      setKeyboardVisible(false),
     );
 
     return () => {
@@ -251,7 +283,11 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   useEffect(() => {
     let interval = null;
 
-    if (booking.ServiceStartedAt && timerStarted && booking.TotalEstimatedDurationMinutes) {
+    if (
+      booking.ServiceStartedAt &&
+      timerStarted &&
+      booking.TotalEstimatedDurationMinutes
+    ) {
       // set initial values
       const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
       const maxTimeSeconds = booking.TotalEstimatedDurationMinutes * 60;
@@ -276,20 +312,30 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         clearInterval(interval);
       }
     };
-  }, [booking.ServiceStartedAt, booking.TotalEstimatedDurationMinutes, timerStarted]);
+  }, [
+    booking.ServiceStartedAt,
+    booking.TotalEstimatedDurationMinutes,
+    timerStarted,
+  ]);
 
   useEffect(() => {
     const loadTimerState = async () => {
       try {
         // Always check if service has started from API first
         if (booking.ServiceStartedAt) {
-          const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
-          const maxTimeSeconds = booking.TotalEstimatedDurationMinutes ? booking.TotalEstimatedDurationMinutes * 60 : 0;
+          const elapsedFromAPI = calculateElapsedFromAPI(
+            booking.ServiceStartedAt,
+          );
+          const maxTimeSeconds = booking.TotalEstimatedDurationMinutes
+            ? booking.TotalEstimatedDurationMinutes * 60
+            : 0;
           setElapsedTime(elapsedFromAPI);
           setMaxTime(maxTimeSeconds);
           setTimerStarted(true);
-          setTimerCompleted(maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds);
-          
+          setTimerCompleted(
+            maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds,
+          );
+
           // Update stored state with current API data
           await AsyncStorage.setItem(
             `timerState_${booking.BookingID}`,
@@ -297,13 +343,14 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
               timerStarted: true,
               elapsedTime: elapsedFromAPI,
               maxTime: maxTimeSeconds,
-              timerCompleted: maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds,
-            })
+              timerCompleted:
+                maxTimeSeconds > 0 && elapsedFromAPI >= maxTimeSeconds,
+            }),
           );
         } else {
           // Check stored state only if service hasn't started
           const storedState = await AsyncStorage.getItem(
-            `timerState_${booking.BookingID}`
+            `timerState_${booking.BookingID}`,
           );
 
           if (storedState) {
@@ -354,12 +401,17 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         // First check API data
         if (booking.CarPickUpDate) {
           setCarPickedUp(true);
-          await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
+          await AsyncStorage.setItem(
+            `carPickedUp_${booking.BookingID}`,
+            "true",
+          );
           return;
         }
-        
+
         // Then check AsyncStorage for persisted state
-        const storedState = await AsyncStorage.getItem(`carPickedUp_${booking.BookingID}`);
+        const storedState = await AsyncStorage.getItem(
+          `carPickedUp_${booking.BookingID}`,
+        );
         if (storedState === "true") {
           setCarPickedUp(true);
         }
@@ -367,7 +419,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         console.error("Error checking car pickup state:", error);
       }
     };
-    
+
     checkCarPickupState();
   }, [booking.CarPickUpDate, booking.BookingID]);
 
@@ -375,7 +427,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   useEffect(() => {
     const checkOtpSentState = async () => {
       try {
-        const storedOtpSent = await AsyncStorage.getItem(`otpSent_${booking.BookingID}`);
+        const storedOtpSent = await AsyncStorage.getItem(
+          `otpSent_${booking.BookingID}`,
+        );
         if (storedOtpSent === "true") {
           setOtpSent(true);
         }
@@ -383,15 +437,21 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         console.error("Error checking OTP sent state:", error);
       }
     };
-    
+
     checkOtpSentState();
   }, [booking.BookingID]);
 
   // Refresh timer when screen comes back into focus
   useFocusEffect(
     React.useCallback(() => {
-      if (booking.ServiceStartedAt && timerStarted && booking.TotalEstimatedDurationMinutes) {
-        const elapsedFromAPI = calculateElapsedFromAPI(booking.ServiceStartedAt);
+      if (
+        booking.ServiceStartedAt &&
+        timerStarted &&
+        booking.TotalEstimatedDurationMinutes
+      ) {
+        const elapsedFromAPI = calculateElapsedFromAPI(
+          booking.ServiceStartedAt,
+        );
         setElapsedTime(elapsedFromAPI);
         const maxTimeSeconds = booking.TotalEstimatedDurationMinutes * 60;
         setTimerCompleted(elapsedFromAPI >= maxTimeSeconds);
@@ -400,7 +460,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       if (booking.CarPickUpDate) {
         setCarPickedUp(true);
       }
-    }, [booking.ServiceStartedAt, timerStarted, booking.TotalEstimatedDurationMinutes, booking.CarPickUpDate])
+    }, [
+      booking.ServiceStartedAt,
+      timerStarted,
+      booking.TotalEstimatedDurationMinutes,
+      booking.CarPickUpDate,
+    ]),
   );
 
   // const formatTime = (totalSeconds) => {
@@ -424,16 +489,21 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
 
       const response = await axios.post(
         `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        payload
+        payload,
       );
 
-      if (response?.data?.status === false || response?.data?.isValid === false) {
+      if (
+        response?.data?.status === false ||
+        response?.data?.isValid === false
+      ) {
         if (actionType === "ServiceStarted") {
           setOtpValid(false);
           setModalMessage("Invalid OTP. Please try again.");
           setModalVisible(true);
         } else {
-          setModalMessage(response?.data?.message || "Action failed. Please try again.");
+          setModalMessage(
+            response?.data?.message || "Action failed. Please try again.",
+          );
           setModalVisible(true);
         }
         return false;
@@ -458,7 +528,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
     >
-      <ScrollView 
+      <ScrollView
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -466,20 +536,20 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
         }
       >
         <View style={globalStyles.container}>
-        {/* <AvailabilityHeader /> */}
+          {/* <AvailabilityHeader /> */}
 
-        {/* Booking Summary */}
-        <View
-          style={[
-            globalStyles.bgwhite,
-            globalStyles.radius,
-            globalStyles.card,
-            globalStyles.p3,
-            globalStyles.mt3,
-          ]}
-        >
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            {/* <Image
+          {/* Booking Summary */}
+          <View
+            style={[
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.card,
+              globalStyles.p3,
+              globalStyles.mt3,
+            ]}
+          >
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              {/* <Image
               source={{
                 uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   booking.CustomerName
@@ -487,230 +557,253 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
               }}
               style={{ width: 46, height: 46, borderRadius: 10 }}
             /> */}
-            <Image
-              source={
-                profileImage
-                  ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
-                  : defaultAvatar
-              }
-              style={{ width: 46, height: 46, borderRadius: 10 }}
-            />
-            <View style={[globalStyles.ml3, { flex: 1 }]}>
-              <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                {customerName || "N/A"}
-              </CustomText>
-              <CustomText
-                style={[globalStyles.f12Medium, globalStyles.neutral500]}
-              >
-                Mobile: {phoneNumber || "N/A"}
-              </CustomText>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                Vibration.vibrate([0, 200, 100, 300]);
-
-                if (phoneNumber) {
-                  Linking.openURL(`tel:${phoneNumber}`);
-                } else {
-                  Alert.alert("Error", "Phone number not available");
+              <Image
+                source={
+                  profileImage
+                    ? { uri: `${API_BASE_URL_IMAGE}${profileImage}` }
+                    : defaultAvatar
                 }
-              }}
-            >
-              <Ionicons
-                style={[
-                  globalStyles.p2,
-                  globalStyles.bgprimary,
-                  globalStyles.borderRadiuslarge,
-                ]}
-                name="call"
-                size={20}
-                color={color.white}
+                style={{ width: 46, height: 46, borderRadius: 10 }}
               />
-            </TouchableOpacity>
-          </View>
-          <View style={[globalStyles.divider, globalStyles.mt2]} />
-          <BookingPickDropRow booking={bookingParam} style={globalStyles.mt2} />
-          <View style={[globalStyles.flexrow]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={16}
-                color={color.primary}
-                style={{ marginRight: 6 }}
-              />
-              <CustomText
+              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
+                  {customerName || "N/A"}
+                </CustomText>
+                <CustomText
+                  style={[globalStyles.f12Medium, globalStyles.neutral500]}
+                >
+                  Mobile: {phoneNumber || "N/A"}
+                </CustomText>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  Vibration.vibrate([0, 200, 100, 300]);
+
+                  if (phoneNumber) {
+                    Linking.openURL(`tel:${phoneNumber}`);
+                  } else {
+                    Alert.alert("Error", "Phone number not available");
+                  }
+                }}
+              >
+                <Ionicons
+                  style={[
+                    globalStyles.p2,
+                    globalStyles.bgprimary,
+                    globalStyles.borderRadiuslarge,
+                  ]}
+                  name="call"
+                  size={20}
+                  color={color.white}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={[globalStyles.divider, globalStyles.mt2]} />
+            <BookingPickDropRow
+              booking={bookingParam}
+              style={globalStyles.mt2}
+            />
+            <View style={[globalStyles.flexrow]}>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).bookingTrackID}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Ionicons name="calendar" size={16} color={color.primary} />
-              <CustomText
+                <MaterialCommunityIcons
+                  name="card-account-details-outline"
+                  size={16}
+                  color={color.primary}
+                  style={{ marginRight: 6 }}
+                />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).bookingTrackID}
+                </CustomText>
+              </View>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).bookingDate}
-              </CustomText>
+                <Ionicons name="calendar" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).bookingDate}
+                </CustomText>
+              </View>
             </View>
-          </View>
-          <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-                globalStyles.w40,
-              ]}
-            >
-              <Ionicons name="car" size={16} color={color.primary} />
-              <CustomText
+            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+              <View
                 style={[
-                  globalStyles.f10Regular,
-                  globalStyles.black,
-                  globalStyles.ml1,
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                  globalStyles.w40,
                 ]}
               >
-                {getBookingDisplayData(bookingParam).vehicleDisplay}
-              </CustomText>
-            </View>
-            <View
-              style={[
-                globalStyles.flexrow,
-                globalStyles.mt2,
-                globalStyles.alineItemscenter,
-              ]}
-            >
-              <Ionicons name="time-outline" size={16} color={color.primary} />
-              <View style={{ flexDirection: "column" }}>
-                {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
-                  <CustomText
-                    key={index}
-                    style={[
-                      globalStyles.f10Regular,
-                      globalStyles.black,
-                      globalStyles.ml1,
-                    ]}
-                  >
-                    {slot.trim()}
-                  </CustomText>
-                ))}
+                <Ionicons name="car" size={16} color={color.primary} />
+                <CustomText
+                  style={[
+                    globalStyles.f10Regular,
+                    globalStyles.black,
+                    globalStyles.ml1,
+                  ]}
+                >
+                  {getBookingDisplayData(bookingParam).vehicleDisplay}
+                </CustomText>
+              </View>
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.mt2,
+                  globalStyles.alineItemscenter,
+                ]}
+              >
+                <Ionicons name="time-outline" size={16} color={color.primary} />
+                <View style={{ flexDirection: "column" }}>
+                  {(getBookingDisplayData(bookingParam).timeSlot || "")
+                    .split(",")
+                    .map((slot, index) => (
+                      <CustomText
+                        key={index}
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.black,
+                          globalStyles.ml1,
+                        ]}
+                      >
+                        {slot.trim()}
+                      </CustomText>
+                    ))}
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        {booking?.PickupDelivery?.[0]?.PickFrom?.PickupOTPVerified === false && (
-          <View>
-            <View
-              style={[
-                globalStyles.mt3,
-                globalStyles.bgwhite,
-                globalStyles.radius,
-                globalStyles.pt0,
-                globalStyles.pb3,
-                globalStyles.ph3,
-                globalStyles.card,
-              ]}
-            >
-              <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                Pre-service checklist
-              </CustomText>
-              <CustomText
+          {booking?.PickupDelivery?.[0]?.PickFrom?.PickupOTPVerified ===
+            false && (
+            <View>
+              <View
                 style={[
-                  globalStyles.f10Light,
-                  globalStyles.neutral500,
-                  globalStyles.mt1,
-                ]}
-              >
-                Upload at least one image (up to 5) <CustomText style={{ color: color.alertError }}>*</CustomText> and enter OTP to start
-              </CustomText>
-              <TouchableOpacity
-                style={[
-                  globalStyles.inputBox,
                   globalStyles.mt3,
-                  imageError ? { borderColor: color.alertError, borderWidth: 2 } : {},
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.pt0,
+                  globalStyles.pb3,
+                  globalStyles.ph3,
+                  globalStyles.card,
                 ]}
-                onPress={() => { setImageError(""); pickImage(); }}
               >
+                <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+                  Pre-service checklist
+                </CustomText>
                 <CustomText
-                  style={[globalStyles.f16Light, globalStyles.neutral500]}
+                  style={[
+                    globalStyles.f10Light,
+                    globalStyles.neutral500,
+                    globalStyles.mt1,
+                  ]}
                 >
-                  Choose Files {images.length > 0 ? `(${images.length} selected)` : ""}
+                  Upload at least one image (up to 5){" "}
+                  <CustomText style={{ color: color.alertError }}>*</CustomText>{" "}
+                  and enter OTP to start
                 </CustomText>
-              </TouchableOpacity>
-              {imageError ? (
-                <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
-                  {imageError}
-                </CustomText>
-              ) : null}
-
-              {images.length > 0 && (
-                <View>
-                  <View
+                <TouchableOpacity
+                  style={[
+                    globalStyles.inputBox,
+                    globalStyles.mt3,
+                    imageError
+                      ? { borderColor: color.alertError, borderWidth: 2 }
+                      : {},
+                  ]}
+                  onPress={() => {
+                    setImageError("");
+                    pickImage();
+                  }}
+                >
+                  <CustomText
+                    style={[globalStyles.f16Light, globalStyles.neutral500]}
+                  >
+                    Choose Files{" "}
+                    {images.length > 0 ? `(${images.length} selected)` : ""}
+                  </CustomText>
+                </TouchableOpacity>
+                {imageError ? (
+                  <CustomText
                     style={[
-                      globalStyles.flexrow,
-                      globalStyles.justifycenter,
-                      globalStyles.mt3,
-                      { flexWrap: "wrap" },
+                      globalStyles.f12Regular,
+                      { color: color.alertError, marginTop: 4 },
                     ]}
                   >
-                    {images.map((uri, index) => (
-                      <View
-                        key={index}
-                        style={{
-                          width: "32%",
-                          marginBottom: 10,
-                          position: "relative",
-                        }}
-                      >
-                        <Image
-                          source={{ uri }}
-                          style={{ width: 100, height: 100, borderRadius: 10 }}
-                        />
-                        <TouchableOpacity
-                          onPress={() => removeImage(index)}
+                    {imageError}
+                  </CustomText>
+                ) : null}
+
+                {images.length > 0 && (
+                  <View>
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.justifycenter,
+                        globalStyles.mt3,
+                        { flexWrap: "wrap" },
+                      ]}
+                    >
+                      {images.map((uri, index) => (
+                        <View
+                          key={index}
                           style={{
-                            position: "absolute",
-                            top: 5,
-                            right: 18,
-                            backgroundColor: "#000",
-                            borderRadius: 10,
-                            padding: 2,
-                            zIndex: 1,
+                            width: "32%",
+                            marginBottom: 10,
+                            position: "relative",
                           }}
                         >
-                          <Ionicons name="close" color="#fff" size={15} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
+                          <Image
+                            source={{ uri }}
+                            style={{
+                              width: 100,
+                              height: 100,
+                              borderRadius: 10,
+                            }}
+                          />
+                          <TouchableOpacity
+                            onPress={() => removeImage(index)}
+                            style={{
+                              position: "absolute",
+                              top: 5,
+                              right: 18,
+                              backgroundColor: "#000",
+                              borderRadius: 10,
+                              padding: 2,
+                              zIndex: 1,
+                            }}
+                          >
+                            <Ionicons name="close" color="#fff" size={15} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
                   </View>
-                </View>
-              )}
-            </View>
-            {/* Images upload with Submit (after OTP success) — no separate Upload Images button */}
-            {/* Registration number + OTP: show directly when page opens (no Pickup Car button) */}
-            <>
+                )}
+              </View>
+              {/* Images upload with Submit (after OTP success) — no separate Upload Images button */}
+              {/* Registration number + OTP: show directly when page opens (no Pickup Car button) */}
+              <>
                 <CustomText
                   style={[
                     globalStyles.f16Bold,
@@ -718,15 +811,26 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     globalStyles.black,
                   ]}
                 >
-                  Car Registration Number <CustomText style={{ color: color.alertError }}>*</CustomText>
-                  <CustomText style={[globalStyles.f12Regular, { color: color.alertError }]}> (Required)</CustomText>
+                  Car Registration Number{" "}
+                  <CustomText style={{ color: color.alertError }}>*</CustomText>
+                  <CustomText
+                    style={[
+                      globalStyles.f12Regular,
+                      { color: color.alertError },
+                    ]}
+                  >
+                    {" "}
+                    (Required)
+                  </CustomText>
                 </CustomText>
                 <TextInput
                   style={[
                     globalStyles.inputBox,
                     globalStyles.mt2,
                     {
-                      borderColor: registrationError ? color.alertError : "#ccc",
+                      borderColor: registrationError
+                        ? color.alertError
+                        : "#ccc",
                       borderWidth: registrationError ? 2 : 1,
                     },
                   ]}
@@ -740,7 +844,12 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   autoCapitalize="characters"
                 />
                 {registrationError ? (
-                  <CustomText style={[globalStyles.f12Regular, { color: color.alertError, marginTop: 4 }]}>
+                  <CustomText
+                    style={[
+                      globalStyles.f12Regular,
+                      { color: color.alertError, marginTop: 4 },
+                    ]}
+                  >
                     {registrationError}
                   </CustomText>
                 ) : null}
@@ -755,78 +864,79 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                   Enter OTP
                 </CustomText>
 
-<View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-  <TextInput
-    style={[
-      globalStyles.inputBox,
-      {
-        flex: 1,
-        borderColor: error ? "red" : "#ccc",
-        borderWidth: 1,
-      },
-    ]}
-    placeholder="Enter OTP"
-    value={otp}
-    onChangeText={(text) => {
-      if (/^\d{0,6}$/.test(text)) {
-        setOtp(text);
-        setError("");
-      }
-    }}
-    keyboardType="numeric"
-    maxLength={6}
-  />
+                <View
+                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                >
+                  <TextInput
+                    style={[
+                      globalStyles.inputBox,
+                      {
+                        flex: 1,
+                        borderColor: error ? "red" : "#ccc",
+                        borderWidth: 1,
+                      },
+                    ]}
+                    placeholder="Enter OTP"
+                    value={otp}
+                    onChangeText={(text) => {
+                      if (/^\d{0,6}$/.test(text)) {
+                        setOtp(text);
+                        setError("");
+                      }
+                    }}
+                    keyboardType="numeric"
+                    maxLength={6}
+                  />
 
-  {otpCooldown === 0 ? (
-    <TouchableOpacity
-      onPress={resendOTP}
-      disabled={isLoading}
-      style={[
-        {
-          marginLeft: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 8,
-          backgroundColor: color.yellow,
-          opacity: isLoading ? 0.6 : 1,
-        },
-      ]}
-    >
-      <CustomText
-        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-      >
-        {isLoading ? "Sending OTP" : "Resend OTP"}  
-      </CustomText>
-    </TouchableOpacity>
-  ) : (
-    <View
-      style={[
-        {
-          marginLeft: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 8,
-          backgroundColor: color.neutral[300],
-          opacity: 0.6,
-        },
-      ]}
-    >
-      <CustomText
-        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-      >
-        Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
-      </CustomText>
-    </View>
-  )}
-</View>
+                  {otpCooldown === 0 ? (
+                    <TouchableOpacity
+                      onPress={resendOTP}
+                      disabled={isLoading}
+                      style={[
+                        {
+                          marginLeft: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                          backgroundColor: color.yellow,
+                          opacity: isLoading ? 0.6 : 1,
+                        },
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        {isLoading ? "Sending OTP" : "Resend OTP"}
+                      </CustomText>
+                    </TouchableOpacity>
+                  ) : (
+                    <View
+                      style={[
+                        {
+                          marginLeft: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                          backgroundColor: color.neutral[300],
+                          opacity: 0.6,
+                        },
+                      ]}
+                    >
+                      <CustomText
+                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                      >
+                        Resend in {Math.floor(otpCooldown / 60)}:
+                        {(otpCooldown % 60).toString().padStart(2, "0")}
+                      </CustomText>
+                    </View>
+                  )}
+                </View>
 
-{error ? (
-  <CustomText style={{ color: "red", marginTop: 5 }}>
-    {error}
-  </CustomText>
-) : null}
-
-   
+                {error ? (
+                  <CustomText style={{ color: "red", marginTop: 5 }}>
+                    {error}
+                  </CustomText>
+                ) : null}
 
                 <TouchableOpacity
                   style={[
@@ -853,7 +963,9 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     // Validation: Car registration number is mandatory
                     const regNo = carRegistrationNumber?.trim() || "";
                     if (!regNo) {
-                      setRegistrationError("Car registration number is mandatory");
+                      setRegistrationError(
+                        "Car registration number is mandatory",
+                      );
                       return;
                     }
                     setRegistrationError("");
@@ -864,28 +976,36 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return;
                     }
 
-                    // Verify OTP — if invalid: show error only; do not post images, do not remove selected images
                     try {
                       const verifyPayload = {
-                        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
+                        carPickupDeliveryId: Number(carPickupDeliveryId),
                         otp: String(otp).trim(),
                         otpType: "Pickup",
                       };
                       const verifyRes = await axios.post(
                         `${API_BASE_URL}ServiceImages/VerifyOTP`,
                         verifyPayload,
-                        { headers: { "Content-Type": "application/json" } }
+                        { headers: { "Content-Type": "application/json" } },
                       );
-                      if (verifyRes?.data?.status === false || verifyRes?.data?.isValid === false) {
+                      if (
+                        verifyRes?.data?.status === false ||
+                        verifyRes?.data?.isValid === false
+                      ) {
                         setOtpValid(false);
-                        setModalMessage(verifyRes?.data?.message || "Invalid OTP. Please try again.");
+                        setModalMessage(
+                          verifyRes?.data?.message ||
+                            "Invalid OTP. Please try again.",
+                        );
                         setModalVisible(true);
                         return; // do not upload images, do not clear images
                       }
                       setOtpValid(true);
                     } catch (verifyErr) {
                       setOtpValid(false);
-                      setModalMessage(verifyErr?.response?.data?.message || "Invalid OTP. Please try again.");
+                      setModalMessage(
+                        verifyErr?.response?.data?.message ||
+                          "Invalid OTP. Please try again.",
+                      );
                       setModalVisible(true);
                       return; // do not upload images, do not clear images
                     }
@@ -893,14 +1013,22 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     // Post images only after OTP is valid (above verify step passed) — use fetch like ServiceStart/ServiceEnd so multipart boundary is set correctly
                     try {
                       setIsUploading(true);
-                      const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                      const baseUrl = API_BASE_URL?.endsWith("/")
+                        ? API_BASE_URL
+                        : `${API_BASE_URL}/`;
                       for (let i = 0; i < images.length; i++) {
                         const formData = new FormData();
-                        formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
+                        formData.append(
+                          "CarPickupDeliveryId",
+                          Number(carPickupDeliveryId) || 0,
+                        );
                         formData.append("VehicleNumber", regNo);
                         formData.append("BookingID", booking.BookingID);
                         formData.append("UploadedBy", 1);
-                        formData.append("TechID", String(booking?.TechID ?? ""));
+                        formData.append(
+                          "TechID",
+                          String(booking?.TechID ?? ""),
+                        );
                         formData.append("ImageUploadType", "Pickup");
                         formData.append("ImagesType", "tech");
                         formData.append("ImageURL1", {
@@ -908,14 +1036,19 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                           type: "image/jpeg",
                           name: `pickup_${i + 1}.jpg`,
                         });
-                        const res = await fetch(`${baseUrl}ServiceImages/InsertPickupDeliveryImages`, {
-                          method: "POST",
-                          headers: { Accept: "application/json" },
-                          body: formData,
-                        });
+                        const res = await fetch(
+                          `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
+                          {
+                            method: "POST",
+                            headers: { Accept: "application/json" },
+                            body: formData,
+                          },
+                        );
                         if (!res.ok) {
                           const errText = await res.text();
-                          throw new Error(errText || `Upload failed ${res.status}`);
+                          throw new Error(
+                            errText || `Upload failed ${res.status}`,
+                          );
                         }
                       }
                       setIsUploading(false);
@@ -923,50 +1056,64 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       setImages([]);
                     } catch (uploadErr) {
                       setIsUploading(false);
-                      setModalMessage(uploadErr?.response?.data?.message || uploadErr?.message || "Image upload failed. Please try again.");
+                      setModalMessage(
+                        uploadErr?.response?.data?.message ||
+                          uploadErr?.message ||
+                          "Image upload failed. Please try again.",
+                      );
                       setModalVisible(true);
                       return; // do not clear images so user can retry
                     }
 
                     // Then update tracking: CarPickUp, ServiceStarted
                     // if (!booking.CarPickUpDate && !carPickedUp) {
-                      try {
-                        await axios.post(
-                          `${API_BASE_URL}ServiceImages/InsertTracking`,
-                          {
-                            pickDropId: Number(carPickupDeliveryId) || 0,
-                            status: "car_picked",
-                          },
-                          { headers: { "Content-Type": "application/json" } }
-                        );
-                      } catch (e) {
-                        console.error("InsertTracking Error:", e);
-                      }
+                    try {
+                      await axios.post(
+                        `${API_BASE_URL}ServiceImages/InsertTracking`,
+                        {
+                          pickDropId: Number(carPickupDeliveryId) || 0,
+                          status: "car_picked",
+                        },
+                        { headers: { "Content-Type": "application/json" } },
+                      );
+                    } catch (e) {
+                      console.error("InsertTracking Error:", e);
+                    }
 
-                      try {
-                        const statusPayload = {
-                          bookingID: Number(booking?.BookingID || 0),
-                          serviceType: booking?.ServiceType || "ServiceAtGarage",
-                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
-                          action: "car_picked",
-                          updatedBy: Number(booking?.TechID || 3),
-                          role: "Technician",
-                        };
-                        console.log("UpdateBookingStatus==========:",statusPayload);
-                        await axios.post(
-                          `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-                          statusPayload,
-                          { headers: { "Content-Type": "application/json" } }
-                        );
-                        console.log("UpdateBookingStatus posted for car_picked");
-                      } catch (e) {
-                        console.error("UpdateBookingStatus Error:", e?.response?.data || e);
-                      }
+                    try {
+                      const statusPayload = {
+                        bookingID: Number(booking?.BookingID || 0),
+                        serviceType: booking?.ServiceType || "ServiceAtGarage",
+                        routeType:
+                          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                        action: "car_picked",
+                        updatedBy: Number(booking?.TechID || 3),
+                        role: "Technician",
+                      };
+                      console.log(
+                        "UpdateBookingStatus==========:",
+                        statusPayload,
+                      );
+                      await axios.post(
+                        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+                        statusPayload,
+                        { headers: { "Content-Type": "application/json" } },
+                      );
+                      console.log("UpdateBookingStatus posted for car_picked");
+                    } catch (e) {
+                      console.error(
+                        "UpdateBookingStatus Error:",
+                        e?.response?.data || e,
+                      );
+                    }
 
-                      setCarPickedUp(true);
-                      try {
-                        await AsyncStorage.setItem(`carPickedUp_${booking.BookingID}`, "true");
-                      } catch (e) {}
+                    setCarPickedUp(true);
+                    try {
+                      await AsyncStorage.setItem(
+                        `carPickedUp_${booking.BookingID}`,
+                        "true",
+                      );
+                    } catch (e) {}
                     // }
 
                     // Reload page with latest booking (DriverStatus car_picked) so Next button shows
@@ -974,27 +1121,32 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                     const bookingForNav = refreshedBooking || booking;
 
                     // Calculate estimated and actual time
-                    const estimatedTime = bookingForNav.TotalEstimatedDurationMinutes
-                      ? bookingForNav.TotalEstimatedDurationMinutes * 60
-                      : 0;
-                    
+                    const estimatedTime =
+                      bookingForNav.TotalEstimatedDurationMinutes
+                        ? bookingForNav.TotalEstimatedDurationMinutes * 60
+                        : 0;
+
                     // Calculate actual time (service just started, so it's 0 or from API if already started)
                     let actualTime = 0;
-                    const serviceStartTime = bookingForNav.ServiceStartedAt 
+                    const serviceStartTime = bookingForNav.ServiceStartedAt
                       ? new Date(bookingForNav.ServiceStartedAt)
                       : new Date();
-                    actualTime = Math.floor((new Date() - serviceStartTime) / 1000);
+                    actualTime = Math.floor(
+                      (new Date() - serviceStartTime) / 1000,
+                    );
 
                     // Update booking with ServiceStartedAt if not already set
                     const updatedBooking = {
                       ...bookingForNav,
-                      ServiceStartedAt: bookingForNav.ServiceStartedAt || new Date().toISOString(),
+                      ServiceStartedAt:
+                        bookingForNav.ServiceStartedAt ||
+                        new Date().toISOString(),
                     };
 
                     // Store timer state
                     await AsyncStorage.setItem(
                       `serviceStarted_${bookingForNav.BookingID}`,
-                      "true"
+                      "true",
                     );
 
                     await AsyncStorage.setItem(
@@ -1004,7 +1156,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         elapsedTime: actualTime,
                         maxTime: estimatedTime,
                         timerCompleted: false,
-                      })
+                      }),
                     );
 
                     // Car Pick Up is garage flow only → always go to CustomerToGarageMap
@@ -1012,55 +1164,60 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       booking: updatedBooking,
                       estimatedTime: estimatedTime,
                       actualTime: actualTime,
-                      carRegistrationNumber: carRegistrationNumber?.trim() || "",
+                      carRegistrationNumber:
+                        carRegistrationNumber?.trim() || "",
                     });
                   }}
                 >
-                  <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                  <CustomText
+                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                  >
                     Submit
                   </CustomText>
                 </TouchableOpacity>
-            </>
-            
-            <View>
-              <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  globalStyles.bgBlack,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.p4,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                  globalStyles.mt4,
-                ]}
-                onPress={() => {
-                  Vibration.vibrate([0, 200, 100, 300]);
+              </>
 
-                  const phoneNumber = 7075243939;
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
-                  } else {
-                    Alert.alert("Error", "Phone number not available");
-                  }
-                }}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+              <View>
+                <TouchableOpacity
+                  style={[
+                    globalStyles.flex1,
+                    globalStyles.bgBlack,
+                    globalStyles.borderRadiuslarge,
+                    globalStyles.p4,
+                    globalStyles.justifycenter,
+                    globalStyles.alineItemscenter,
+                    globalStyles.mt4,
+                  ]}
+                  onPress={() => {
+                    Vibration.vibrate([0, 200, 100, 300]);
+
+                    const phoneNumber = 7075243939;
+                    if (phoneNumber) {
+                      Linking.openURL(`tel:${phoneNumber}`);
+                    } else {
+                      Alert.alert("Error", "Phone number not available");
+                    }
+                  }}
                 >
-                  <Image source={helpcall} />
-                  <CustomText
-                    style={[globalStyles.textWhite, globalStyles.ml2]}
+                  <View
+                    style={[
+                      globalStyles.flexrow,
+                      globalStyles.alineItemscenter,
+                    ]}
                   >
-                    Call help line
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
+                    <Image source={helpcall} />
+                    <CustomText
+                      style={[globalStyles.textWhite, globalStyles.ml2]}
+                    >
+                      Call help line
+                    </CustomText>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )} 
+          )}
 
-                {driverStatus === "car_picked" 
-                && (
+          {driverStatus === "car_picked" && (
             <TouchableOpacity
               onPress={async () => {
                 setTimerCompleted(true);
@@ -1085,43 +1242,71 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                 Next
               </CustomText>
             </TouchableOpacity>
-            )}
+          )}
 
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setModalVisible(false)}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
           >
-            <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
-              <View style={styles.modalIconContainer}>
-                <Ionicons
-                  name={modalMessage.toLowerCase().includes("successfully") ? "checkmark-circle" : "alert-circle"}
-                  size={48}
-                  color={modalMessage.toLowerCase().includes("successfully") ? color.primary : color.alertError}
-                />
-              </View>
-              <CustomText style={[globalStyles.f18SemiBold, globalStyles.textac, globalStyles.mb2]}>
-                {modalMessage.toLowerCase().includes("successfully") ? "Success!" : "Notice"}
-              </CustomText>
-              <CustomText style={[globalStyles.f12Regular, globalStyles.textac, globalStyles.neutral500, globalStyles.mb4]}>
-                {modalMessage}
-              </CustomText>
-              <TouchableOpacity
-                style={styles.okButton}
-                onPress={() => setModalVisible(false)}
+            <Pressable
+              style={styles.modalOverlay}
+              onPress={() => setModalVisible(false)}
+            >
+              <Pressable
+                style={styles.modalBox}
+                onPress={(e) => e.stopPropagation()}
               >
-                <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
-                  OK
+                <View style={styles.modalIconContainer}>
+                  <Ionicons
+                    name={
+                      modalMessage.toLowerCase().includes("successfully")
+                        ? "checkmark-circle"
+                        : "alert-circle"
+                    }
+                    size={48}
+                    color={
+                      modalMessage.toLowerCase().includes("successfully")
+                        ? color.primary
+                        : color.alertError
+                    }
+                  />
+                </View>
+                <CustomText
+                  style={[
+                    globalStyles.f18SemiBold,
+                    globalStyles.textac,
+                    globalStyles.mb2,
+                  ]}
+                >
+                  {modalMessage.toLowerCase().includes("successfully")
+                    ? "Success!"
+                    : "Notice"}
                 </CustomText>
-              </TouchableOpacity>
+                <CustomText
+                  style={[
+                    globalStyles.f12Regular,
+                    globalStyles.textac,
+                    globalStyles.neutral500,
+                    globalStyles.mb4,
+                  ]}
+                >
+                  {modalMessage}
+                </CustomText>
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  >
+                    OK
+                  </CustomText>
+                </TouchableOpacity>
+              </Pressable>
             </Pressable>
-          </Pressable>
-        </Modal>
+          </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -16,7 +16,12 @@ import {
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import { Ionicons, MaterialCommunityIcons, FontAwesome5, FontAwesome } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome5,
+  FontAwesome,
+} from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
@@ -79,17 +84,32 @@ export default function Dashboard() {
   };
   const isBookingCompleted = (booking) => {
     const status = booking?.PickupDelivery?.[0]?.DriverStatus;
-    return status === "completed" || status === "ServiceComplete" || status === "car_picked" || status === "in_transit" || status === "drop_reached";
+    return (
+      status === "completed" ||
+      status === "ServiceComplete" ||
+      status === "car_picked" ||
+      status === "in_transit" ||
+      status === "drop_reached"
+    );
   };
 
   const getAssignDate = (booking) => {
     const pd = booking?.PickupDelivery;
     if (!pd) return booking?.BookingDate || booking?.TechAssignDate || null;
     if (Array.isArray(pd) && pd.length > 0) {
-      const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
-      return sorted[0]?.AssignDate || booking?.BookingDate || booking?.TechAssignDate || null;
+      const sorted = [...pd].sort(
+        (a, b) => new Date(b.AssignDate) - new Date(a.AssignDate),
+      );
+      return (
+        sorted[0]?.AssignDate ||
+        booking?.BookingDate ||
+        booking?.TechAssignDate ||
+        null
+      );
     }
-    return pd?.AssignDate || booking?.BookingDate || booking?.TechAssignDate || null;
+    return (
+      pd?.AssignDate || booking?.BookingDate || booking?.TechAssignDate || null
+    );
   };
 
   useFocusEffect(
@@ -103,8 +123,20 @@ export default function Dashboard() {
         }
       };
 
-      refreshData();
-    }, [])
+      const checkStartRideFlag = async () => {
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const rideKeys = keys.filter((k) => k.startsWith("startRide_done_"));
+          // simply remove any existing flag(s); dashboard is already visible
+          await Promise.all(rideKeys.map((k) => AsyncStorage.removeItem(k)));
+        } catch (e) {
+          console.error("Error clearing startRide flag on dashboard:", e);
+        }
+      };
+
+      // run refresh first, then look for flag so that bookings array is populated
+      refreshData().then(() => checkStartRideFlag());
+    }, [bookings]),
   );
 
   const Booking = () => {
@@ -123,14 +155,44 @@ export default function Dashboard() {
   const CustomerInfo = async (item) => {
     navigation.navigate("customerInfo", { booking: item });
   };
+
+ const openBooking = (item) => {
+    const estimatedTime = item.TotalEstimatedDurationMinutes
+      ? item.TotalEstimatedDurationMinutes * 60
+      : 0;
+
+    let actualTime = 0;
+    
+
+    const driverStatus = getDriverStatus(item);
+
+      if (driverStatus === "car_picked" || driverStatus === "in_transit") {
+        navigation.navigate("CustomerToGarageMap", {
+          booking: item,
+          estimatedTime,
+          actualTime,
+          carRegistrationNumber: item.CarRegistrationNumber || "",
+        });
+      } else if (driverStatus === "drop_reached") {
+        navigation.navigate("DropCarAtGarage", {
+          booking: item,
+          estimatedTime,
+          actualTime,
+          carRegistrationNumber: item.CarRegistrationNumber || "",
+        });
+      } else {
+        navigation.navigate("ServiceAtGarageMap", { booking: item });
+      }
+    
+  };
+
+
   const Schedules = () => {
     navigation.navigate("Schedules");
   };
   const Reports = () => {
     navigation.navigate("Reports");
   };
-
-
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -144,7 +206,7 @@ export default function Dashboard() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
 
           const allBookingsData = Array.isArray(res.data) ? res.data : [];
@@ -192,9 +254,9 @@ export default function Dashboard() {
             booking.Packages?.flatMap(
               (pkg) =>
                 pkg.Category?.SubCategories?.filter(
-                  (sub) => sub.id === techID
-                ) || []
-            ) || []
+                  (sub) => sub.id === techID,
+                ) || [],
+            ) || [],
         ) || [];
 
       setCount(taskCount);
@@ -210,22 +272,31 @@ export default function Dashboard() {
         setActiveServices([]);
         return;
       }
-      const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-      const res = await axios.get(
-        `${baseUrl}Bookings/GetAssignedBookings`,
-        { params: { Id: techID, techId: techID }, headers: { Authorization: `Bearer ${token}` } }
-      );
-      const allAssignedBookings = Array.isArray(res.data) ? res.data : res?.data?.data || [];
-      const completedCount = allAssignedBookings.filter(isBookingCompleted).length;
+      const baseUrl = API_BASE_URL?.endsWith("/")
+        ? API_BASE_URL
+        : `${API_BASE_URL}/`;
+      const res = await axios.get(`${baseUrl}Bookings/GetAssignedBookings`, {
+        params: { Id: techID, techId: techID },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const allAssignedBookings = Array.isArray(res.data)
+        ? res.data
+        : res?.data?.data || [];
+      const completedCount =
+        allAssignedBookings.filter(isBookingCompleted).length;
       setReportsListCount(completedCount);
-      const futureCount = allAssignedBookings.filter((b) => isFutureDate(getAssignDate(b))).length;
+      const futureCount = allAssignedBookings.filter((b) =>
+        isFutureDate(getAssignDate(b)),
+      ).length;
       setSchedulesCount(futureCount);
       const nonFutureBookings = allAssignedBookings.filter((booking) => {
         const serviceDate = getAssignDate(booking);
         if (!serviceDate) return true;
         return !isFutureDate(serviceDate);
       });
-      const pendingCount = nonFutureBookings.filter((b) => !isBookingCompleted(b)).length;
+      const pendingCount = nonFutureBookings.filter(
+        (b) => !isBookingCompleted(b),
+      ).length;
       setAssignedBookingsCount(pendingCount);
       const activeBookings = allAssignedBookings.filter(isActiveService);
       setActiveServices(activeBookings);
@@ -270,7 +341,7 @@ export default function Dashboard() {
             duration: 700,
             useNativeDriver: false,
           }),
-        ])
+        ]),
       ).start();
     }
   }, [initialLoading, pulse]);
@@ -289,7 +360,7 @@ export default function Dashboard() {
           duration: 0,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -522,12 +593,9 @@ export default function Dashboard() {
     <ScrollView
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} />}
     >
       <View style={[globalStyles.container]}>
-
         <View
           style={[
             globalStyles.flexrow,
@@ -653,14 +721,12 @@ export default function Dashboard() {
           <View style={globalStyles.divider} />
 
           <View style={[globalStyles.flexrow, globalStyles.justifysb]}>
-
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <IconLabel icon="people-outline" />
               <CustomText style={globalStyles.f16Bold}>
                 {assignedBookingsCount} customers
               </CustomText>
             </View>
-
           </View>
         </Pressable>
 
@@ -736,375 +802,741 @@ export default function Dashboard() {
                 ]}
               >
                 <CustomText
-                  style={[
-                    globalStyles.f12Medium,
-                    globalStyles.neutral500,
-                  ]}
+                  style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
                   0
                 </CustomText>
               </View>
             )}
           </View>
-          {(Array.isArray(activeServices) ? activeServices.length > 0 : false) ? (
+          {(
+            Array.isArray(activeServices) ? activeServices.length > 0 : false
+          ) ? (
             <View style={[globalStyles.mt3]}>
               {(activeServices || []).map((item, index) => {
                 const driverStatus = getDriverStatus(item);
                 const lastPaymentStatus = getLastPaymentStatus(item);
                 const totalPaid = (item?.Payments || []).reduce(
-                  (sum, p) => (p?.PaymentStatus === "Success" || p?.PaymentStatus === "Partialpaid" ? sum + Number(p?.AmountPaid || 0) : sum),
-                  0
+                  (sum, p) =>
+                    p?.PaymentStatus === "Success" ||
+                    p?.PaymentStatus === "Partialpaid"
+                      ? sum + Number(p?.AmountPaid || 0)
+                      : sum,
+                  0,
                 );
                 const totalPrice = Number(item?.TotalPrice) || 0;
                 const amountPending = totalPrice - totalPaid;
                 const display = getBookingDisplayData(item);
 
                 return (
-                  <Pressable
-                    onPress={() => CustomerInfo(item)}
-                    key={`${item.BookingID ?? "active"}-${index}`}
-                    style={[
-                      driverStatus === "completed" ? globalStyles.bgneutral100 : globalStyles.bgwhite,
-                      globalStyles.p4,
-                      globalStyles.mt4,
-                      globalStyles.card,
-                      styles.cardWrapper,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.accent,
-                        {
-                          backgroundColor:
-                            driverStatus === "completed" ? color.primary : color.alertError,
-                        },
-                      ]}
-                    />
-                    <View style={styles.cardContent}>
-                      <View style={globalStyles.flexrow}>
-                        <Image
-                          source={
-                            item.ProfileImage
-                              ? { uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}` }
-                              : defaultAvatar
-                          }
-                          style={styles.bookingAvatar}
-                        />
-                        <View style={[globalStyles.ml3, { flex: 1 }]}>
-                          <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                            {item.CustomerName || display.customerName || "N/A"}
-                          </CustomText>
-
+                  <View>
+                    {item.ServiceType === "ServiceAtGarage" &&
+                      item.PickupDelivery?.[0] && (
+                        <Pressable
+                        onPress={() => openBooking(item)}
+                  // key={item.BookingID?.toString() || `idx-${index}`}
+                          key={`${item.BookingID ?? "active"}-${index}`}
+                          style={[
+                            driverStatus === "completed"
+                              ? globalStyles.bgneutral100
+                              : globalStyles.bgwhite,
+                            globalStyles.p4,
+                            globalStyles.mt4,
+                            globalStyles.card,
+                            styles.cardWrapper,
+                          ]}
+                        >
                           <View
                             style={[
-                              globalStyles.flexrow,
-                              globalStyles.alineItemscenter,
-                              { flexWrap: "wrap", gap: 8 },
+                              styles.accent,
+                              {
+                                backgroundColor:
+                                  driverStatus === "completed"
+                                    ? color.primary
+                                    : color.alertError,
+                              },
                             ]}
-                          >
-                            <CustomText style={[globalStyles.f12Bold, globalStyles.secondary]}>
-                              {item.ServiceType
-                                ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
-                                : "N/A"}
-                            </CustomText>
-                          </View>
-                          <View>
-                            <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
-                              <MaterialCommunityIcons
-                                name="card-account-details-outline"
-                                size={16}
-                                color={color.primary}
-                                style={styles.cardMetaIcon}
+                          />
+                          <View style={styles.cardContent}>
+                            <View style={globalStyles.flexrow}>
+                              <Image
+                                source={
+                                  item.ProfileImage
+                                    ? {
+                                        uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                                      }
+                                    : defaultAvatar
+                                }
+                                style={styles.bookingAvatar}
                               />
-                              <CustomText
-                                style={[globalStyles.f10Regular, globalStyles.black]}
-                                numberOfLines={1}
-                              >
-                                {display.bookingTrackID}
-                              </CustomText>
-                            </View>
-                            <View style={styles.cardMetaItem}>
-                              <FontAwesome5
-                                name="car"
-                                size={14}
-                                color={color.primary}
-                                style={styles.cardMetaIcon}
-                              />
-                              <CustomText
-                                style={[globalStyles.f10Regular, globalStyles.black]}
-                                numberOfLines={1}
-                              >
-                                {display.vehicleDisplay}
-                              </CustomText>
-                            </View>
-                            <View style={styles.cardMetaItem}>
-                              <MaterialCommunityIcons
-                                name="calendar"
-                                size={16}
-                                color={color.primary}
-                                style={styles.cardMetaIcon}
-                              />
-                              <CustomText
-                                style={[globalStyles.f10Regular, globalStyles.black]}
-                                numberOfLines={1}
-                              >
-                                {display.bookingDate}
-                              </CustomText>
-                            </View>
-                            <View style={styles.cardMetaItem}>
-                              <Ionicons
-                                name="time-outline"
-                                size={16}
-                                color={color.primary}
-                                style={styles.cardMetaIcon}
-                              />
-                              <CustomText
-                                style={[globalStyles.f10Regular, globalStyles.black, styles.timeValue]}
-                              >
-                                {(display.timeSlot || "")
-                                  .split(",")
-                                  .map((s) => s.trim())
-                                  .filter(Boolean)
-                                  .join("\n") || "N/A"}
-                              </CustomText>
-                            </View>
-                          </View>
-                        </View>
+                              <View style={[globalStyles.ml3, { flex: 1 }]}>
+                                <CustomText
+                                  style={[
+                                    globalStyles.f16Bold,
+                                    globalStyles.black,
+                                  ]}
+                                >
+                                  {item.CustomerName ||
+                                    display.customerName ||
+                                    "N/A"}
+                                </CustomText>
 
-                        <View style={{marginRight: -16,marginTop: -10}}>
-                          {(item?.PickupDelivery?.[0]?.DriverStatus === "ServiceStart" || item?.PickupDelivery?.[0]?.DriverStatus === "ServiceComplete") && (
-                            <View style={[globalStyles.alineItemscenter]}>
-
-                              <Animated.View style={{ marginRight: 8, transform: [{ rotate: gearRotation }, ] }}>
-                                <FontAwesome name="gear" size={50} color={color.primary} />
-                              </Animated.View>
-                              <Animated.View style={{ marginRight: 35,marginTop: -14, transform: [{ rotate: gearRotationreverse }, ] }}>
-                                <FontAwesome name="gear" size={30} color={color.primary} />
-                              </Animated.View>
-                            </View>
-                          )}
-                        </View>
-
-                      </View>
-
-                      {item.ServiceType === "ServiceAtGarage" && item.PickupDelivery?.[0] && (
-                        <View style={styles.fromToCard}>
-                          <TouchableOpacity
-                            onPress={() => {
-                              Vibration.vibrate([0, 200, 100, 300]);
-                              const phoneNumber = item.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
-                              if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
-                              else Alert.alert("Error", "Phone number not available");
-                            }}
-                            style={[
-                              styles.callbutton,
-                              globalStyles.flexrow,
-                              globalStyles.justifysb,
-                              { backgroundColor: color.primary },
-                            ]}
-                          >
-                            <CustomText
-                              style={[globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2]}
-                            >
-                              Car Drop call
-                            </CustomText>
-                            <Ionicons
-                              style={[
-                                globalStyles.p2,
-                                globalStyles.ml2,
-                                globalStyles.bgsecondary,
-                                globalStyles.borderRadiuslarge,
-                              ]}
-                              name="call"
-                              size={20}
-                              color={color.white}
-                            />
-                          </TouchableOpacity>
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
-                            </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
-                            </CustomText>
-                          </View>
-                          <View style={styles.addressUnderline} />
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
-                            </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.DropAt?.Address || "N/A"}
-                            </CustomText>
-                          </View>
-                          <View style={[globalStyles.flexrow, globalStyles.justifyend, globalStyles.alineItemscenter]}>
-                            <TouchableOpacity
-                              onPress={() => {
-                                Vibration.vibrate([0, 200, 100, 300]);
-                                const phoneNumber = item.PickupDelivery?.[0]?.DropAt?.PersonNumber;
-                                if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
-                                else Alert.alert("Error", "Phone number not available");
-                              }}
-                              style={[
-                                styles.callbutton,
-                                globalStyles.flexrow,
-                                globalStyles.justifysb,
-                                { backgroundColor: color.primary },
-                              ]}
-                            >
-                              <Ionicons
-                                style={[
-                                  globalStyles.p2,
-                                  globalStyles.mr2,
-                                  globalStyles.bgsecondary,
-                                  globalStyles.borderRadiuslarge,
-                                ]}
-                                name="call"
-                                size={20}
-                                color={color.white}
-                              />
-                              <CustomText
-                                style={[globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2]}
-                              >
-                                Car Drop call
-                              </CustomText>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      )}
-
-                      {item.ServiceType === "ServiceAtHome" && item.PickupDelivery?.[0] && (
-                        <View style={styles.fromToCard}>
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
-                            </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
-                            </CustomText>
-                          </View>
-                          <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifysb, globalStyles.alineItemscenter]}>
-                            <TouchableOpacity
-                              onPress={() => {
-                                Vibration.vibrate([0, 200, 100, 300]);
-                                const phoneNumber = item.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
-                                if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
-                                else Alert.alert("Error", "Phone number not available");
-                              }}
-                              style={[
-                                styles.callbuttontocustomer,
-                                globalStyles.flexrow,
-                                { backgroundColor: color.primary },
-                              ]}
-                            >
-                              <Ionicons
-                                style={[
-                                  globalStyles.p2,
-                                  globalStyles.mr2,
-                                  globalStyles.bgsecondary,
-                                  globalStyles.borderRadiuslarge,
-                                ]}
-                                name="call"
-                                size={16}
-                                color={color.white}
-                              />
-                              <CustomText
-                                style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
-                                ]}
-                              >
-                                Call customer
-                              </CustomText>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              onPress={() => CustomerInfo(item)}
-                              key={`${item.BookingID ?? "active"}-${index}`}
-                              style={[
-                                styles.ViewCarDetails,
-                                globalStyles.flexrow,
-                              ]}
-                            >
-
-                              <CustomText
-                                style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite
-                                ]}
-                              >
-                                View
-                              </CustomText>
-                              <Ionicons
-                                style={[
-                                  globalStyles.p2,
-                                  globalStyles.bgwhite,
-                                  globalStyles.borderRadiuslarge,
-                                ]}
-                                name="chevron-forward-outline"
-                                size={16}
-                                color={color.yellow}
-                              />
-
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      )}
-
-                      {/* <View style={[globalStyles.divider, globalStyles.mt3]} /> */}
-
-                      {(lastPaymentStatus !== "Success" && lastPaymentStatus !== "Partialpaid") &&
-                        amountPending > 0 && (
-                          <View
-                            style={[
-                              globalStyles.flexrow,
-                              globalStyles.justifysb,
-                              globalStyles.alineItemscenter,
-                              globalStyles.p3,
-                              { backgroundColor: color.alertWarning + "15", borderRadius: 8 },
-                            ]}
-                          >
-                            <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter, { flex: 1 }]}>
-                              <CustomText style={[globalStyles.f10Regular, globalStyles.f16Bold, globalStyles.neutral500]}>
-                                Amount Pending:
-                              </CustomText>
-                              {(item?.PickupDelivery?.[0]?.DriverStatus === "pickup_started" ||
-                                item?.PickupDelivery?.[0]?.DriverStatus === "pickup_reached") && (
-                                  <CustomText style={[globalStyles.f20Bold, globalStyles.primary, globalStyles.mt1]}>
-                                    ₹{amountPending}
+                                <View
+                                  style={[
+                                    globalStyles.flexrow,
+                                    globalStyles.alineItemscenter,
+                                    { flexWrap: "wrap", gap: 8 },
+                                  ]}
+                                >
+                                  <CustomText
+                                    style={[
+                                      globalStyles.f12Bold,
+                                      globalStyles.secondary,
+                                    ]}
+                                  >
+                                    {item.ServiceType
+                                      ? item.ServiceType.replace(
+                                          /([A-Z])/g,
+                                          " $1",
+                                        ).trim()
+                                      : "N/A"}
                                   </CustomText>
+                                </View>
+                                <View>
+                                  <View
+                                    style={[
+                                      styles.cardMetaItem,
+                                      { marginTop: 0 },
+                                    ]}
+                                  >
+                                    <MaterialCommunityIcons
+                                      name="card-account-details-outline"
+                                      size={16}
+                                      color={color.primary}
+                                      style={styles.cardMetaIcon}
+                                    />
+                                    <CustomText
+                                      style={[
+                                        globalStyles.f10Regular,
+                                        globalStyles.black,
+                                      ]}
+                                      numberOfLines={1}
+                                    >
+                                      {display.bookingTrackID}
+                                    </CustomText>
+                                  </View>
+                                  <View style={styles.cardMetaItem}>
+                                    <FontAwesome5
+                                      name="car"
+                                      size={14}
+                                      color={color.primary}
+                                      style={styles.cardMetaIcon}
+                                    />
+                                    <CustomText
+                                      style={[
+                                        globalStyles.f10Regular,
+                                        globalStyles.black,
+                                      ]}
+                                      numberOfLines={1}
+                                    >
+                                      {display.vehicleDisplay}
+                                    </CustomText>
+                                  </View>
+                                  <View style={styles.cardMetaItem}>
+                                    <MaterialCommunityIcons
+                                      name="calendar"
+                                      size={16}
+                                      color={color.primary}
+                                      style={styles.cardMetaIcon}
+                                    />
+                                    <CustomText
+                                      style={[
+                                        globalStyles.f10Regular,
+                                        globalStyles.black,
+                                      ]}
+                                      numberOfLines={1}
+                                    >
+                                      {display.bookingDate}
+                                    </CustomText>
+                                  </View>
+                                  <View style={styles.cardMetaItem}>
+                                    <Ionicons
+                                      name="time-outline"
+                                      size={16}
+                                      color={color.primary}
+                                      style={styles.cardMetaIcon}
+                                    />
+                                    <CustomText
+                                      style={[
+                                        globalStyles.f10Regular,
+                                        globalStyles.black,
+                                        styles.timeValue,
+                                      ]}
+                                    >
+                                      {(display.timeSlot || "")
+                                        .split(",")
+                                        .map((s) => s.trim())
+                                        .filter(Boolean)
+                                        .join("\n") || "N/A"}
+                                    </CustomText>
+                                  </View>
+                                </View>
+                              </View>
+
+                              <View
+                                style={{ marginRight: -16, marginTop: -10 }}
+                              >
+                                {(item?.PickupDelivery?.[0]?.DriverStatus ===
+                                  "ServiceStart" ||
+                                  item?.PickupDelivery?.[0]?.DriverStatus ===
+                                    "ServiceComplete") && (
+                                  <View style={[globalStyles.alineItemscenter]}>
+                                    <Animated.View
+                                      style={{
+                                        marginRight: 8,
+                                        transform: [{ rotate: gearRotation }],
+                                      }}
+                                    >
+                                      <FontAwesome
+                                        name="gear"
+                                        size={50}
+                                        color={color.primary}
+                                      />
+                                    </Animated.View>
+                                    <Animated.View
+                                      style={{
+                                        marginRight: 35,
+                                        marginTop: -14,
+                                        transform: [
+                                          { rotate: gearRotationreverse },
+                                        ],
+                                      }}
+                                    >
+                                      <FontAwesome
+                                        name="gear"
+                                        size={30}
+                                        color={color.primary}
+                                      />
+                                    </Animated.View>
+                                  </View>
                                 )}
+                              </View>
                             </View>
 
-                            {/* {(item.PaymentMode === "COS" || item.PaymentMode === "cos") &&
-                              isBookingCompleted(item) && ( */}
+                            <View style={styles.fromToCard}>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  Vibration.vibrate([0, 200, 100, 300]);
+                                  const phoneNumber =
+                                    item.PickupDelivery?.[0]?.PickFrom
+                                      ?.PersonNumber;
+                                  if (phoneNumber)
+                                    Linking.openURL(`tel:${phoneNumber}`);
+                                  else
+                                    Alert.alert(
+                                      "Error",
+                                      "Phone number not available",
+                                    );
+                                }}
+                                style={[
+                                  styles.callbutton,
+                                  globalStyles.flexrow,
+                                  globalStyles.justifysb,
+                                  { backgroundColor: color.primary },
+                                ]}
+                              >
+                                <CustomText
+                                  style={[
+                                    globalStyles.f12Bold,
+                                    globalStyles.textWhite,
+                                    globalStyles.ml2,
+                                  ]}
+                                >
+                                  Car Pickup call
+                                </CustomText>
+                                <Ionicons
+                                  style={[
+                                    globalStyles.p2,
+                                    globalStyles.ml2,
+                                    globalStyles.bgsecondary,
+                                    globalStyles.borderRadiuslarge,
+                                  ]}
+                                  name="call"
+                                  size={20}
+                                  color={color.white}
+                                />
+                              </TouchableOpacity>
+                              <View style={styles.addressLine}>
+                                <View style={styles.addressIconWrap}>
+                                  <MaterialCommunityIcons
+                                    name="map-marker"
+                                    size={18}
+                                    color={color.primary}
+                                  />
+                                </View>
+                                <CustomText
+                                  style={styles.addressValue}
+                                  numberOfLines={2}
+                                >
+                                  {item.PickupDelivery?.[0]?.PickFrom
+                                    ?.Address || "N/A"}
+                                </CustomText>
+                              </View>
+                              <View style={styles.addressUnderline} />
+                              <View style={styles.addressLine}>
+                                <View style={styles.addressIconWrap}>
+                                  <MaterialCommunityIcons
+                                    name="map-marker"
+                                    size={18}
+                                    color={color.primary}
+                                  />
+                                </View>
+                                <CustomText
+                                  style={styles.addressValue}
+                                  numberOfLines={2}
+                                >
+                                  {item.PickupDelivery?.[0]?.DropAt?.Address ||
+                                    "N/A"}
+                                </CustomText>
+                              </View>
+                              <View
+                                style={[
+                                  globalStyles.flexrow,
+                                  globalStyles.justifyend,
+                                  globalStyles.alineItemscenter,
+                                ]}
+                              >
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    Vibration.vibrate([0, 200, 100, 300]);
+                                    const phoneNumber =
+                                      item.PickupDelivery?.[0]?.DropAt
+                                        ?.PersonNumber;
+                                    if (phoneNumber)
+                                      Linking.openURL(`tel:${phoneNumber}`);
+                                    else
+                                      Alert.alert(
+                                        "Error",
+                                        "Phone number not available",
+                                      );
+                                  }}
+                                  style={[
+                                    styles.callbutton,
+                                    globalStyles.flexrow,
+                                    globalStyles.justifysb,
+                                    { backgroundColor: color.primary },
+                                  ]}
+                                >
+                                  <Ionicons
+                                    style={[
+                                      globalStyles.p2,
+                                      globalStyles.mr2,
+                                      globalStyles.bgsecondary,
+                                      globalStyles.borderRadiuslarge,
+                                    ]}
+                                    name="call"
+                                    size={20}
+                                    color={color.white}
+                                  />
+                                  <CustomText
+                                    style={[
+                                      globalStyles.f12Bold,
+                                      globalStyles.textWhite,
+                                      globalStyles.mr2,
+                                    ]}
+                                  >
+                                    Car Drop call
+                                  </CustomText>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          </View>
+                        </Pressable>
+                      )}
 
 
-                            {(item?.PickupDelivery?.[0]?.DriverStatus === "ServiceStart" || item?.PickupDelivery?.[0]?.DriverStatus === "ServiceComplete") && (
-                              <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+ {item.ServiceType === "ServiceAtHome" &&
+                          item.PickupDelivery?.[0] && (
+                    <Pressable
+                      onPress={() => CustomerInfo(item)}
+                      key={`${item.BookingID ?? "active"}-${index}`}
+                      style={[
+                        driverStatus === "completed"
+                          ? globalStyles.bgneutral100
+                          : globalStyles.bgwhite,
+                        globalStyles.p4,
+                        globalStyles.mt4,
+                        globalStyles.card,
+                        styles.cardWrapper,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.accent,
+                          {
+                            backgroundColor:
+                              driverStatus === "completed"
+                                ? color.primary
+                                : color.alertError,
+                          },
+                        ]}
+                      />
+                      <View style={styles.cardContent}>
+                        <View style={globalStyles.flexrow}>
+                          <Image
+                            source={
+                              item.ProfileImage
+                                ? {
+                                    uri: `${API_BASE_URL_IMAGE}${item.ProfileImage}`,
+                                  }
+                                : defaultAvatar
+                            }
+                            style={styles.bookingAvatar}
+                          />
+                          <View style={[globalStyles.ml3, { flex: 1 }]}>
+                            <CustomText
+                              style={[globalStyles.f16Bold, globalStyles.black]}
+                            >
+                              {item.CustomerName ||
+                                display.customerName ||
+                                "N/A"}
+                            </CustomText>
 
+                            <View
+                              style={[
+                                globalStyles.flexrow,
+                                globalStyles.alineItemscenter,
+                                { flexWrap: "wrap", gap: 8 },
+                              ]}
+                            >
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold,
+                                  globalStyles.secondary,
+                                ]}
+                              >
+                                {item.ServiceType
+                                  ? item.ServiceType.replace(
+                                      /([A-Z])/g,
+                                      " $1",
+                                    ).trim()
+                                  : "N/A"}
+                              </CustomText>
+                            </View>
+                            <View>
+                              <View
+                                style={[styles.cardMetaItem, { marginTop: 0 }]}
+                              >
+                                <MaterialCommunityIcons
+                                  name="card-account-details-outline"
+                                  size={16}
+                                  color={color.primary}
+                                  style={styles.cardMetaIcon}
+                                />
+                                <CustomText
+                                  style={[
+                                    globalStyles.f10Regular,
+                                    globalStyles.black,
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {display.bookingTrackID}
+                                </CustomText>
+                              </View>
+                              <View style={styles.cardMetaItem}>
+                                <FontAwesome5
+                                  name="car"
+                                  size={14}
+                                  color={color.primary}
+                                  style={styles.cardMetaIcon}
+                                />
+                                <CustomText
+                                  style={[
+                                    globalStyles.f10Regular,
+                                    globalStyles.black,
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {display.vehicleDisplay}
+                                </CustomText>
+                              </View>
+                              <View style={styles.cardMetaItem}>
+                                <MaterialCommunityIcons
+                                  name="calendar"
+                                  size={16}
+                                  color={color.primary}
+                                  style={styles.cardMetaIcon}
+                                />
+                                <CustomText
+                                  style={[
+                                    globalStyles.f10Regular,
+                                    globalStyles.black,
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {display.bookingDate}
+                                </CustomText>
+                              </View>
+                              <View style={styles.cardMetaItem}>
+                                <Ionicons
+                                  name="time-outline"
+                                  size={16}
+                                  color={color.primary}
+                                  style={styles.cardMetaIcon}
+                                />
+                                <CustomText
+                                  style={[
+                                    globalStyles.f10Regular,
+                                    globalStyles.black,
+                                    styles.timeValue,
+                                  ]}
+                                >
+                                  {(display.timeSlot || "")
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter(Boolean)
+                                    .join("\n") || "N/A"}
+                                </CustomText>
+                              </View>
+                            </View>
+                          </View>
+
+                          <View style={{ marginRight: -16, marginTop: -10 }}>
+                            {(item?.PickupDelivery?.[0]?.DriverStatus ===
+                              "ServiceStart" ||
+                              item?.PickupDelivery?.[0]?.DriverStatus ===
+                                "ServiceComplete") && (
+                              <View style={[globalStyles.alineItemscenter]}>
+                                <Animated.View
+                                  style={{
+                                    marginRight: 8,
+                                    transform: [{ rotate: gearRotation }],
+                                  }}
+                                >
+                                  <FontAwesome
+                                    name="gear"
+                                    size={50}
+                                    color={color.primary}
+                                  />
+                                </Animated.View>
+                                <Animated.View
+                                  style={{
+                                    marginRight: 35,
+                                    marginTop: -14,
+                                    transform: [
+                                      { rotate: gearRotationreverse },
+                                    ],
+                                  }}
+                                >
+                                  <FontAwesome
+                                    name="gear"
+                                    size={30}
+                                    color={color.primary}
+                                  />
+                                </Animated.View>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+
+                      
+
+                       
+                            <View style={styles.fromToCard}>
+                              <View style={styles.addressLine}>
+                                <View style={styles.addressIconWrap}>
+                                  <MaterialCommunityIcons
+                                    name="map-marker"
+                                    size={18}
+                                    color={color.primary}
+                                  />
+                                </View>
+                                <CustomText
+                                  style={styles.addressValue}
+                                  numberOfLines={2}
+                                >
+                                  {item.PickupDelivery?.[0]?.PickFrom
+                                    ?.Address || "N/A"}
+                                </CustomText>
+                              </View>
+                              <View
+                                style={[
+                                  globalStyles.flexrow,
+                                  globalStyles.mt3,
+                                  globalStyles.justifysb,
+                                  globalStyles.alineItemscenter,
+                                ]}
+                              >
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    Vibration.vibrate([0, 200, 100, 300]);
+                                    const phoneNumber =
+                                      item.PickupDelivery?.[0]?.PickFrom
+                                        ?.PersonNumber;
+                                    if (phoneNumber)
+                                      Linking.openURL(`tel:${phoneNumber}`);
+                                    else
+                                      Alert.alert(
+                                        "Error",
+                                        "Phone number not available",
+                                      );
+                                  }}
+                                  style={[
+                                    styles.callbuttontocustomer,
+                                    globalStyles.flexrow,
+                                    { backgroundColor: color.primary },
+                                  ]}
+                                >
+                                  <Ionicons
+                                    style={[
+                                      globalStyles.p2,
+                                      globalStyles.mr2,
+                                      globalStyles.bgsecondary,
+                                      globalStyles.borderRadiuslarge,
+                                    ]}
+                                    name="call"
+                                    size={16}
+                                    color={color.white}
+                                  />
+                                  <CustomText
+                                    style={[
+                                      globalStyles.f12Bold,
+                                      globalStyles.textWhite,
+                                      globalStyles.mr2,
+                                    ]}
+                                  >
+                                    Call customer
+                                  </CustomText>
+                                </TouchableOpacity>
 
                                 <TouchableOpacity
-                                  onPress={() => CollectPayment(item, amountPending)}
-                                  style={[styles.actionButton, { backgroundColor: color.primary }]}
+                                  onPress={() => CustomerInfo(item)}
+                                  key={`${item.BookingID ?? "active"}-${index}`}
+                                  style={[
+                                    styles.ViewCarDetails,
+                                    globalStyles.flexrow,
+                                  ]}
                                 >
-                                  <CustomText style={[globalStyles.f16Bold, globalStyles.mr2, globalStyles.textWhite]}>
-                                    ₹ {amountPending}
+                                  <CustomText
+                                    style={[
+                                      globalStyles.f12Bold,
+                                      globalStyles.textWhite,
+                                    ]}
+                                  >
+                                    View
                                   </CustomText>
                                   <Ionicons
                                     style={[
                                       globalStyles.p2,
-                                      globalStyles.bgsecondary,
+                                      globalStyles.bgwhite,
                                       globalStyles.borderRadiuslarge,
                                     ]}
                                     name="chevron-forward-outline"
                                     size={16}
-                                    color={color.white}
+                                    color={color.yellow}
                                   />
                                 </TouchableOpacity>
                               </View>
-                            )}
+                            </View>
+                          
 
-                            {/* )} */}
-                            {/* {isActiveService(item) && (
+                        {/* <View style={[globalStyles.divider, globalStyles.mt3]} /> */}
+
+                        {lastPaymentStatus !== "Success" &&
+                          lastPaymentStatus !== "Partialpaid" &&
+                          amountPending > 0 && (
+                            <View
+                              style={[
+                                globalStyles.flexrow,
+                                globalStyles.justifysb,
+                                globalStyles.alineItemscenter,
+                                globalStyles.p3,
+                                {
+                                  backgroundColor: color.alertWarning + "15",
+                                  borderRadius: 8,
+                                },
+                              ]}
+                            >
+                              <View
+                                style={[
+                                  globalStyles.flexrow,
+                                  globalStyles.justifysb,
+                                  globalStyles.alineItemscenter,
+                                  { flex: 1 },
+                                ]}
+                              >
+                                <CustomText
+                                  style={[
+                                    globalStyles.f10Regular,
+                                    globalStyles.f16Bold,
+                                    globalStyles.neutral500,
+                                  ]}
+                                >
+                                  Amount Pending:
+                                </CustomText>
+                                {(item?.PickupDelivery?.[0]?.DriverStatus ===
+                                  "pickup_started" ||
+                                  item?.PickupDelivery?.[0]?.DriverStatus ===
+                                    "pickup_reached") && (
+                                  <CustomText
+                                    style={[
+                                      globalStyles.f20Bold,
+                                      globalStyles.primary,
+                                      globalStyles.mt1,
+                                    ]}
+                                  >
+                                    ₹{amountPending}
+                                  </CustomText>
+                                )}
+                              </View>
+
+                              {/* {(item.PaymentMode === "COS" || item.PaymentMode === "cos") &&
+                              isBookingCompleted(item) && ( */}
+
+                              {(item?.PickupDelivery?.[0]?.DriverStatus ===
+                                "ServiceStart" ||
+                                item?.PickupDelivery?.[0]?.DriverStatus ===
+                                  "ServiceComplete") && (
+                                <View
+                                  style={[
+                                    globalStyles.flexrow,
+                                    globalStyles.alineItemscenter,
+                                  ]}
+                                >
+                                  <TouchableOpacity
+                                    onPress={() =>
+                                      CollectPayment(item, amountPending)
+                                    }
+                                    style={[
+                                      styles.actionButton,
+                                      { backgroundColor: color.primary },
+                                    ]}
+                                  >
+                                    <CustomText
+                                      style={[
+                                        globalStyles.f16Bold,
+                                        globalStyles.mr2,
+                                        globalStyles.textWhite,
+                                      ]}
+                                    >
+                                      ₹ {amountPending}
+                                    </CustomText>
+                                    <Ionicons
+                                      style={[
+                                        globalStyles.p2,
+                                        globalStyles.bgsecondary,
+                                        globalStyles.borderRadiuslarge,
+                                      ]}
+                                      name="chevron-forward-outline"
+                                      size={16}
+                                      color={color.white}
+                                    />
+                                  </TouchableOpacity>
+                                </View>
+                              )}
+
+                              {/* )} */}
+                              {/* {isActiveService(item) && (
                               <TouchableOpacity
                                 onPress={() => CustomerInfo(item)}
                                 style={[styles.actionButton, { backgroundColor: color.primary }]}
@@ -1112,10 +1544,12 @@ export default function Dashboard() {
                                 <Ionicons name="navigate-outline" size={20} color={color.white} />
                               </TouchableOpacity>
                             )} */}
-                          </View>
-                        )}
-                    </View>
-                  </Pressable>
+                            </View>
+                          )}
+                      </View>
+                    </Pressable>
+                    )}
+                  </View>
                 );
               })}
             </View>
@@ -1311,7 +1745,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-
 
   startButton: {
     backgroundColor: "#000",

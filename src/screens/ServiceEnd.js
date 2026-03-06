@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -18,7 +18,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -43,6 +43,34 @@ export default function ServiceEnd() {
   const { estimatedTime = 0, actualTime = 0, carRegistrationNumber: paramRegNo = "" } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
+
+  const refreshBooking = useCallback(async () => {
+    const currentBooking = route.params?.booking;
+    if (!currentBooking?.BookingID) return;
+    const techID = currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    if (!techID) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings`, {
+        params: { Id: techID, techId: techID },
+      });
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const fromApi = list.find((b) => b.BookingID === currentBooking.BookingID);
+      if (fromApi) {
+        navigation.setParams({
+          ...route.params,
+          booking: fromApi,
+        });
+      }
+    } catch (e) {
+      if (__DEV__) console.warn("ServiceEnd refreshBooking:", e?.response?.data ?? e?.message);
+    }
+  }, [route.params?.booking?.BookingID, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshBooking();
+    }, [refreshBooking])
+  );
 
   // Merge booking data with Leads data for missing fields (same as ServiceStart.js)
   const customerName = booking.PickupDelivery[0]?.PickFrom?.PersonName;

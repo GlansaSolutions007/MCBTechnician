@@ -66,8 +66,9 @@ export default function DropCarAtGarage() {
   const carPickupDeliveryId = Number(
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
-  const [bookingParam, setBookingParam] = useState(route?.params?.booking || booking);
-  console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
+  const [bookingParam, setBookingParam] = useState( booking);
+  console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle)
+  // console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
   useEffect(() => {
     let mounted = true;
     const fetchAssigned = async () => {
@@ -448,7 +449,7 @@ export default function DropCarAtGarage() {
               ]}
               placeholder="From pickup"
               placeholderTextColor={color.neutral[500]}
-              value={bookingParam?.Leads?.Vehicle?.RegistrationNumber || ""}
+              value={bookingParam?.Leads?.Vehicle?.RegistrationNumber}
               // value={"ABC123"}
               editable={false}
               autoCapitalize="characters"

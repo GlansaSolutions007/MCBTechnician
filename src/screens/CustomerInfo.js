@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   Text,
   Vibration,
   Animated,
+  AppState,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import CustomText from "../components/CustomText";
@@ -135,14 +136,18 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   const legId =
     currentLeg?.Id ??
     currentLeg?.ID ??
+    currentLeg?.id ??
     currentLeg?.PickupDeliveryId ??
     (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
   const fromArray =
     Array.isArray(pd) && pd.length > 0
-      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId, null)
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.id ?? l?.PickupDeliveryId, null)
       : null;
+  const firstLegId = Array.isArray(pd) && pd.length > 0
+    ? (pd[0]?.Id ?? pd[0]?.ID ?? pd[0]?.id ?? pd[0]?.PickupDeliveryId)
+    : null;
   const pickDropId = Number(
-    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? 0
+    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? firstLegId ?? 0
   );
   const routeType =
     currentLeg?.PickFrom?.RouteType ??
@@ -184,12 +189,13 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   const CollectPayment = async (booking) => {
     navigation.navigate("CollectPayment", { booking: booking });
   };
-  const onRefresh = async () => {
-    if (!booking?.BookingID) {
+  const onRefresh = useCallback(async () => {
+    const currentBooking = route.params?.booking ?? booking;
+    if (!currentBooking?.BookingID) {
       setLoading(false);
       return;
     }
-    if (!booking?.TechID) {
+    if (!currentBooking?.TechID) {
       setLoading(false);
       return;
     }
@@ -198,54 +204,56 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${booking.TechID}`
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${currentBooking.TechID}`
       );
 
-      if (response.data && response.data.length > 0) {
-        const fromApi = response.data.find(
-          (b) => b.BookingID === booking.BookingID
+      const data = Array.isArray(response?.data) ? response.data : response?.data?.data ?? [];
+      if (data.length > 0) {
+        const fromApi = data.find(
+          (b) => b.BookingID === currentBooking.BookingID
         );
-        setUpdatedBookings((prev) => {
-          if (!fromApi) return prev;
-          const getStatus = (b) =>
-            b?.DriverStatus ??
-            (Array.isArray(b?.PickupDelivery)
-              ? b.PickupDelivery[0]?.DriverStatus
-              : b?.PickupDelivery?.DriverStatus);
-          const statusOrder = {
-            assigned: 1,
-            pickup_started: 2,
-            pickup_reached: 3,
-            car_picked: 4,
-            ServiceStart: 5,
-            completed: 6,
-            ServiceComplete: 7,
-            Confirmed: 1,
-            StartJourney: 2,
-            Reached: 3,
-            ServiceStarted: 4,
-            Completed: 5,
-          };
-          const prevStatus = getStatus(prev);
-          const apiStatus = getStatus(fromApi);
-          const prevOrder = statusOrder[prevStatus] ?? 0;
-          const apiOrder = statusOrder[apiStatus] ?? 0;
-          if (apiOrder < prevOrder && prevStatus) {
-            const merged = {
-              ...fromApi,
-              DriverStatus: prevStatus,
-              PickupDelivery: Array.isArray(fromApi.PickupDelivery)
-                ? fromApi.PickupDelivery.map((leg, i) =>
-                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
-                  )
-                : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
+        if (fromApi) {
+          setUpdatedBookings((prev) => {
+            const getStatus = (b) =>
+              b?.DriverStatus ??
+              (Array.isArray(b?.PickupDelivery)
+                ? b.PickupDelivery[0]?.DriverStatus
+                : b?.PickupDelivery?.DriverStatus);
+            const statusOrder = {
+              assigned: 1,
+              pickup_started: 2,
+              pickup_reached: 3,
+              car_picked: 4,
+              ServiceStart: 5,
+              completed: 6,
+              ServiceComplete: 7,
+              Confirmed: 1,
+              StartJourney: 2,
+              Reached: 3,
+              ServiceStarted: 4,
+              Completed: 5,
             };
-            navigation.setParams({ booking: merged });
-            return merged;
-          }
-          navigation.setParams({ booking: fromApi });
-          return fromApi;
-        });
+            const prevStatus = getStatus(prev);
+            const apiStatus = getStatus(fromApi);
+            const prevOrder = statusOrder[prevStatus] ?? 0;
+            const apiOrder = statusOrder[apiStatus] ?? 0;
+            if (apiOrder < prevOrder && prevStatus) {
+              const merged = {
+                ...fromApi,
+                DriverStatus: prevStatus,
+                PickupDelivery: Array.isArray(fromApi.PickupDelivery)
+                  ? fromApi.PickupDelivery.map((leg, i) =>
+                      i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                    )
+                  : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
+              };
+              navigation.setParams({ booking: merged });
+              return merged;
+            }
+            navigation.setParams({ booking: fromApi });
+            return fromApi;
+          });
+        }
       }
     } catch (error) {
       console.error("Error refreshing booking:", error);
@@ -253,12 +261,13 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       setRefreshing(false);
       setLoading(false);
     }
-  };
+  }, [booking?.BookingID, booking?.TechID, route.params?.booking?.BookingID, navigation]);
+
   // Refetch when screen is focused (initial open + go back and open again)
   useFocusEffect(
-    React.useCallback(() => {
-      if (booking?.BookingID) onRefresh();
-    }, [booking?.BookingID])
+    useCallback(() => {
+      if (route.params?.booking?.BookingID) onRefresh();
+    }, [onRefresh, route.params?.booking?.BookingID])
   );
 
   useEffect(() => {
@@ -287,18 +296,58 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   //   return () => clearInterval(interval);
   // }, []);
 
+  // When component mounts or booking changes we look for the start-ride flag.
+  // If it's present we know the user previously opened an external map link and may
+  // have left the app.  Clearing the flag and refreshing here makes sure the
+  // booking data is up‑to‑date and prevents the navigator from landing back on
+  // the dashboard when the app comes back into the foreground.
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
         const flag = await AsyncStorage.getItem(
           `startRide_done_${booking.BookingID}`
         );
+        if (flag === "true") {
+          await AsyncStorage.removeItem(`startRide_done_${booking.BookingID}`);
+          navigation.reset({
+            index: 0,
+            routes: [
+              { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+            ],
+          });
+        }
       } catch (error) {
         console.error("Error reading start ride flag", error);
       }
     };
     checkIfStarted();
-  }, [booking.BookingID]);
+  }, [booking.BookingID, onRefresh, navigation, booking]);
+
+  // keep track of app state so we can detect when the user returns from the maps
+  // application.  If the ride-start flag is still set we make sure the screen is
+  // restored rather than letting the navigator default back to the dashboard.
+  useEffect(() => {
+    const listener = AppState.addEventListener("change", async (nextState) => {
+      if (nextState === "active") {
+        try {
+          const flag = await AsyncStorage.getItem(`startRide_done_${booking.BookingID}`);
+          if (flag === "true") {
+            await AsyncStorage.removeItem(`startRide_done_${booking.BookingID}`);
+            navigation.reset({
+              index: 0,
+              routes: [
+                { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+              ],
+            });
+          }
+        } catch (err) {
+          console.error("AppState flag check error", err);
+        }
+      }
+    });
+
+    return () => listener.remove();
+  }, [booking.BookingID, navigation, onRefresh, booking]);
 
   useEffect(() => {
     if (Array.isArray(booking) && booking.length > 0) {
@@ -643,6 +692,9 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
 
 
   const handleStartRidedirect = async () => {
+    // we intentionally do not await onRefresh here so the user is not kept waiting
+    // before the maps app opens; the request will still complete in the
+    // background and the focus listener (below) will pick up any updates.
     onRefresh();
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
@@ -686,9 +738,9 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
-    // Update UI immediately (requested removal of updateTechnicianTracking)
-    const updatedBooking = { 
-      ...booking, 
+    // Optimistic UI update
+    const updatedBooking = {
+      ...booking,
       PickupDelivery: {
         ...booking.PickupDelivery,
         DriverStatus: "pickup_started"
@@ -696,7 +748,10 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
     };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
-    onRefresh();
+
+    // Recall API to get latest status from server so UI stays in sync
+    await onRefresh();
+
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
     } catch (error) {
@@ -718,22 +773,28 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       }
     }
 
-    const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
-    const generateOtpPayload = {
-      carPickupDeliveryId: pickDropId,
-      otpType: "Pickup",
-      phoneNumber: String(pickupPhoneNumber).trim(),
-    };
-    console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
-    try {
-      const genOtpRes = await axios.post(
-        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        generateOtpPayload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
-    } catch (e) {
-      console.error("GenerateOTP Error:", e?.response?.data ?? e);
+    const pickupPhoneNumber = displayBooking?.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
+    const carPickupDeliveryIdValue = Number(pickDropId) || 0;
+    if (!carPickupDeliveryIdValue) {
+      if (__DEV__) console.warn("GenerateOTP skipped: CarPickupDeliveryId is missing for this booking.");
+    } else {
+      try {
+        const generateOtpPayload = {
+          CarPickupDeliveryId: carPickupDeliveryIdValue,
+          carPickupDeliveryId: carPickupDeliveryIdValue,
+          otpType: "Pickup",
+          phoneNumber: String(pickupPhoneNumber || "").trim(),
+        };
+        const genOtpRes = await axios.post(
+          `${API_BASE_URL}ServiceImages/GenerateOTP`,
+          generateOtpPayload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
+        console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
+      } catch (e) {
+        console.error("GenerateOTP Error:", e?.response?.data ?? e);
+      }
     }
 
     try {

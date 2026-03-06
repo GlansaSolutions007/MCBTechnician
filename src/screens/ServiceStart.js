@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   ScrollView,
   View,
@@ -100,6 +100,29 @@ export default function ServiceStart() {
     currentLeg?.PickFrom?.RouteType ??
     currentLeg?.DropAt?.RouteType ??
     "CustomerToDealer";
+  const refreshBooking = useCallback(async () => {
+    const currentBooking = route.params?.booking;
+    if (!currentBooking?.BookingID) return;
+    const techID = currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    if (!techID) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings`, {
+        params: { Id: techID, techId: techID },
+      });
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const fromApi = list.find((b) => b.BookingID === currentBooking.BookingID);
+      if (fromApi) navigation.setParams({ booking: fromApi });
+    } catch (e) {
+      if (__DEV__) console.warn("ServiceStart refreshBooking:", e?.response?.data ?? e?.message);
+    }
+  }, [route.params?.booking?.BookingID, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshBooking();
+    }, [refreshBooking])
+  );
+
   // Pre-fill car registration from API when booking has it; if not there, leave empty
   useEffect(() => {
     const fromApi =
