@@ -8,13 +8,15 @@ import {
   Image,
   Pressable,
   Animated,
+  Easing,
   Alert,
   Linking,
   Vibration,
+  ActivityIndicator,
 } from "react-native";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, FontAwesome5, FontAwesome } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
@@ -31,6 +33,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [pulse] = useState(new Animated.Value(0));
+  const [gearSpin] = useState(new Animated.Value(0));
 
   const getLastPaymentStatus = (item) => {
     const payments = item?.Payments || [];
@@ -40,16 +43,16 @@ export default function Dashboard() {
 
   const isActiveService = (item) => {
     const lastPaymentStatus = getLastPaymentStatus(item);
+    const driverStatus = item?.PickupDelivery?.[0]?.DriverStatus;
     return (
-      item.PickupDelivery[0].DriverStatus === "pickup_started" ||
-      item.PickupDelivery[0].DriverStatus === "pickup_reached" ||
-      item.PickupDelivery[0].DriverStatus === "ServiceStart" ||
-      item.PickupDelivery[0].DriverStatus === "car_picked" ||
-      item.PickupDelivery[0].DriverStatus === "in_transit" ||
-      item.PickupDelivery[0].DriverStatus === "drop_reached"
-    ) && (
-        lastPaymentStatus !== "Pending"
-      );
+      (driverStatus === "pickup_started" ||
+        driverStatus === "pickup_reached" ||
+        driverStatus === "ServiceStart" ||
+        driverStatus === "car_picked" ||
+        driverStatus === "in_transit" ||
+        driverStatus === "drop_reached") &&
+      lastPaymentStatus !== "Pending"
+    );
   };
 
   const getDriverStatus = (booking) => {
@@ -75,9 +78,8 @@ export default function Dashboard() {
     }
   };
   const isBookingCompleted = (booking) => {
-    const status = booking?.PickupDelivery[0].DriverStatus;
-    if (status === "completed" || status === "ServiceComplete" || status === "car_picked" || status === "in_transit" || status === "drop_reached") return true;
-    return false;
+    const status = booking?.PickupDelivery?.[0]?.DriverStatus;
+    return status === "completed" || status === "ServiceComplete" || status === "car_picked" || status === "in_transit" || status === "drop_reached";
   };
 
   const getAssignDate = (booking) => {
@@ -272,6 +274,35 @@ export default function Dashboard() {
       ).start();
     }
   }, [initialLoading, pulse]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(gearSpin, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(gearSpin, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [gearSpin]);
+
+  const gearRotation = gearSpin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+  const gearRotationreverse = gearSpin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["360deg", "0deg"],
+  });
 
   const bg = pulse.interpolate({
     inputRange: [0, 1],
@@ -652,7 +683,7 @@ export default function Dashboard() {
                 Active Services
               </CustomText>
             </View>
-            {activeServices.length > 0 ? (
+            {(activeServices || []).length > 0 ? (
               <View
                 style={[
                   globalStyles.flexrow,
@@ -688,7 +719,7 @@ export default function Dashboard() {
                     { letterSpacing: 0.5 },
                   ]}
                 >
-                  {activeServices.length}
+                  {(activeServices || []).length}
                 </CustomText>
               </View>
             ) : (
@@ -715,12 +746,17 @@ export default function Dashboard() {
               </View>
             )}
           </View>
-          {activeServices.length > 0 ? (
+          {(Array.isArray(activeServices) ? activeServices.length > 0 : false) ? (
             <View style={[globalStyles.mt3]}>
-              {activeServices.map((item, index) => {
+              {(activeServices || []).map((item, index) => {
                 const driverStatus = getDriverStatus(item);
                 const lastPaymentStatus = getLastPaymentStatus(item);
-                const amountPending = item?.PickupDelivery[0]?.AddOns[0]?.TotalPrice;
+                const totalPaid = (item?.Payments || []).reduce(
+                  (sum, p) => (p?.PaymentStatus === "Success" || p?.PaymentStatus === "Partialpaid" ? sum + Number(p?.AmountPaid || 0) : sum),
+                  0
+                );
+                const totalPrice = Number(item?.TotalPrice) || 0;
+                const amountPending = totalPrice - totalPaid;
                 const display = getBookingDisplayData(item);
 
                 return (
@@ -758,6 +794,7 @@ export default function Dashboard() {
                           <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
                             {item.CustomerName || display.customerName || "N/A"}
                           </CustomText>
+
                           <View
                             style={[
                               globalStyles.flexrow,
@@ -833,6 +870,21 @@ export default function Dashboard() {
                             </View>
                           </View>
                         </View>
+
+                        <View style={{marginRight: -16,marginTop: -10}}>
+                          {(item?.PickupDelivery?.[0]?.DriverStatus === "ServiceStart" || item?.PickupDelivery?.[0]?.DriverStatus === "ServiceComplete") && (
+                            <View style={[globalStyles.alineItemscenter]}>
+
+                              <Animated.View style={{ marginRight: 8, transform: [{ rotate: gearRotation }, ] }}>
+                                <FontAwesome name="gear" size={50} color={color.primary} />
+                              </Animated.View>
+                              <Animated.View style={{ marginRight: 35,marginTop: -14, transform: [{ rotate: gearRotationreverse }, ] }}>
+                                <FontAwesome name="gear" size={30} color={color.primary} />
+                              </Animated.View>
+                            </View>
+                          )}
+                        </View>
+
                       </View>
 
                       {item.ServiceType === "ServiceAtGarage" && item.PickupDelivery?.[0] && (
@@ -840,7 +892,7 @@ export default function Dashboard() {
                           <TouchableOpacity
                             onPress={() => {
                               Vibration.vibrate([0, 200, 100, 300]);
-                              const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
+                              const phoneNumber = item.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
                               if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
                               else Alert.alert("Error", "Phone number not available");
                             }}
@@ -889,7 +941,7 @@ export default function Dashboard() {
                             <TouchableOpacity
                               onPress={() => {
                                 Vibration.vibrate([0, 200, 100, 300]);
-                                const phoneNumber = item.PickupDelivery[0].DropAt?.PersonNumber;
+                                const phoneNumber = item.PickupDelivery?.[0]?.DropAt?.PersonNumber;
                                 if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
                                 else Alert.alert("Error", "Phone number not available");
                               }}
@@ -935,7 +987,7 @@ export default function Dashboard() {
                             <TouchableOpacity
                               onPress={() => {
                                 Vibration.vibrate([0, 200, 100, 300]);
-                                const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
+                                const phoneNumber = item.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
                                 if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
                                 else Alert.alert("Error", "Phone number not available");
                               }}
@@ -1014,10 +1066,8 @@ export default function Dashboard() {
                               <CustomText style={[globalStyles.f10Regular, globalStyles.f16Bold, globalStyles.neutral500]}>
                                 Amount Pending:
                               </CustomText>
-                              {item.PickupDelivery[0].DriverStatus === "pickup_started" ||
-                                item.PickupDelivery[0].DriverStatus === "pickup_reached"                               
-                                && (item) && (
-
+                              {(item?.PickupDelivery?.[0]?.DriverStatus === "pickup_started" ||
+                                item?.PickupDelivery?.[0]?.DriverStatus === "pickup_reached") && (
                                   <CustomText style={[globalStyles.f20Bold, globalStyles.primary, globalStyles.mt1]}>
                                     ₹{amountPending}
                                   </CustomText>
@@ -1028,26 +1078,30 @@ export default function Dashboard() {
                               isBookingCompleted(item) && ( */}
 
 
-                            {item.PickupDelivery[0].DriverStatus === "ServiceStart" || item.PickupDelivery[0].DriverStatus === "ServiceComplete" && (item) && (
-                            <TouchableOpacity
-                              onPress={() => CollectPayment(item, amountPending)}
-                              style={[styles.actionButton, { backgroundColor: color.primary }]}
-                            >
-                              <CustomText style={[globalStyles.f16Bold,globalStyles.mr2, globalStyles.textWhite]}>
-                                ₹ {amountPending}
-                              </CustomText>
-                              <Ionicons
-                                style={[
-                                  globalStyles.p2,
-                                  globalStyles.bgsecondary,
-                                  globalStyles.borderRadiuslarge,
-                                ]}
-                                name="chevron-forward-outline"
-                                size={16}
-                                color={color.white}
-                              />
-                            </TouchableOpacity>
-                           )} 
+                            {(item?.PickupDelivery?.[0]?.DriverStatus === "ServiceStart" || item?.PickupDelivery?.[0]?.DriverStatus === "ServiceComplete") && (
+                              <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+
+
+                                <TouchableOpacity
+                                  onPress={() => CollectPayment(item, amountPending)}
+                                  style={[styles.actionButton, { backgroundColor: color.primary }]}
+                                >
+                                  <CustomText style={[globalStyles.f16Bold, globalStyles.mr2, globalStyles.textWhite]}>
+                                    ₹ {amountPending}
+                                  </CustomText>
+                                  <Ionicons
+                                    style={[
+                                      globalStyles.p2,
+                                      globalStyles.bgsecondary,
+                                      globalStyles.borderRadiuslarge,
+                                    ]}
+                                    name="chevron-forward-outline"
+                                    size={16}
+                                    color={color.white}
+                                  />
+                                </TouchableOpacity>
+                              </View>
+                            )}
 
                             {/* )} */}
                             {/* {isActiveService(item) && (

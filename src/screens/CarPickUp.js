@@ -74,7 +74,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
   // Merge booking data with Leads data for missing fields
   const customerName = bookingParam.CustomerName || bookingParam.Leads?.FullName || "";
   const phoneNumber = bookingParam.PhoneNumber || bookingParam.Leads?.PhoneNumber || "";
-  const dealerpersonnumber =  bookingParam.PickupDelivery[0].PickFrom?.PersonNumber || "";
+  const dealerpersonnumber = bookingParam?.PickupDelivery?.[0]?.PickFrom?.PersonNumber || "";
   const profileImage = bookingParam.ProfileImage || null;
   const vehicleNumber = bookingParam.VehicleNumber || bookingParam.Leads?.Vehicle?.RegistrationNumber || "";
   const brandName = bookingParam.BrandName || bookingParam.Leads?.Vehicle?.BrandName || "";
@@ -620,7 +620,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
           </View>
         </View>
 
-        {booking?.PickupDelivery[0].PickFrom?.PickupOTPVerified === false && (
+        {booking?.PickupDelivery?.[0]?.PickFrom?.PickupOTPVerified === false && (
           <View>
             <View
               style={[
@@ -890,7 +890,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                       return; // do not upload images, do not clear images
                     }
 
-                    // Post images only after OTP is valid (above verify step passed)
+                    // Post images only after OTP is valid (above verify step passed) — use fetch like ServiceStart/ServiceEnd so multipart boundary is set correctly
                     try {
                       setIsUploading(true);
                       const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
@@ -900,7 +900,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         formData.append("VehicleNumber", regNo);
                         formData.append("BookingID", booking.BookingID);
                         formData.append("UploadedBy", 1);
-                        formData.append("TechID", booking.TechID ?? "");
+                        formData.append("TechID", String(booking?.TechID ?? ""));
                         formData.append("ImageUploadType", "Pickup");
                         formData.append("ImagesType", "tech");
                         formData.append("ImageURL1", {
@@ -908,23 +908,22 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                           type: "image/jpeg",
                           name: `pickup_${i + 1}.jpg`,
                         });
-                        await axios.post(
-                          `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
-                          formData,
-                          {
-                            headers: {
-                              Accept: "application/json",
-                              "Content-Type": "multipart/form-data",
-                            },
-                          }
-                        );
+                        const res = await fetch(`${baseUrl}ServiceImages/InsertPickupDeliveryImages`, {
+                          method: "POST",
+                          headers: { Accept: "application/json" },
+                          body: formData,
+                        });
+                        if (!res.ok) {
+                          const errText = await res.text();
+                          throw new Error(errText || `Upload failed ${res.status}`);
+                        }
                       }
                       setIsUploading(false);
                       setUploadDone(true);
                       setImages([]);
                     } catch (uploadErr) {
                       setIsUploading(false);
-                      setModalMessage(uploadErr?.response?.data?.message || "Image upload failed. Please try again.");
+                      setModalMessage(uploadErr?.response?.data?.message || uploadErr?.message || "Image upload failed. Please try again.");
                       setModalVisible(true);
                       return; // do not clear images so user can retry
                     }
@@ -948,7 +947,7 @@ const [cooldownTimer, setCooldownTimer] = useState(null);
                         const statusPayload = {
                           bookingID: Number(booking?.BookingID || 0),
                           serviceType: booking?.ServiceType || "ServiceAtGarage",
-                          routeType: booking?.PickupDelivery[0].PickFrom.RouteType ,
+                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
                           action: "car_picked",
                           updatedBy: Number(booking?.TechID || 3),
                           role: "Technician",

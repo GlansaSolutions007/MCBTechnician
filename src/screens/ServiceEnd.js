@@ -369,7 +369,41 @@ export default function ServiceEnd() {
       console.error("UpdateBookingStatus (ServiceComplete) Error:", e?.response?.data ?? e);
     }
 
-    // Complete tracking then navigate to Collect Payment (QR and amount)
+    const addOnsToUpdate = [
+      ...(Array.isArray(booking?.BookingAddOns) ? booking.BookingAddOns : []),
+      ...(Array.isArray(booking?.PickupDelivery?.[0]?.AddOns) ? booking.PickupDelivery[0].AddOns : []),
+    ];
+    const completedBy = Number(booking?.TechID ?? 1) || 1;
+    let authToken = null;
+    try {
+      authToken = await AsyncStorage.getItem("token");
+    } catch (_) {}
+    const addOnHeaders = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+    for (const addOn of addOnsToUpdate) {
+      const addOnID = addOn.AddOnID ?? addOn.BookingAddOnID ?? addOn.Id ?? addOn.ID;
+      if (addOnID == null) continue;
+      const addOnIdNum = Number(addOnID);
+      if (!Number.isFinite(addOnIdNum)) continue;
+      try {
+        await axios.post(
+          `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
+          {
+            addOnID: addOnIdNum,
+            completedBy,
+            completedRole: "Dealer",
+            is_Completed: true,
+            statusName: "ServiceCompleted",
+          },
+          { headers: addOnHeaders }
+        );
+      } catch (e) {
+        if (__DEV__) console.warn("UpdateAddOnCompletion Error:", e?.response?.data ?? e?.message);
+      }
+    }
+
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -617,53 +651,53 @@ export default function ServiceEnd() {
                   ))}
 
                   {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
-                        <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
-                          <CustomText
-                            style={[
-                              globalStyles.f12Bold,
-                              globalStyles.primary,
-                            ]}
-                          >
-                            • {addOn.ServiceName}
-                          </CustomText>
-                          {addOn.Description && (
+                    <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
+                      <CustomText
+                        style={[
+                          globalStyles.f12Bold,
+                          globalStyles.primary,
+                        ]}
+                      >
+                        • {addOn.ServiceName}
+                      </CustomText>
+                      {addOn.Description && (
+                        <CustomText
+                          style={[
+                            globalStyles.f12Regular,
+                            globalStyles.neutral500,
+                            globalStyles.mt1,
+
+                          ]}
+                        >
+                          {addOn.Description}
+                        </CustomText>
+                      )}
+                      {addOn.Includes && addOn.Includes.length > 0 && (
+                        <View style={[globalStyles.ml3, globalStyles.mt1]}>
+                          {addOn.Includes.map((inc) => (
                             <CustomText
+                              key={inc.IncludeID}
                               style={[
                                 globalStyles.f12Regular,
                                 globalStyles.neutral500,
-                                globalStyles.mt1,
-
                               ]}
                             >
-                              {addOn.Description}
+                              - {inc.IncludeName}
                             </CustomText>
-                          )}
-                          {addOn.Includes && addOn.Includes.length > 0 && (
-                            <View style={[globalStyles.ml3, globalStyles.mt1]}>
-                              {addOn.Includes.map((inc) => (
-                                <CustomText
-                                  key={inc.IncludeID}
-                                  style={[
-                                    globalStyles.f12Regular,
-                                    globalStyles.neutral500,
-                                  ]}
-                                >
-                                  - {inc.IncludeName}
-                                </CustomText>
-                              ))}
-                            </View>
-                          )}
+                          ))}
                         </View>
-                      ))}
+                      )}
+                    </View>
+                  ))}
 
-                      {(!booking.Packages || booking.Packages.length === 0) &&
-                        (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
-                          <CustomText
-                            style={[globalStyles.f12Regular, globalStyles.neutral500]}
-                          >
-                            No services available
-                          </CustomText>
-                        )}
+                  {(!booking.Packages || booking.Packages.length === 0) &&
+                    (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
+                      <CustomText
+                        style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                      >
+                        No services available
+                      </CustomText>
+                    )}
 
 
 

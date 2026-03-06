@@ -392,7 +392,7 @@ export default function CustomerToGarageMap() {
     console.log("phoneNumber===============",phoneNumber)
     try {
       const payload = {
-        carPickupDeliveryId: Number(carPickupDeliveryId),
+        CarPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Delivery",
         phoneNumber: String(phoneNumber).trim(),
       };

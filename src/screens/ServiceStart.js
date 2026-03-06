@@ -62,6 +62,7 @@ export default function ServiceStart() {
   const [registrationError, setRegistrationError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [modalOnOkNavigateToDashboard, setModalOnOkNavigateToDashboard] = useState(false);
   const [otpValid, setOtpValid] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -940,11 +941,6 @@ export default function ServiceStart() {
                       : new Date();
                     actualTime = Math.floor((new Date() - serviceStartTime) / 1000);
 
-                    const updatedBooking = {
-                      ...booking,
-                      ServiceStartedAt: booking.ServiceStartedAt || new Date().toISOString(),
-                    };
-
                     await AsyncStorage.setItem(
                       `serviceStarted_${booking.BookingID}`,
                       "true"
@@ -960,12 +956,9 @@ export default function ServiceStart() {
                       })
                     );
 
-                    navigation.navigate("ServiceEnd", {
-                      booking: updatedBooking,
-                      estimatedTime: estimatedTime,
-                      actualTime: actualTime,
-                      carRegistrationNumber: regNo || carRegistrationNumber?.trim() || "",
-                    });
+                    setModalMessage("Service started");
+                    setModalOnOkNavigateToDashboard(true);
+                    setModalVisible(true);
                   }}
                 >
                   <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
@@ -1040,7 +1033,16 @@ export default function ServiceStart() {
             animationType="fade"
             transparent={true}
             visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
+            onRequestClose={() => {
+              if (modalOnOkNavigateToDashboard) {
+                setModalOnOkNavigateToDashboard(false);
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "CustomerTabNavigator", params: { screen: "Dashboard" } }],
+                });
+              }
+              setModalVisible(false);
+            }}
           >
             <View style={styles.modalOverlay}>
               <View style={styles.modalBox}>
@@ -1056,7 +1058,16 @@ export default function ServiceStart() {
 
                 <TouchableOpacity
                   style={styles.okButton}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    if (modalOnOkNavigateToDashboard) {
+                      setModalOnOkNavigateToDashboard(false);
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CustomerTabNavigator", params: { screen: "Dashboard" } }],
+                      });
+                    }
+                    setModalVisible(false);
+                  }}
                 >
                   <CustomText
                     style={[globalStyles.textWhite, globalStyles.f14Bold]}
