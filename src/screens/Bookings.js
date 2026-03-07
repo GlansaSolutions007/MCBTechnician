@@ -684,7 +684,7 @@ export default function Bookings() {
 
                             <CustomText
                               style={[
-                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2,
+                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2,{marginBottom:2}
                               ]}
                             >
                               Car pickup call
@@ -751,7 +751,7 @@ export default function Bookings() {
                               />
                               <CustomText
                                 style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2, {marginBottom:2}
                                 ]}
                               >
                                 Car Drop call
@@ -812,7 +812,7 @@ export default function Bookings() {
                               />
                               <CustomText
                                 style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,{marginBottom:2}
                                 ]}
                               >
                                 Call customer

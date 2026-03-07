@@ -451,26 +451,6 @@ export default function ServiceEnd() {
     }
 
     // Post status "ServiceComplete" via UpdateBookingStatus
-    try {
-      const statusPayload = {
-        bookingID: Number(booking?.BookingID || 0),
-        serviceType: booking?.ServiceType || "ServiceAtGarage",
-        action: "ServiceComplete",
-        routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
-        updatedBy: Number(booking?.TechID || 3),
-        role: "Technician",
-      };
-      await axios.post(
-        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-        statusPayload,
-        { headers: { "Content-Type": "application/json" } },
-      );
-    } catch (e) {
-      console.error(
-        "UpdateBookingStatus (ServiceComplete) Error:",
-        e?.response?.data ?? e,
-      );
-    }
 
     // const addOnsToUpdate = [
     //   ...(Array.isArray(booking?.PickupDelivery?.[0]?.AddOns)
@@ -522,48 +502,103 @@ export default function ServiceEnd() {
     //   }
     // }
 
+    const addOnsToUpdate = booking?.PickupDelivery?.[0]?.AddOns ?? [];
 
-const addOnsToUpdate = booking?.PickupDelivery?.[0]?.AddOns ?? [];
+    const completedBy = await AsyncStorage.getItem("techID");
+    console.log("completedBy======", completedBy);
 
-const completedBy = await AsyncStorage.getItem("techID");
-console.log("completedBy======", completedBy);
+    let authToken = await AsyncStorage.getItem("token");
+    console.log("authToken======", authToken);
 
-let authToken = await AsyncStorage.getItem("token");
-console.log("authToken======", authToken);
+    // const addOnHeaders = {
+    //   "Content-Type": "application/json",
+    //   ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    // };
 
-const addOnHeaders = {
-  "Content-Type": "application/json",
-  ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-};
+    // for (const addOn of addOnsToUpdate) {
+    //   const addOnIdNum = Number(addOn.AddOnID);
+    //   console.log("addOnIdNum-------------",addOnIdNum)
 
-for (const addOn of addOnsToUpdate) {
-  const addOnIdNum = Number(addOn.AddOnID);
-  console.log("addOnIdNum-------------",addOnIdNum)
+    //   try {
+    //     console.log("Calling API for AddOnID:", addOnIdNum);
 
-  try {
-    console.log("Calling API for AddOnID:", addOnIdNum);
+    //     const response = await axios.put(
+    //       `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
+    //       {
+    //         addOnID: addOnIdNum,
+    //         completedBy,
+    //         completedRole: "Technician",
+    //         is_Completed: true,
+    //         statusName: "ServiceCompleted",
+    //       },
+    //       { headers: addOnHeaders }
+    //     );
 
-    const response = await axios.put(
-      `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
-      {
-        addOnID: addOnIdNum,
-        completedBy,
-        completedRole: "Technician",
-        is_Completed: true,
-        statusName: "ServiceCompleted",
-      },
-      { headers: addOnHeaders }
-    );
+    //     console.log("UpdateAddOnCompletion Response:", response.data);
+    //   } catch (e) {
+    //     console.warn(
+    //       "UpdateAddOnCompletion Error:",
+    //       e?.response?.data ?? e?.message
+    //     );
+    //   }
+    // }
 
-    console.log("UpdateAddOnCompletion Response:", response.data);
-  } catch (e) {
-    console.warn(
-      "UpdateAddOnCompletion Error:",
-      e?.response?.data ?? e?.message
-    );
-  }
-}
+    //  try {
+    //       const statusPayload = {
+    //         bookingID: Number(booking?.BookingID || 0),
+    //         serviceType: booking?.ServiceType || "ServiceAtGarage",
+    //         action: "ServiceComplete",
+    //         routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
+    //         updatedBy: Number(booking?.TechID || 3),
+    //         role: "Technician",
+    //       };
+    //       await axios.post(
+    //         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+    //         statusPayload,
+    //         { headers: { "Content-Type": "application/json" } },
+    //       );
+    //     } catch (e) {
+    //       console.error(
+    //         "UpdateBookingStatus (ServiceComplete) Error:",
+    //         e?.response?.data ?? e,
+    //       );
+    //     }
 
+    const addOnHeaders = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    // 1️⃣ Update all AddOns
+    for (const addOn of addOnsToUpdate) {
+      const addOnIdNum = Number(addOn.AddOnID);
+      console.log("addOnIdNum-------------", addOnIdNum);
+
+      try {
+        console.log("Calling API for AddOnID:", addOnIdNum);
+
+        const response = await axios.put(
+          `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
+          {
+            addOnID: addOnIdNum,
+            completedBy,
+            completedRole: "Technician",
+            is_Completed: true,
+            statusName: "ServiceCompleted",
+          },
+          { headers: addOnHeaders },
+        );
+
+        console.log("UpdateAddOnCompletion Response:", response.data);
+      } catch (e) {
+        console.warn(
+          "UpdateAddOnCompletion Error:",
+          e?.response?.data ?? e?.message,
+        );
+      }
+    }
+
+ 
 
     try {
       await axios.post(
@@ -578,8 +613,37 @@ for (const addOn of addOnsToUpdate) {
       console.error("InsertTracking Completed Error:", e);
     }
 
+       // 2️⃣ After loop finishes, update booking status
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        action: "ServiceComplete",
+        routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
+        updatedBy: Number(booking?.TechID || 3),
+        role: "Technician",
+      };
+
+      const statusResponse = await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } },
+      );
+
+      console.log("UpdateBookingStatus Response:", statusResponse.data);
+    } catch (e) {
+      console.error(
+        "UpdateBookingStatus (ServiceComplete) Error:",
+        e?.response?.data ?? e,
+      );
+    }
+
+    
+
     navigation.navigate("CollectPayment", { booking });
   };
+
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
