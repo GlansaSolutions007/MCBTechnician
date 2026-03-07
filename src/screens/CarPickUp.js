@@ -1206,7 +1206,7 @@ export default function CarPickUp() {
                   >
                     <Image source={helpcall} />
                     <CustomText
-                      style={[globalStyles.textWhite, globalStyles.ml2]}
+                      style={[globalStyles.textWhite, globalStyles.ml2,globalStyles.f12Bold]}
                     >
                       Call help line
                     </CustomText>

@@ -15,6 +15,7 @@ import {
   Platform,
   Keyboard,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -292,6 +293,7 @@ export default function DropCarAtGarage() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
     >
+      <StatusBar barStyle="dark-content" backgroundColor={color.white} />
       <ScrollView
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"

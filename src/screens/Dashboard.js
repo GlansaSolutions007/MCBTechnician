@@ -1723,8 +1723,8 @@ const styles = StyleSheet.create({
   },
   addressValue: {
     flex: 1,
-    fontSize: 13,
     color: color.black,
+    ...globalStyles.f12Regular,
   },
   addressUnderline: {
     height: 1,
