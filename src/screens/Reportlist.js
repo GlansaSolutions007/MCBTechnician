@@ -158,6 +158,23 @@ function Reportlist() {
 
   const renderBookingCard = ({ item, index }) => {
     const driverStatus = getDriverStatus(item);
+    const assignDateTime = item?.PickupDelivery?.[0]?.AssignDate;
+
+    const assignDate = assignDateTime
+      ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      : "";
+
+    const assignTime = assignDateTime
+      ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      : "";
+
     return (
       <Pressable
         onPress={() => customerInfo(item)}
@@ -197,9 +214,9 @@ function Reportlist() {
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
                 {item.ServiceType
                   ? item.ServiceType
-                  .replace(/([A-Z])/g, " $1")
-                  .replace(/\bAt\b/g, "at")
-                  .trim()
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/\bAt\b/g, "at")
+                    .trim()
                   : "N/A"}
               </CustomText>
             </View>
@@ -216,7 +233,7 @@ function Reportlist() {
                 },
               ]}
             >
-              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite,{marginBottom:2}]}>
+              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite, { marginBottom: 2 }]}>
                 {(driverStatus || "No Status").charAt(0).toUpperCase() +
                   (driverStatus || "No Status").slice(1)}
               </CustomText>
@@ -329,8 +346,9 @@ function Reportlist() {
                   ]}
                   numberOfLines={1}
                 >
-                  {getBookingDisplayData(item).timeSlot}
-                </CustomText>
+                  {item?.ServiceType === "ServiceAtGarage"
+                    ? ` ${assignTime}`
+                    : getBookingDisplayData(item).timeSlot}                </CustomText>
               </View>
             </View>
           </View>

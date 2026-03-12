@@ -95,6 +95,23 @@ export default function ServiceStart() {
   // );
   const carPickupDeliveryId = booking?.PickupDelivery[0].Id;
 
+  const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
+
   const routeType =
     currentLeg?.PickFrom?.[0]?.RouteType ??
     currentLeg?.PickFrom?.RouteType ??
@@ -200,7 +217,7 @@ export default function ServiceStart() {
         return;
       }
       const phoneNumber = bookingParam?.PickupDelivery[0]?.PickFrom?.PersonNumber;
-      console.log("phoneNumber===============",phoneNumber)
+      console.log("phoneNumber===============", phoneNumber)
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Pickup",
@@ -604,18 +621,32 @@ export default function ServiceStart() {
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
+                  {bookingParam?.ServiceType === "ServiceAtGarage" ? (
                     <CustomText
-                      key={index}
                       style={[
                         globalStyles.f10Regular,
                         globalStyles.black,
                         globalStyles.ml1,
                       ]}
                     >
-                      {slot.trim()}
+                      {assignTime}
                     </CustomText>
-                  ))}
+                  ) : (
+                    (getBookingDisplayData(bookingParam).timeSlot || "")
+                      .split(",")
+                      .map((slot, index) => (
+                        <CustomText
+                          key={index}
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.black,
+                            globalStyles.ml1,
+                          ]}
+                        >
+                          {slot.trim()}
+                        </CustomText>
+                      ))
+                  )}
                 </View>
               </View>
             </View>
@@ -635,7 +666,7 @@ export default function ServiceStart() {
                 ]}
               >
                 <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                  Pre-service checklist
+                  Pre-Service Checklist
                 </CustomText>
                 <CustomText
                   style={[
@@ -940,7 +971,7 @@ export default function ServiceStart() {
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtHome",
                         action: "ServiceStart",
-                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
                         updatedBy: Number(booking?.TechID || 3),
                         role: "Technician",
                       };

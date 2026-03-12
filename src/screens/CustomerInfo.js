@@ -61,14 +61,14 @@ export default function CustomerInfo() {
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
   const profileImage = booking.ProfileImage || null;
   // Vehicle number: Use booking.VehicleNumber if available, otherwise use Leads.Vehicle.RegistrationNumber
-  const vehicleNumber = booking.VehicleNumber 
-    ? booking.VehicleNumber 
+  const vehicleNumber = booking.VehicleNumber
+    ? booking.VehicleNumber
     : (booking.Leads?.Vehicle?.RegistrationNumber || "");
   const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = booking.VehicleImage || null;
-  
+
   // Helper function to format date (YYYY-MM-DD to DD MMM YYYY)
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -97,7 +97,7 @@ export default function CustomerInfo() {
       return timeString;
     }
   };
-  
+
   const [location, setLocation] = useState(null);
   const [addressLocation, setAddressLocation] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -128,8 +128,25 @@ export default function CustomerInfo() {
   //   displayBooking?.Leads?.PhoneNumber ??
   //   booking?.PhoneNumber ??
   //   "";
-    const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
-console.log("pickupPhoneNumber===============", pickupPhoneNumber);
+  const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
+  console.log("pickupPhoneNumber===============", pickupPhoneNumber);
+
+  const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
 
   const driverStatus =
     displayBooking?.DriverStatus ?? currentLeg?.DriverStatus;
@@ -168,10 +185,10 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   };
   const ServiceEnd = async (item) => {
     // Calculate estimated time from booking if available
-    const estimatedTime = item.TotalEstimatedDurationMinutes 
-      ? item.TotalEstimatedDurationMinutes * 60 
+    const estimatedTime = item.TotalEstimatedDurationMinutes
+      ? item.TotalEstimatedDurationMinutes * 60
       : 0;
-    
+
     // Calculate actual time if service has started
     let actualTime = 0;
     if (item.ServiceStartedAt) {
@@ -179,7 +196,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       const currentTime = new Date();
       actualTime = Math.floor((currentTime - startTime) / 1000); // Convert to seconds
     }
-    
+
     navigation.navigate("ServiceEnd", {
       booking: item,
       estimatedTime: estimatedTime,
@@ -243,8 +260,8 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 DriverStatus: prevStatus,
                 PickupDelivery: Array.isArray(fromApi.PickupDelivery)
                   ? fromApi.PickupDelivery.map((leg, i) =>
-                      i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
-                    )
+                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                  )
                   : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
               };
               navigation.setParams({ booking: merged });
@@ -377,9 +394,9 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   const rawLat = booking?.latitude ?? booking?.Latitude;
   const rawLng = booking?.longitude ?? booking?.Longitude;
   // Check if coordinates are valid (not null/undefined and are valid numbers)
-  const hasValidCoordinates = rawLat != null && rawLng != null && 
-                              !isNaN(Number(rawLat)) && !isNaN(Number(rawLng)) &&
-                              Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng));
+  const hasValidCoordinates = rawLat != null && rawLng != null &&
+    !isNaN(Number(rawLat)) && !isNaN(Number(rawLng)) &&
+    Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng));
   const Latitude = hasValidCoordinates ? Number(rawLat) : null;
   const Longitude = hasValidCoordinates ? Number(rawLng) : null;
 
@@ -447,7 +464,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                   mapRef.current.animateToRegion(coords, 1000);
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
             // Route will be fetched by the useEffect that watches location and addressLocation
           }
         );
@@ -460,7 +477,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
     return () => {
       try {
         subscription && subscription.remove && subscription.remove();
-      } catch (_) {}
+      } catch (_) { }
       subscription = null;
     };
   }, []);
@@ -526,7 +543,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       ) {
         return;
       }
-      
+
       // Use provided destination or fallback to default destination
       const routeDestination = dest || destination;
       if (
@@ -617,7 +634,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   // Geocode address to get coordinates
   const geocodeAddress = async (address) => {
     if (!address || address.trim() === "") return null;
-    
+
     try {
       const response = await axios.get(
         `https://maps.googleapis.com/maps/api/geocode/json`,
@@ -647,7 +664,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
   const openGoogleMaps = async () => {
     try {
       let url = "";
-      
+
       // Determine destination - prioritize geocoded address location, then coordinates, then address string
       let destinationCoords = null;
       if (addressLocation) {
@@ -655,11 +672,11 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       } else if (hasValidCoordinates && destination) {
         destinationCoords = destination;
       }
-      
+
       // If we have current location and destination coordinates, show route
       if (location && destinationCoords) {
         url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destinationCoords.Latitude},${destinationCoords.Longitude}&travelmode=driving`;
-      } 
+      }
       // If we have destination coordinates but no current location, just show destination
       else if (destinationCoords) {
         url = `https://www.google.com/maps/?api=1&q=${destinationCoords.Latitude},${destinationCoords.Longitude}`;
@@ -673,7 +690,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       else if (hasValidCoordinates) {
         url = `https://www.google.com/maps/?api=1&q=${Latitude},${Longitude}`;
       }
-      
+
       if (url) {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
@@ -722,7 +739,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
@@ -806,7 +823,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
         updatedBy: Number(displayBooking?.TechID || 3),
         role: "Technician",
       };
-      console.log("ServiceImages/UpdateBookingStatus---:",statusPayload);
+      console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
@@ -818,8 +835,8 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
     }
 
     // Requested removal of updateTechnicianTracking
-    const updatedBooking ={ 
-      ...booking, 
+    const updatedBooking = {
+      ...booking,
       PickupDelivery: {
         ...booking.PickupDelivery,
         DriverStatus: "pickup_reached"
@@ -830,7 +847,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
     onRefresh();
     try {
       await stopBackgroundTracking();
-    } catch (_) {}
+    } catch (_) { }
     navigation.navigate(updatedBooking.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: updatedBooking });
   };
 
@@ -1130,8 +1147,8 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 source={
                   profileImage
                     ? {
-                        uri: `https://api.mycarsbuddy.com/images/${profileImage}`,
-                      }
+                      uri: `https://api.mycarsbuddy.com/images/${profileImage}`,
+                    }
                     : defaultAvatar
                 }
                 style={{ width: 46, height: 46, borderRadius: 10 }}
@@ -1174,7 +1191,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
               const display = getBookingDisplayData(booking);
               return (
                 <>
-                  
+
                   {/* <BookingPickDropRow booking={booking} style={globalStyles.mt2} /> */}
                   <View style={[globalStyles.flexrow, globalStyles.mt2]}>
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
@@ -1199,16 +1216,33 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                     </View>
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
                       <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
-                      <View style={{ flex: 1 }}>
-                        {(display.timeSlot || "")
-                          .split(",")
-                          .map((slot) => slot.trim())
-                          .filter(Boolean)
-                          .map((s, i) => (
-                            <CustomText key={i} style={[globalStyles.f10Regular, globalStyles.black]}>
-                              {s}
-                            </CustomText>
-                          ))}
+                      <View style={{ flexDirection: "column" }}>
+                        {bookingParam?.ServiceType === "ServiceAtGarage" ? (
+                          <CustomText
+                            style={[
+                              globalStyles.f10Regular,
+                              globalStyles.black,
+                              globalStyles.ml1,
+                            ]}
+                          >
+                            {assignTime}
+                          </CustomText>
+                        ) : (
+                          (getBookingDisplayData(bookingParam).timeSlot || "")
+                            .split(",")
+                            .map((slot, index) => (
+                              <CustomText
+                                key={index}
+                                style={[
+                                  globalStyles.f10Regular,
+                                  globalStyles.black,
+                                  globalStyles.ml1,
+                                ]}
+                              >
+                                {slot.trim()}
+                              </CustomText>
+                            ))
+                        )}
                       </View>
                     </View>
                   </View>
@@ -1513,7 +1547,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
           </View> */}
 
           <View>
-            <CustomText style={[globalStyles.f16Bold, globalStyles.black,globalStyles.mt3]}>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}>
               Service Details
             </CustomText>
 
@@ -1538,7 +1572,7 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 >
                   Services:
                 </CustomText>
-                
+
                 {/* Packages - Point-wise */}
                 {/* {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
                   <View key={pkg.PackageID} style={[globalStyles.mb3]}>
@@ -1636,20 +1670,20 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 ))}
 
                 {(!booking.Packages || booking.Packages.length === 0) &&
-                 (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.neutral500]}
-                  >
-                    No services available
-                  </CustomText>
-                )}
+                  (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
+                    <CustomText
+                      style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                    >
+                      No services available
+                    </CustomText>
+                  )}
               </View>
 
               {/* Pickup and Delivery Details */}
               {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
                 <View style={[globalStyles.mb3]}>
-                 
-                
+
+
                 </View>
               ) : (
                 <View style={[globalStyles.mb3]}>
@@ -1661,8 +1695,8 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
                 </View>
               )}
 
-              
-              
+
+
             </View>
           </View>
         </View>
@@ -1680,12 +1714,12 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
           style={[
             globalStyles.container,
             globalStyles.pb5,
-            { backgroundColor: color.background || "#f5f5f5"},
+            { backgroundColor: color.background || "#f5f5f5" },
           ]}
         >
           <View >
             <View>
-            
+
               {driverStatus &&
                 driverStatus !== "ServiceComplete" &&
                 driverStatus !== "completed" && (
@@ -1711,44 +1745,44 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
 
                     {(driverStatus === "pickup_started" ||
                       driverStatus === "ServiceStart") && (
-                      <View style={styles.startreach}>
-                        <TouchableOpacity
-                          style={[styles.startButton, { flex: 1 }]}
-                          onPress={handleStartRidedirect}
-                        >
-                          <Ionicons
-                            name="navigate"
-                            size={20}
-                            color="#fff"
-                            style={{ marginRight: 8 }}
-                          />
-                          <CustomText
-                            style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                          >
-                            Navigate
-                          </CustomText>
-                        </TouchableOpacity>
-
-                        {driverStatus === "pickup_started" && (
+                        <View style={styles.startreach}>
                           <TouchableOpacity
-                            style={[styles.ReachedButton, { flex: 1 }]}
-                            onPress={Reached}
+                            style={[styles.startButton, { flex: 1 }]}
+                            onPress={handleStartRidedirect}
                           >
                             <Ionicons
-                              name="flag"
+                              name="navigate"
                               size={20}
-                              color="white"
+                              color="#fff"
                               style={{ marginRight: 8 }}
                             />
                             <CustomText
                               style={[globalStyles.f14Bold, globalStyles.textWhite]}
                             >
-                              Reached
+                              Navigate
                             </CustomText>
                           </TouchableOpacity>
-                        )}
-                      </View>
-                    )}
+
+                          {driverStatus === "pickup_started" && (
+                            <TouchableOpacity
+                              style={[styles.ReachedButton, { flex: 1 }]}
+                              onPress={Reached}
+                            >
+                              <Ionicons
+                                name="flag"
+                                size={20}
+                                color="white"
+                                style={{ marginRight: 8 }}
+                              />
+                              <CustomText
+                                style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                              >
+                                Reached
+                              </CustomText>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
                   </>
                 )}
               {/* </View> */}
@@ -1823,22 +1857,22 @@ console.log("pickupPhoneNumber===============", pickupPhoneNumber);
             {updatedBookings.Payments?.some(
               (payment) => payment.PaymentStatus === "Pending"
             ) && (
-              <TouchableOpacity
-                onPress={() => CollectPayment(updatedBookings)}
-                style={styles.NextButton}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.f14Bold,
-                    globalStyles.mr1,
-                    globalStyles.textWhite,
-                  ]}
+                <TouchableOpacity
+                  onPress={() => CollectPayment(updatedBookings)}
+                  style={styles.NextButton}
                 >
-                  Collect Cash
-                </CustomText>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </TouchableOpacity>
-            )}
+                  <CustomText
+                    style={[
+                      globalStyles.f14Bold,
+                      globalStyles.mr1,
+                      globalStyles.textWhite,
+                    ]}
+                  >
+                    Collect Cash
+                  </CustomText>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
           </View>
         </View>
       </View>

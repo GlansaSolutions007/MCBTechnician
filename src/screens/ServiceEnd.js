@@ -114,6 +114,23 @@ export default function ServiceEnd() {
     booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName =
     booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
+
+    const assignDateTime = booking?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(() => {
     const servicesList = [];
@@ -808,7 +825,7 @@ export default function ServiceEnd() {
                 ]}
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
-                <View style={{ flexDirection: "column" }}>
+                {/* <View style={{ flexDirection: "column" }}>
                   {(getBookingDisplayData(booking).timeSlot || "")
                     .split(",")
                     .map((slot, index) => (
@@ -823,6 +840,34 @@ export default function ServiceEnd() {
                         {slot.trim()}
                       </CustomText>
                     ))}
+                </View> */}
+                <View style={{ flexDirection: "column" }}>
+                  {booking?.ServiceType === "ServiceAtGarage" ? (
+                    <CustomText
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                       {assignTime}
+                    </CustomText>
+                  ) : (
+                    (getBookingDisplayData(booking).timeSlot || "")
+                      .split(",")
+                      .map((slot, index) => (
+                        <CustomText
+                          key={index}
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.black,
+                            globalStyles.ml1,
+                          ]}
+                        >
+                          {slot.trim()}
+                        </CustomText>
+                      ))
+                  )}
                 </View>
               </View>
             </View>

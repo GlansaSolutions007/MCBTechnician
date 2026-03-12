@@ -103,6 +103,24 @@ export default function CarPickUp() {
     bookingParam.Leads?.FullAddress ||
     bookingParam.Leads?.City ||
     "";
+
+  const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
+
   // Pre-fill car registration from API when booking has it
   useEffect(() => {
     const fromApi =
@@ -152,9 +170,9 @@ export default function CarPickUp() {
   const fromArray =
     Array.isArray(pd) && pd.length > 0
       ? pd.reduce(
-          (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
-          null,
-        )
+        (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
+        null,
+      )
       : null;
   const carPickupDeliveryId = booking?.PickupDelivery?.[0]?.Id;
   const driverStatus =
@@ -224,7 +242,7 @@ export default function CarPickUp() {
     } catch (error) {
       setModalMessage(
         error?.response?.data?.message ||
-          "Failed to send OTP. Please try again.",
+        "Failed to send OTP. Please try again.",
       );
       setModalVisible(true);
     } finally {
@@ -676,20 +694,32 @@ export default function CarPickUp() {
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {(getBookingDisplayData(bookingParam).timeSlot || "")
-                    .split(",")
-                    .map((slot, index) => (
-                      <CustomText
-                        key={index}
-                        style={[
-                          globalStyles.f10Regular,
-                          globalStyles.black,
-                          globalStyles.ml1,
-                        ]}
-                      >
-                        {slot.trim()}
-                      </CustomText>
-                    ))}
+                  {bookingParam?.ServiceType === "ServiceAtGarage" ? (
+                    <CustomText
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                       {assignTime}
+                    </CustomText>
+                  ) : (
+                    (getBookingDisplayData(bookingParam).timeSlot || "")
+                      .split(",")
+                      .map((slot, index) => (
+                        <CustomText
+                          key={index}
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.black,
+                            globalStyles.ml1,
+                          ]}
+                        >
+                          {slot.trim()}
+                        </CustomText>
+                      ))
+                  )}
                 </View>
               </View>
             </View>
@@ -697,524 +727,524 @@ export default function CarPickUp() {
 
           {booking?.PickupDelivery?.[0]?.PickFrom?.PickupOTPVerified ===
             false && (
-            <View>
-              <View
-                style={[
-                  globalStyles.mt3,
-                  globalStyles.bgwhite,
-                  globalStyles.radius,
-                  globalStyles.pt0,
-                  globalStyles.pb3,
-                  globalStyles.ph3,
-                  globalStyles.card,
-                ]}
-              >
-                <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                  Pre-service checklist
-                </CustomText>
-                <CustomText
-                  style={[
-                    globalStyles.f10Light,
-                    globalStyles.neutral500,
-                    globalStyles.mt1,
-                  ]}
-                >
-                  Upload at least one image (up to 5){" "}
-                  <CustomText style={{ color: color.alertError }}>*</CustomText>{" "}
-                  and enter OTP to start
-                </CustomText>
-                <TouchableOpacity
-                  style={[
-                    globalStyles.inputBox,
-                    globalStyles.mt3,
-                    imageError
-                      ? { borderColor: color.alertError, borderWidth: 2 }
-                      : {},
-                  ]}
-                  onPress={() => {
-                    setImageError("");
-                    pickImage();
-                  }}
-                >
-                  <CustomText
-                    style={[globalStyles.f16Light, globalStyles.neutral500]}
-                  >
-                    Choose Files{" "}
-                    {images.length > 0 ? `(${images.length} selected)` : ""}
-                  </CustomText>
-                </TouchableOpacity>
-                {imageError ? (
-                  <CustomText
-                    style={[
-                      globalStyles.f12Regular,
-                      { color: color.alertError, marginTop: 4 },
-                    ]}
-                  >
-                    {imageError}
-                  </CustomText>
-                ) : null}
-
-                {images.length > 0 && (
-                  <View>
-                    <View
-                      style={[
-                        globalStyles.flexrow,
-                        globalStyles.justifycenter,
-                        globalStyles.mt3,
-                        { flexWrap: "wrap" },
-                      ]}
-                    >
-                      {images.map((uri, index) => (
-                        <View
-                          key={index}
-                          style={{
-                            width: "32%",
-                            marginBottom: 10,
-                            position: "relative",
-                          }}
-                        >
-                          <Image
-                            source={{ uri }}
-                            style={{
-                              width: 100,
-                              height: 100,
-                              borderRadius: 10,
-                            }}
-                          />
-                          <TouchableOpacity
-                            onPress={() => removeImage(index)}
-                            style={{
-                              position: "absolute",
-                              top: 5,
-                              right: 18,
-                              backgroundColor: "#000",
-                              borderRadius: 10,
-                              padding: 2,
-                              zIndex: 1,
-                            }}
-                          >
-                            <Ionicons name="close" color="#fff" size={15} />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-              {/* Images upload with Submit (after OTP success) — no separate Upload Images button */}
-              {/* Registration number + OTP: show directly when page opens (no Pickup Car button) */}
-              <>
-                <CustomText
-                  style={[
-                    globalStyles.f16Bold,
-                    globalStyles.mt3,
-                    globalStyles.black,
-                  ]}
-                >
-                  Car Registration Number{" "}
-                  <CustomText style={{ color: color.alertError }}>*</CustomText>
-                  <CustomText
-                    style={[
-                      globalStyles.f12Regular,
-                      { color: color.alertError },
-                    ]}
-                  >
-                    {" "}
-                    (Required)
-                  </CustomText>
-                </CustomText>
-                <TextInput
-                  style={[
-                    globalStyles.inputBox,
-                    globalStyles.mt2,
-                    {
-                      borderColor: registrationError
-                        ? color.alertError
-                        : "#ccc",
-                      borderWidth: registrationError ? 2 : 1,
-                    },
-                  ]}
-                  placeholder="Enter vehicle registration number (required)"
-                  placeholderTextColor={color.neutral[500]}
-                  value={carRegistrationNumber}
-                  onChangeText={(text) => {
-                    setCarRegistrationNumber(text.trim().toUpperCase());
-                    setRegistrationError("");
-                  }}
-                  autoCapitalize="characters"
-                />
-                {registrationError ? (
-                  <CustomText
-                    style={[
-                      globalStyles.f12Regular,
-                      { color: color.alertError, marginTop: 4 },
-                    ]}
-                  >
-                    {registrationError}
-                  </CustomText>
-                ) : null}
-
-                <CustomText
-                  style={[
-                    globalStyles.f16Light,
-                    globalStyles.mt3,
-                    globalStyles.neutral500,
-                  ]}
-                >
-                  Enter OTP
-                </CustomText>
-
+              <View>
                 <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                  style={[
+                    globalStyles.mt3,
+                    globalStyles.bgwhite,
+                    globalStyles.radius,
+                    globalStyles.pt0,
+                    globalStyles.pb3,
+                    globalStyles.ph3,
+                    globalStyles.card,
+                  ]}
                 >
-                  <TextInput
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+                    Pre-Service Checklist
+                  </CustomText>
+                  <CustomText
+                    style={[
+                      globalStyles.f10Medium,
+                      globalStyles.neutral500,
+                      globalStyles.mt1,
+                    ]}
+                  >
+                    Upload at least one image (up to 5){" "}
+                    <CustomText style={{ color: color.alertError }}>*</CustomText>{" "}
+                    and enter OTP to start
+                  </CustomText>
+                  <TouchableOpacity
                     style={[
                       globalStyles.inputBox,
-                      {
-                        flex: 1,
-                        borderColor: error ? "red" : "#ccc",
-                        borderWidth: 1,
-                      },
+                      globalStyles.mt3,
+                      imageError
+                        ? { borderColor: color.alertError, borderWidth: 2 }
+                        : {},
                     ]}
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChangeText={(text) => {
-                      if (/^\d{0,6}$/.test(text)) {
-                        setOtp(text);
-                        setError("");
-                      }
+                    onPress={() => {
+                      setImageError("");
+                      pickImage();
                     }}
-                    keyboardType="numeric"
-                    maxLength={6}
-                  />
+                  >
+                    <CustomText
+                      style={[globalStyles.f16Light, globalStyles.neutral500]}
+                    >
+                      Choose Files{" "}
+                      {images.length > 0 ? `(${images.length} selected)` : ""}
+                    </CustomText>
+                  </TouchableOpacity>
+                  {imageError ? (
+                    <CustomText
+                      style={[
+                        globalStyles.f12Regular,
+                        { color: color.alertError, marginTop: 4 },
+                      ]}
+                    >
+                      {imageError}
+                    </CustomText>
+                  ) : null}
 
-                  {otpCooldown === 0 ? (
-                    <TouchableOpacity
-                      onPress={resendOTP}
-                      disabled={isLoading}
-                      style={[
-                        {
-                          marginLeft: 10,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          borderRadius: 8,
-                          backgroundColor: color.yellow,
-                          opacity: isLoading ? 0.6 : 1,
-                        },
-                      ]}
-                    >
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                  {images.length > 0 && (
+                    <View>
+                      <View
+                        style={[
+                          globalStyles.flexrow,
+                          globalStyles.justifycenter,
+                          globalStyles.mt3,
+                          { flexWrap: "wrap" },
+                        ]}
                       >
-                        {isLoading ? "Sending OTP" : "Resend OTP"}
-                      </CustomText>
-                    </TouchableOpacity>
-                  ) : (
-                    <View
-                      style={[
-                        {
-                          marginLeft: 10,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          borderRadius: 8,
-                          backgroundColor: color.neutral[300],
-                          opacity: 0.6,
-                        },
-                      ]}
-                    >
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                      >
-                        Resend in {Math.floor(otpCooldown / 60)}:
-                        {(otpCooldown % 60).toString().padStart(2, "0")}
-                      </CustomText>
+                        {images.map((uri, index) => (
+                          <View
+                            key={index}
+                            style={{
+                              width: "32%",
+                              marginBottom: 10,
+                              position: "relative",
+                            }}
+                          >
+                            <Image
+                              source={{ uri }}
+                              style={{
+                                width: 100,
+                                height: 100,
+                                borderRadius: 10,
+                              }}
+                            />
+                            <TouchableOpacity
+                              onPress={() => removeImage(index)}
+                              style={{
+                                position: "absolute",
+                                top: 5,
+                                right: 18,
+                                backgroundColor: "#000",
+                                borderRadius: 10,
+                                padding: 2,
+                                zIndex: 1,
+                              }}
+                            >
+                              <Ionicons name="close" color="#fff" size={15} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
                     </View>
                   )}
                 </View>
-
-                {error ? (
-                  <CustomText style={{ color: "red", marginTop: 5 }}>
-                    {error}
+                {/* Images upload with Submit (after OTP success) — no separate Upload Images button */}
+                {/* Registration number + OTP: show directly when page opens (no Pickup Car button) */}
+                <>
+                  <CustomText
+                    style={[
+                      globalStyles.f16Bold,
+                      globalStyles.mt3,
+                      globalStyles.black,
+                    ]}
+                  >
+                    Car Registration Number{" "}
+                    <CustomText style={{ color: color.alertError }}>*</CustomText>
+                    <CustomText
+                      style={[
+                        globalStyles.f12Regular,
+                        { color: color.alertError },
+                      ]}
+                    >
+                      {" "}
+                      (Required)
+                    </CustomText>
                   </CustomText>
-                ) : null}
+                  <TextInput
+                    style={[
+                      globalStyles.inputBox,
+                      globalStyles.mt2,
+                      {
+                        borderColor: registrationError
+                          ? color.alertError
+                          : "#ccc",
+                        borderWidth: registrationError ? 2 : 1,
+                      },
+                    ]}
+                    placeholder="Enter vehicle registration number (required)"
+                    placeholderTextColor={color.neutral[500]}
+                    value={carRegistrationNumber}
+                    onChangeText={(text) => {
+                      setCarRegistrationNumber(text.trim().toUpperCase());
+                      setRegistrationError("");
+                    }}
+                    autoCapitalize="characters"
+                  />
+                  {registrationError ? (
+                    <CustomText
+                      style={[
+                        globalStyles.f12Regular,
+                        { color: color.alertError, marginTop: 4 },
+                      ]}
+                    >
+                      {registrationError}
+                    </CustomText>
+                  ) : null}
 
-                <TouchableOpacity
-                  style={[
-                    globalStyles.mt4,
-                    globalStyles.bgprimary,
-                    globalStyles.p4,
-                    globalStyles.borderRadiuslarge,
-                    {
-                      width: "100%",
-                      minHeight: 50,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginBottom: keyboardVisible ? 10 : 0,
-                    },
-                  ]}
-                  onPress={async () => {
-                    // Validation: At least one image required (Pre-service checklist)
-                    if (!images.length || images.length < 1) {
-                      setImageError("Please upload at least one image");
-                      return;
-                    }
-                    setImageError("");
+                  <CustomText
+                    style={[
+                      globalStyles.f16Light,
+                      globalStyles.mt3,
+                      globalStyles.black, { marginBottom: 2 }
+                    ]}
+                  >
+                    Enter OTP
+                  </CustomText>
 
-                    // Validation: Car registration number is mandatory
-                    const regNo = carRegistrationNumber?.trim() || "";
-                    if (!regNo) {
-                      setRegistrationError(
-                        "Car registration number is mandatory",
-                      );
-                      return;
-                    }
-                    setRegistrationError("");
+                  <View
+                    style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+                  >
+                    <TextInput
+                      style={[
+                        globalStyles.inputBox,
+                        {
+                          flex: 1,
+                          borderColor: error ? "red" : "#ccc",
+                          borderWidth: 1,
+                        },
+                      ]}
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChangeText={(text) => {
+                        if (/^\d{0,6}$/.test(text)) {
+                          setOtp(text);
+                          setError("");
+                        }
+                      }}
+                      keyboardType="numeric"
+                      maxLength={6}
+                    />
 
-                    // Validation: Check OTP
-                    if (!otp || otp.length !== 6) {
-                      setError("Please enter a valid 6-digit OTP");
-                      return;
-                    }
+                    {otpCooldown === 0 ? (
+                      <TouchableOpacity
+                        onPress={resendOTP}
+                        disabled={isLoading}
+                        style={[
+                          {
+                            marginLeft: 10,
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            borderRadius: 8,
+                            backgroundColor: color.yellow,
+                            opacity: isLoading ? 0.6 : 1,
+                          },
+                        ]}
+                      >
+                        <CustomText
+                          style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                        >
+                          {isLoading ? "Sending OTP" : "Resend OTP"}
+                        </CustomText>
+                      </TouchableOpacity>
+                    ) : (
+                      <View
+                        style={[
+                          {
+                            marginLeft: 10,
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            borderRadius: 8,
+                            backgroundColor: color.neutral[300],
+                            opacity: 0.6,
+                          },
+                        ]}
+                      >
+                        <CustomText
+                          style={[globalStyles.f12Bold, globalStyles.textWhite]}
+                        >
+                          Resend in {Math.floor(otpCooldown / 60)}:
+                          {(otpCooldown % 60).toString().padStart(2, "0")}
+                        </CustomText>
+                      </View>
+                    )}
+                  </View>
 
-                    try {
-                      const verifyPayload = {
-                        carPickupDeliveryId: Number(carPickupDeliveryId),
-                        otp: String(otp).trim(),
-                        otpType: "Pickup",
-                      };
-                      const verifyRes = await axios.post(
-                        `${API_BASE_URL}ServiceImages/VerifyOTP`,
-                        verifyPayload,
-                        { headers: { "Content-Type": "application/json" } },
-                      );
-                      if (
-                        verifyRes?.data?.status === false ||
-                        verifyRes?.data?.isValid === false
-                      ) {
+                  {error ? (
+                    <CustomText style={{ color: "red", marginTop: 5 }}>
+                      {error}
+                    </CustomText>
+                  ) : null}
+
+                  <TouchableOpacity
+                    style={[
+                      globalStyles.mt4,
+                      globalStyles.bgprimary,
+                      globalStyles.p4,
+                      globalStyles.borderRadiuslarge,
+                      {
+                        width: "100%",
+                        minHeight: 50,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: keyboardVisible ? 10 : 0,
+                      },
+                    ]}
+                    onPress={async () => {
+                      // Validation: At least one image required (Pre-service checklist)
+                      if (!images.length || images.length < 1) {
+                        setImageError("Please upload at least one image");
+                        return;
+                      }
+                      setImageError("");
+
+                      // Validation: Car registration number is mandatory
+                      const regNo = carRegistrationNumber?.trim() || "";
+                      if (!regNo) {
+                        setRegistrationError(
+                          "Car registration number is mandatory",
+                        );
+                        return;
+                      }
+                      setRegistrationError("");
+
+                      // Validation: Check OTP
+                      if (!otp || otp.length !== 6) {
+                        setError("Please enter a valid 6-digit OTP");
+                        return;
+                      }
+
+                      try {
+                        const verifyPayload = {
+                          carPickupDeliveryId: Number(carPickupDeliveryId),
+                          otp: String(otp).trim(),
+                          otpType: "Pickup",
+                        };
+                        const verifyRes = await axios.post(
+                          `${API_BASE_URL}ServiceImages/VerifyOTP`,
+                          verifyPayload,
+                          { headers: { "Content-Type": "application/json" } },
+                        );
+                        if (
+                          verifyRes?.data?.status === false ||
+                          verifyRes?.data?.isValid === false
+                        ) {
+                          setOtpValid(false);
+                          setModalMessage(
+                            verifyRes?.data?.message ||
+                            "Invalid OTP. Please try again.",
+                          );
+                          setModalVisible(true);
+                          return; // do not upload images, do not clear images
+                        }
+                        setOtpValid(true);
+                      } catch (verifyErr) {
                         setOtpValid(false);
                         setModalMessage(
-                          verifyRes?.data?.message ||
-                            "Invalid OTP. Please try again.",
+                          verifyErr?.response?.data?.message ||
+                          "Invalid OTP. Please try again.",
                         );
                         setModalVisible(true);
                         return; // do not upload images, do not clear images
                       }
-                      setOtpValid(true);
-                    } catch (verifyErr) {
-                      setOtpValid(false);
-                      setModalMessage(
-                        verifyErr?.response?.data?.message ||
-                          "Invalid OTP. Please try again.",
-                      );
-                      setModalVisible(true);
-                      return; // do not upload images, do not clear images
-                    }
 
-                    // Post images only after OTP is valid (above verify step passed) — use fetch like ServiceStart/ServiceEnd so multipart boundary is set correctly
-                    try {
-                      setIsUploading(true);
-                      const baseUrl = API_BASE_URL?.endsWith("/")
-                        ? API_BASE_URL
-                        : `${API_BASE_URL}/`;
-                      for (let i = 0; i < images.length; i++) {
-                        const formData = new FormData();
-                        formData.append(
-                          "CarPickupDeliveryId",
-                          Number(carPickupDeliveryId) || 0,
-                        );
-                        formData.append("VehicleNumber", regNo);
-                        formData.append("BookingID", booking.BookingID);
-                        formData.append("UploadedBy", 1);
-                        formData.append(
-                          "TechID",
-                          String(booking?.TechID ?? ""),
-                        );
-                        formData.append("ImageUploadType", "Pickup");
-                        formData.append("ImagesType", "tech");
-                        formData.append("ImageURL1", {
-                          uri: images[i],
-                          type: "image/jpeg",
-                          name: `pickup_${i + 1}.jpg`,
-                        });
-                        const res = await fetch(
-                          `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
-                          {
-                            method: "POST",
-                            headers: { Accept: "application/json" },
-                            body: formData,
-                          },
-                        );
-                        if (!res.ok) {
-                          const errText = await res.text();
-                          throw new Error(
-                            errText || `Upload failed ${res.status}`,
+                      // Post images only after OTP is valid (above verify step passed) — use fetch like ServiceStart/ServiceEnd so multipart boundary is set correctly
+                      try {
+                        setIsUploading(true);
+                        const baseUrl = API_BASE_URL?.endsWith("/")
+                          ? API_BASE_URL
+                          : `${API_BASE_URL}/`;
+                        for (let i = 0; i < images.length; i++) {
+                          const formData = new FormData();
+                          formData.append(
+                            "CarPickupDeliveryId",
+                            Number(carPickupDeliveryId) || 0,
                           );
+                          formData.append("VehicleNumber", regNo);
+                          formData.append("BookingID", booking.BookingID);
+                          formData.append("UploadedBy", 1);
+                          formData.append(
+                            "TechID",
+                            String(booking?.TechID ?? ""),
+                          );
+                          formData.append("ImageUploadType", "Pickup");
+                          formData.append("ImagesType", "tech");
+                          formData.append("ImageURL1", {
+                            uri: images[i],
+                            type: "image/jpeg",
+                            name: `pickup_${i + 1}.jpg`,
+                          });
+                          const res = await fetch(
+                            `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
+                            {
+                              method: "POST",
+                              headers: { Accept: "application/json" },
+                              body: formData,
+                            },
+                          );
+                          if (!res.ok) {
+                            const errText = await res.text();
+                            throw new Error(
+                              errText || `Upload failed ${res.status}`,
+                            );
+                          }
                         }
-                      }
-                      setIsUploading(false);
-                      setUploadDone(true);
-                      setImages([]);
-                    } catch (uploadErr) {
-                      setIsUploading(false);
-                      setModalMessage(
-                        uploadErr?.response?.data?.message ||
+                        setIsUploading(false);
+                        setUploadDone(true);
+                        setImages([]);
+                      } catch (uploadErr) {
+                        setIsUploading(false);
+                        setModalMessage(
+                          uploadErr?.response?.data?.message ||
                           uploadErr?.message ||
                           "Image upload failed. Please try again.",
-                      );
-                      setModalVisible(true);
-                      return; // do not clear images so user can retry
-                    }
+                        );
+                        setModalVisible(true);
+                        return; // do not clear images so user can retry
+                      }
 
-                    // Then update tracking: CarPickUp, ServiceStarted
-                    // if (!booking.CarPickUpDate && !carPickedUp) {
-                    try {
-                      await axios.post(
-                        `${API_BASE_URL}ServiceImages/InsertTracking`,
-                        {
-                          pickDropId: Number(carPickupDeliveryId) || 0,
-                          status: "car_picked",
-                        },
-                        { headers: { "Content-Type": "application/json" } },
-                      );
-                    } catch (e) {
-                      console.error("InsertTracking Error:", e);
-                    }
+                      // Then update tracking: CarPickUp, ServiceStarted
+                      // if (!booking.CarPickUpDate && !carPickedUp) {
+                      try {
+                        await axios.post(
+                          `${API_BASE_URL}ServiceImages/InsertTracking`,
+                          {
+                            pickDropId: Number(carPickupDeliveryId) || 0,
+                            status: "car_picked",
+                          },
+                          { headers: { "Content-Type": "application/json" } },
+                        );
+                      } catch (e) {
+                        console.error("InsertTracking Error:", e);
+                      }
 
-                    try {
-                      const statusPayload = {
-                        bookingID: Number(booking?.BookingID || 0),
-                        serviceType: booking?.ServiceType || "ServiceAtGarage",
-                        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
-                        action: "car_picked",
-                        updatedBy: Number(booking?.TechID || 3),
-                        role: "Technician",
+                      try {
+                        const statusPayload = {
+                          bookingID: Number(booking?.BookingID || 0),
+                          serviceType: booking?.ServiceType || "ServiceAtGarage",
+                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                          action: "car_picked",
+                          updatedBy: Number(booking?.TechID || 3),
+                          role: "Technician",
+                        };
+                        console.log(
+                          "UpdateBookingStatus==========:",
+                          statusPayload,
+                        );
+                        await axios.post(
+                          `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+                          statusPayload,
+                          { headers: { "Content-Type": "application/json" } },
+                        );
+                        console.log("UpdateBookingStatus posted for car_picked");
+                      } catch (e) {
+                        console.error(
+                          "UpdateBookingStatus Error:",
+                          e?.response?.data || e,
+                        );
+                      }
+
+                      setCarPickedUp(true);
+                      try {
+                        await AsyncStorage.setItem(
+                          `carPickedUp_${booking.BookingID}`,
+                          "true",
+                        );
+                      } catch (e) { }
+                      // }
+
+                      // Reload page with latest booking (DriverStatus car_picked) so Next button shows
+                      const refreshedBooking = await refreshBooking();
+                      const bookingForNav = refreshedBooking || booking;
+
+                      // Calculate estimated and actual time
+                      const estimatedTime =
+                        bookingForNav.TotalEstimatedDurationMinutes
+                          ? bookingForNav.TotalEstimatedDurationMinutes * 60
+                          : 0;
+
+                      // Calculate actual time (service just started, so it's 0 or from API if already started)
+                      let actualTime = 0;
+                      const serviceStartTime = bookingForNav.ServiceStartedAt
+                        ? new Date(bookingForNav.ServiceStartedAt)
+                        : new Date();
+                      actualTime = Math.floor(
+                        (new Date() - serviceStartTime) / 1000,
+                      );
+
+                      // Update booking with ServiceStartedAt if not already set
+                      const updatedBooking = {
+                        ...bookingForNav,
+                        ServiceStartedAt:
+                          bookingForNav.ServiceStartedAt ||
+                          new Date().toISOString(),
                       };
-                      console.log(
-                        "UpdateBookingStatus==========:",
-                        statusPayload,
-                      );
-                      await axios.post(
-                        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-                        statusPayload,
-                        { headers: { "Content-Type": "application/json" } },
-                      );
-                      console.log("UpdateBookingStatus posted for car_picked");
-                    } catch (e) {
-                      console.error(
-                        "UpdateBookingStatus Error:",
-                        e?.response?.data || e,
-                      );
-                    }
 
-                    setCarPickedUp(true);
-                    try {
+                      // Store timer state
                       await AsyncStorage.setItem(
-                        `carPickedUp_${booking.BookingID}`,
+                        `serviceStarted_${bookingForNav.BookingID}`,
                         "true",
                       );
-                    } catch (e) {}
-                    // }
 
-                    // Reload page with latest booking (DriverStatus car_picked) so Next button shows
-                    const refreshedBooking = await refreshBooking();
-                    const bookingForNav = refreshedBooking || booking;
+                      await AsyncStorage.setItem(
+                        `timerState_${bookingForNav.BookingID}`,
+                        JSON.stringify({
+                          timerStarted: true,
+                          elapsedTime: actualTime,
+                          maxTime: estimatedTime,
+                          timerCompleted: false,
+                        }),
+                      );
 
-                    // Calculate estimated and actual time
-                    const estimatedTime =
-                      bookingForNav.TotalEstimatedDurationMinutes
-                        ? bookingForNav.TotalEstimatedDurationMinutes * 60
-                        : 0;
-
-                    // Calculate actual time (service just started, so it's 0 or from API if already started)
-                    let actualTime = 0;
-                    const serviceStartTime = bookingForNav.ServiceStartedAt
-                      ? new Date(bookingForNav.ServiceStartedAt)
-                      : new Date();
-                    actualTime = Math.floor(
-                      (new Date() - serviceStartTime) / 1000,
-                    );
-
-                    // Update booking with ServiceStartedAt if not already set
-                    const updatedBooking = {
-                      ...bookingForNav,
-                      ServiceStartedAt:
-                        bookingForNav.ServiceStartedAt ||
-                        new Date().toISOString(),
-                    };
-
-                    // Store timer state
-                    await AsyncStorage.setItem(
-                      `serviceStarted_${bookingForNav.BookingID}`,
-                      "true",
-                    );
-
-                    await AsyncStorage.setItem(
-                      `timerState_${bookingForNav.BookingID}`,
-                      JSON.stringify({
-                        timerStarted: true,
-                        elapsedTime: actualTime,
-                        maxTime: estimatedTime,
-                        timerCompleted: false,
-                      }),
-                    );
-
-                    // Car Pick Up is garage flow only → always go to CustomerToGarageMap
-                    navigation.navigate("CustomerToGarageMap", {
-                      booking: updatedBooking,
-                      estimatedTime: estimatedTime,
-                      actualTime: actualTime,
-                      carRegistrationNumber:
-                        carRegistrationNumber?.trim() || "",
-                    });
-                  }}
-                >
-                  <CustomText
-                    style={[globalStyles.f16Bold, globalStyles.textWhite]}
+                      // Car Pick Up is garage flow only → always go to CustomerToGarageMap
+                      navigation.navigate("CustomerToGarageMap", {
+                        booking: updatedBooking,
+                        estimatedTime: estimatedTime,
+                        actualTime: actualTime,
+                        carRegistrationNumber:
+                          carRegistrationNumber?.trim() || "",
+                      });
+                    }}
                   >
-                    Submit
-                  </CustomText>
-                </TouchableOpacity>
-              </>
-
-              <View>
-                <TouchableOpacity
-                  style={[
-                    globalStyles.flex1,
-                    globalStyles.bgBlack,
-                    globalStyles.borderRadiuslarge,
-                    globalStyles.p4,
-                    globalStyles.justifycenter,
-                    globalStyles.alineItemscenter,
-                    globalStyles.mt4,
-                  ]}
-                  onPress={() => {
-                    Vibration.vibrate([0, 200, 100, 300]);
-
-                    const phoneNumber = 7075243939;
-                    if (phoneNumber) {
-                      Linking.openURL(`tel:${phoneNumber}`);
-                    } else {
-                      Alert.alert("Error", "Phone number not available");
-                    }
-                  }}
-                >
-                  <View
-                    style={[
-                      globalStyles.flexrow,
-                      globalStyles.alineItemscenter,
-                    ]}
-                  >
-                    <Image source={helpcall} />
                     <CustomText
-                      style={[globalStyles.textWhite, globalStyles.ml2,globalStyles.f12Bold]}
+                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
                     >
-                      Call Help Line
+                      Submit
                     </CustomText>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </>
+
+                <View>
+                  <TouchableOpacity
+                    style={[
+                      globalStyles.flex1,
+                      globalStyles.bgBlack,
+                      globalStyles.borderRadiuslarge,
+                      globalStyles.p4,
+                      globalStyles.justifycenter,
+                      globalStyles.alineItemscenter,
+                      globalStyles.mt4,
+                    ]}
+                    onPress={() => {
+                      Vibration.vibrate([0, 200, 100, 300]);
+
+                      const phoneNumber = 7075243939;
+                      if (phoneNumber) {
+                        Linking.openURL(`tel:${phoneNumber}`);
+                      } else {
+                        Alert.alert("Error", "Phone number not available");
+                      }
+                    }}
+                  >
+                    <View
+                      style={[
+                        globalStyles.flexrow,
+                        globalStyles.alineItemscenter,
+                      ]}
+                    >
+                      <Image source={helpcall} />
+                      <CustomText
+                        style={[globalStyles.textWhite, globalStyles.ml2, globalStyles.f12Bold]}
+                      >
+                        Call Help Line
+                      </CustomText>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
           {driverStatus === "car_picked" && (
             <TouchableOpacity

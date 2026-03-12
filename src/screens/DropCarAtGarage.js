@@ -67,8 +67,8 @@ export default function DropCarAtGarage() {
   const carPickupDeliveryId = Number(
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
-  const [bookingParam, setBookingParam] = useState( booking);
-  console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle)
+  const [bookingParam, setBookingParam] = useState(booking);
+  console.log("bookingParam===============00000000000000", bookingParam?.Leads?.Vehicle)
   // console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
   useEffect(() => {
     let mounted = true;
@@ -93,7 +93,7 @@ export default function DropCarAtGarage() {
   }, [booking?.BookingID, booking?.TechID]);
 
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
-  const GarageName = bookingParam?.PickupDelivery[0]?.DropAt?.PersonName ;
+  const GarageName = bookingParam?.PickupDelivery[0]?.DropAt?.PersonName;
   // const phoneNumber = bookingParam?.PhoneNumber || bookingParam?.Leads?.PhoneNumber || "";
   const pdParam = bookingParam?.PickupDelivery;
   const currentLegParam = Array.isArray(pdParam) ? pdParam[0] : pdParam;
@@ -101,6 +101,23 @@ export default function DropCarAtGarage() {
   const DropAtphoneNumber = currentLegParam?.DropAt?.PersonNumber || bookingParam?.PickupDelivery?.DropAt?.PersonNumber || "";
   console.log("DropAtphoneNumber===-----=====-----===:", currentLegParam);
   const profileImage = bookingParam?.ProfileImage || null;
+
+  const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
@@ -248,12 +265,12 @@ export default function DropCarAtGarage() {
         const statusPayload = {
           bookingID: Number(booking?.BookingID || 0),
           serviceType: booking?.ServiceType || "ServiceAtGarage",
-          routeType: booking?.PickupDelivery[0].DropAt.RouteType ,
+          routeType: booking?.PickupDelivery[0].DropAt.RouteType,
           action: "completed",
           updatedBy: Number(booking?.TechID || 3),
           role: "Technician",
         };
-        console.log("UpdateBookingStatus Payload (completed):",statusPayload);
+        console.log("UpdateBookingStatus Payload (completed):", statusPayload);
         await axios.post(
           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
           statusPayload,
@@ -287,7 +304,16 @@ export default function DropCarAtGarage() {
     );
   }
 
+  const routeType =
+    bookingParam?.PickupDelivery?.[0]?.DropAt?.RouteType || "";
+
+  const dropHeading =
+    routeType === "DealerToCustomer"
+      ? "Drop Car at Home"
+      : "Drop Car at Garage";
+
   return (
+
     <KeyboardAvoidingView
       style={[globalStyles.flex1, globalStyles.bgcontainer]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -367,11 +393,32 @@ export default function DropCarAtGarage() {
               <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {(getBookingDisplayData(bookingParam).timeSlot || "").split(",").map((slot, index) => (
-                    <CustomText key={index} style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                      {slot.trim()}
+                  {bookingParam?.ServiceType === "ServiceAtGarage" ? (
+                    <CustomText
+                      style={[
+                        globalStyles.f10Regular,
+                        globalStyles.black,
+                        globalStyles.ml1,
+                      ]}
+                    >
+                      {assignTime}
                     </CustomText>
-                  ))}
+                  ) : (
+                    (getBookingDisplayData(bookingParam).timeSlot || "")
+                      .split(",")
+                      .map((slot, index) => (
+                        <CustomText
+                          key={index}
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.black,
+                            globalStyles.ml1,
+                          ]}
+                        >
+                          {slot.trim()}
+                        </CustomText>
+                      ))
+                  )}
                 </View>
               </View>
             </View>
@@ -390,7 +437,7 @@ export default function DropCarAtGarage() {
             ]}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-              Drop Car at Garage
+             {dropHeading}
             </CustomText>
             <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}>
               Upload images (at least one required), enter Delivery OTP and tap Complete
@@ -492,7 +539,7 @@ export default function DropCarAtGarage() {
               ) : (
                 <View style={[styles.otpButton, { marginLeft: 10, backgroundColor: color.neutral[300], opacity: 0.6 }]}>
                   <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                    Resend in {otpCooldown}s
+                    Resend in {otpCooldown}
                   </CustomText>
                 </View>
               )}

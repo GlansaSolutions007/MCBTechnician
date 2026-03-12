@@ -66,6 +66,8 @@ export default function Bookings() {
         },
       );
 
+      console.log('assigned bookingsssss', response?.data);
+
       const bookingsData = Array.isArray(response?.data)
         ? response.data
         : response?.data?.data || [];
@@ -520,6 +522,19 @@ export default function Bookings() {
             {filteredBookings.map((item, index) => {
               const driverStatus = getDriverStatus(item);
               const completed = isBookingCompleted(item);
+              const carPicked = driverStatus === "car_picked" || driverStatus === "in_transit" || driverStatus === "drop_reached";
+              const assignDateTime = item?.PickupDelivery?.[0]?.AssignDate;
+
+              const assignDate = assignDateTime
+                ? new Date(assignDateTime).toLocaleDateString("en-IN")
+                : "N/A";
+
+              const assignTime = assignDateTime
+                ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+                : "N/A";
               return (
                 <Pressable
                   onPress={() => openBooking(item)}
@@ -560,7 +575,7 @@ export default function Bookings() {
                         style={styles.avatar}
                       />
                       <View style={[globalStyles.ml3, { flex: 1 }]}>
-                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flexWrap: "wrap", gap: 8 , alignItems:'flex-end'}]}>
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flexWrap: "wrap", gap: 8, alignItems: 'flex-end' }]}>
                           <CustomText
                             style={[globalStyles.f16Bold, globalStyles.black]}
                           >
@@ -569,7 +584,7 @@ export default function Bookings() {
                           {completed && (
                             <View style={styles.completedBadge}>
                               <Ionicons name="checkmark-circle" size={14} color={color.white} />
-                              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite, globalStyles.ml1,{marginBottom:2}]}>
+                              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite, globalStyles.ml1, { marginBottom: 2 }]}>
                                 Completed
                               </CustomText>
                             </View>
@@ -588,8 +603,8 @@ export default function Bookings() {
                           >
                             {item.ServiceType
                               ? item.ServiceType.replace(/([A-Z])/g, " $1")
-                              .replace(/\bAt\b/g, "at")
-                              .trim()
+                                .replace(/\bAt\b/g, "at")
+                                .trim()
                               : "N/A"}
                           </CustomText>
 
@@ -651,15 +666,22 @@ export default function Bookings() {
                                 color={color.primary}
                                 style={styles.cardMetaIcon}
                               />
-                              <CustomText
-                                style={[globalStyles.f10Regular, globalStyles.black]}
-                              >
-                                {(getBookingDisplayData(item).timeSlot || "")
-                                  .split(",")
-                                  .map((s) => s.trim())
-                                  .filter(Boolean)
-                                  .join("\n") || "N/A"}
+                              <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                                {item.ServiceType === "ServiceAtGarage" ? (
+                                  <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                    {assignTime}
+                                  </CustomText>
+                                ) : (
+                                  <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                    {(item.TimeSlot || "")
+                                      .split(",")
+                                      .map((s) => s.trim())
+                                      .filter(Boolean)
+                                      .join("\n") || "N/A"}
+                                  </CustomText>
+                                )}
                               </CustomText>
+
                             </View>
                           </View>
 
@@ -740,6 +762,7 @@ export default function Bookings() {
                           </View>
                           <View style={[globalStyles.flexrow, globalStyles.justifyend, globalStyles.alineItemscenter]}>
                             <TouchableOpacity
+                              disabled={!carPicked}
                               onPress={() => {
                                 Vibration.vibrate([0, 200, 100, 300]);
 
@@ -754,7 +777,10 @@ export default function Bookings() {
                                 styles.callbutton,
                                 globalStyles.flexrow,
                                 globalStyles.justifysb,
-                                { backgroundColor: color.primary },
+                                {
+                                  backgroundColor: carPicked ? color.primary : color.neutral[300],
+                                  opacity: carPicked ? 1 : 0.6,
+                                },
                               ]}
                             >
                               <Ionicons
@@ -884,7 +910,7 @@ export default function Bookings() {
           </Animated.View>
         )}
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 }
 
