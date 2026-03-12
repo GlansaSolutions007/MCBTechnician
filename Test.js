@@ -702,7 +702,7 @@ export default function ServiceStart() {
                   <CustomText
                     style={[globalStyles.textWhite, globalStyles.ml2]}
                   >
-                    Call help line
+                   Call Help Line
                   </CustomText>
                 </View>
               </TouchableOpacity>

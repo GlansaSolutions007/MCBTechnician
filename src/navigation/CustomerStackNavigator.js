@@ -53,7 +53,7 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="ServiceAtGarageMap"
         component={ServiceAtGarageMap}
-        options={{ title: "Car pickup map" }}
+        options={{ title: "Car PickUp Map" }}
       />
       <Stack.Screen
         name="reviews"
@@ -105,7 +105,7 @@ export default function CustomerStackNavigator() {
               onPress={() => navigation.navigate("Booking")}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}} />
             </TouchableOpacity>
           ),
         })}
@@ -114,13 +114,13 @@ export default function CustomerStackNavigator() {
         name="DropCarAtGarage"
         component={DropCarAtGarage}
         options={({ navigation }) => ({
-          title: "Car drop",
+          title: "Car Drop",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.navigate("Booking")}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}} />
             </TouchableOpacity>
           ),
         })}
@@ -150,7 +150,7 @@ export default function CustomerStackNavigator() {
               }}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}}/>
             </TouchableOpacity>
           ),
         })}
@@ -159,7 +159,7 @@ export default function CustomerStackNavigator() {
         name="Booking"
         component={Bookings}
         options={({ navigation }) => ({
-          title: "Booking",
+          title: "Bookings",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => {
@@ -175,7 +175,7 @@ export default function CustomerStackNavigator() {
               }}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}}/>
             </TouchableOpacity>
           ),
         })}

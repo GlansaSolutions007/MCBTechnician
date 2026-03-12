@@ -519,6 +519,7 @@ export default function Bookings() {
           >
             {filteredBookings.map((item, index) => {
               const driverStatus = getDriverStatus(item);
+              const completed = isBookingCompleted(item);
               return (
                 <Pressable
                   onPress={() => openBooking(item)}
@@ -559,11 +560,21 @@ export default function Bookings() {
                         style={styles.avatar}
                       />
                       <View style={[globalStyles.ml3, { flex: 1 }]}>
-                        <CustomText
-                          style={[globalStyles.f16Bold, globalStyles.black]}
-                        >
-                          {item.CustomerName || "N/A"}
-                        </CustomText>
+                        <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flexWrap: "wrap", gap: 8 , alignItems:'flex-end'}]}>
+                          <CustomText
+                            style={[globalStyles.f16Bold, globalStyles.black]}
+                          >
+                            {item.CustomerName || "N/A"}
+                          </CustomText>
+                          {completed && (
+                            <View style={styles.completedBadge}>
+                              <Ionicons name="checkmark-circle" size={14} color={color.white} />
+                              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite, globalStyles.ml1,{marginBottom:2}]}>
+                                Completed
+                              </CustomText>
+                            </View>
+                          )}
+                        </View>
                         <View
                           style={[
                             globalStyles.flexrow,
@@ -576,75 +587,83 @@ export default function Bookings() {
                             style={[globalStyles.f12Bold, globalStyles.secondary]}
                           >
                             {item.ServiceType
-                              ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                              ? item.ServiceType.replace(/([A-Z])/g, " $1")
+                              .replace(/\bAt\b/g, "at")
+                              .trim()
                               : "N/A"}
                           </CustomText>
 
+                          {/* {completed && (
+                            <View style={styles.completedBadge}>
+                              <Ionicons name="checkmark-circle" size={16} color={color.white} />
+                              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml1]}>
+                                Completed
+                              </CustomText>
+                            </View>
+                          )} */}
+                          <View >
+                            <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
+                              <MaterialCommunityIcons
+                                name="card-account-details-outline"
+                                size={16}
+                                color={color.primary}
+                                style={styles.cardMetaIcon}
+                              />
+                              <CustomText
+                                style={[globalStyles.f10Regular, globalStyles.black]}
+                                numberOfLines={1}
+                              >
+                                {getBookingDisplayData(item).bookingTrackID}
+                              </CustomText>
+                            </View>
+                            <View style={styles.cardMetaItem}>
+                              <FontAwesome5
+                                name="car"
+                                size={14}
+                                color={color.primary}
+                                style={styles.cardMetaIcon}
+                              />
+                              <CustomText
+                                style={[globalStyles.f10Regular, globalStyles.black]}
+                                numberOfLines={1}
+                              >
+                                {getBookingDisplayData(item).vehicleDisplay}
+                              </CustomText>
+                            </View>
+                            <View style={styles.cardMetaItem}>
+                              <MaterialCommunityIcons
+                                name="calendar"
+                                size={16}
+                                color={color.primary}
+                                style={styles.cardMetaIcon}
+                              />
+                              <CustomText
+                                style={[globalStyles.f10Regular, globalStyles.black]}
+                                numberOfLines={1}
+                              >
+                                {getBookingDisplayData(item).bookingDate}
+                              </CustomText>
+                            </View>
+                            <View style={styles.cardMetaItem}>
+                              <Ionicons
+                                name="time-outline"
+                                size={16}
+                                color={color.primary}
+                                style={styles.cardMetaIcon}
+                              />
+                              <CustomText
+                                style={[globalStyles.f10Regular, globalStyles.black]}
+                              >
+                                {(getBookingDisplayData(item).timeSlot || "")
+                                  .split(",")
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                                  .join("\n") || "N/A"}
+                              </CustomText>
+                            </View>
+                          </View>
 
-                        </View>
-                        <View >
-                          <View style={[styles.cardMetaItem, { marginTop: 0 }]}>
-                            <MaterialCommunityIcons
-                              name="card-account-details-outline"
-                              size={16}
-                              color={color.primary}
-                              style={styles.cardMetaIcon}
-                            />
-                            <CustomText
-                              style={[globalStyles.f10Regular, globalStyles.black]}
-                              numberOfLines={1}
-                            >
-                              {getBookingDisplayData(item).bookingTrackID}
-                            </CustomText>
-                          </View>
-                          <View style={styles.cardMetaItem}>
-                            <FontAwesome5
-                              name="car"
-                              size={14}
-                              color={color.primary}
-                              style={styles.cardMetaIcon}
-                            />
-                            <CustomText
-                              style={[globalStyles.f10Regular, globalStyles.black]}
-                              numberOfLines={1}
-                            >
-                              {getBookingDisplayData(item).vehicleDisplay}
-                            </CustomText>
-                          </View>
-                          <View style={styles.cardMetaItem}>
-                            <MaterialCommunityIcons
-                              name="calendar"
-                              size={16}
-                              color={color.primary}
-                              style={styles.cardMetaIcon}
-                            />
-                            <CustomText
-                              style={[globalStyles.f10Regular, globalStyles.black]}
-                              numberOfLines={1}
-                            >
-                              {getBookingDisplayData(item).bookingDate}
-                            </CustomText>
-                          </View>
-                          <View style={styles.cardMetaItem}>
-                            <Ionicons
-                              name="time-outline"
-                              size={16}
-                              color={color.primary}
-                              style={styles.cardMetaIcon}
-                            />
-                            <CustomText
-                              style={[globalStyles.f10Regular, globalStyles.black]}
-                            >
-                              {(getBookingDisplayData(item).timeSlot || "")
-                                .split(",")
-                                .map((s) => s.trim())
-                                .filter(Boolean)
-                                .join("\n") || "N/A"}
-                            </CustomText>
-                          </View>
-                        </View>
-
-                        {/* <CustomText
+                          {/* <CustomText
                             style={[globalStyles.f12Bold, globalStyles.textblack,
                             globalStyles.mt1,
                           ]}
@@ -655,13 +674,13 @@ export default function Bookings() {
                           </CustomText>
                         </CustomText> */}
 
+                        </View>
                       </View>
                     </View>
 
-
                     {/* From / Address / To / Drop card (per sketch) */}
                     {
-                      item.ServiceType === "ServiceAtGarage" && (
+                      item.ServiceType === "ServiceAtGarage" && !completed && (
                         <View style={styles.fromToCard}>
                           <TouchableOpacity
                             onPress={() => {
@@ -684,10 +703,10 @@ export default function Bookings() {
 
                             <CustomText
                               style={[
-                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2,{marginBottom:2}
+                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2, { marginBottom: 2 }
                               ]}
                             >
-                              Car pickup call
+                              Pickup
                             </CustomText>
 
                             <Ionicons
@@ -751,10 +770,10 @@ export default function Bookings() {
                               />
                               <CustomText
                                 style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2, {marginBottom:2}
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2, { marginBottom: 2 }
                                 ]}
                               >
-                                Car Drop call
+                                Drop
                               </CustomText>
 
 
@@ -769,7 +788,7 @@ export default function Bookings() {
 
 
                     {
-                      item.ServiceType === "ServiceAtHome" && (
+                      item.ServiceType === "ServiceAtHome" && !completed && (
                         <View style={styles.fromToCard}>
 
                           <View style={styles.addressLine}>
@@ -812,10 +831,10 @@ export default function Bookings() {
                               />
                               <CustomText
                                 style={[
-                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2,{marginBottom:2}
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.mr2, { marginBottom: 2 }
                                 ]}
                               >
-                                Call customer
+                                Call Customer
                               </CustomText>
 
 
@@ -968,7 +987,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 50,
-    width: "58%",
+    width: "38%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
@@ -1085,8 +1104,16 @@ const styles = StyleSheet.create({
   toRow: {
     marginTop: 14,
   },
-  chipCompleted: { backgroundColor: "#4CAF50" },
-  chipPending: { backgroundColor: color.primary },
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: color.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
   avatar: {
     width: 100,
     height: 120,

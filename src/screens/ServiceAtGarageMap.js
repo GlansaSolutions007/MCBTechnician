@@ -196,7 +196,7 @@ export default function ServiceAtGarageMap() {
           });
         }
       }
-    } catch (err) {}
+    } catch (err) { }
     setRefreshing(false);
   };
 
@@ -226,12 +226,12 @@ export default function ServiceAtGarageMap() {
               Longitude: loc.coords.longitude,
             })
         );
-      } catch (e) {}
+      } catch (e) { }
     })();
     return () => {
       try {
         sub?.remove?.();
-      } catch (_) {}
+      } catch (_) { }
     };
   }, []);
 
@@ -279,7 +279,7 @@ export default function ServiceAtGarageMap() {
         url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}&travelmode=driving`;
       }
       if (url && (await Linking.canOpenURL(url))) await Linking.openURL(url);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const handleStartRide = async () => {
@@ -303,7 +303,7 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -324,8 +324,8 @@ export default function ServiceAtGarageMap() {
       ...booking,
       PickupDelivery: Array.isArray(currentPD)
         ? currentPD.map((leg, i) =>
-            i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg
-          )
+          i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg
+        )
         : { ...currentPD, DriverStatus: "pickup_started" },
     };
     setUpdatedBooking(next);
@@ -337,8 +337,8 @@ export default function ServiceAtGarageMap() {
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
-    const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber ;
-    console.log("phoneNumber===========-----------",phoneNumber)
+    const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber;
+    console.log("phoneNumber===========-----------", phoneNumber)
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -356,7 +356,7 @@ export default function ServiceAtGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_reached",
         updatedBy: Number(booking?.TechID || 3),
         role: "Technician",
@@ -391,8 +391,8 @@ export default function ServiceAtGarageMap() {
       ...booking,
       PickupDelivery: Array.isArray(currentPD)
         ? currentPD.map((leg, i) =>
-            i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg
-          )
+          i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg
+        )
         : { ...currentPD, DriverStatus: "pickup_reached" },
     };
     setUpdatedBooking(next);
@@ -400,7 +400,7 @@ export default function ServiceAtGarageMap() {
     onRefresh();
     try {
       await stopBackgroundTracking();
-    } catch (_) {}
+    } catch (_) { }
     navigation.navigate("CarPickUp", { booking: next });
   };
 
@@ -440,11 +440,11 @@ export default function ServiceAtGarageMap() {
 
   const initialRegion = mapDestination
     ? {
-        latitude: mapDestination.Latitude,
-        longitude: mapDestination.Longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      }
+      latitude: mapDestination.Latitude,
+      longitude: mapDestination.Longitude,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    }
     : { latitude: 0, longitude: 0, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
   return (
@@ -500,53 +500,58 @@ export default function ServiceAtGarageMap() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           showsVerticalScrollIndicator={false}
         >
-        {/* First: only Let's Start. On click → update to StartJourney, then show only Navigate + Reached */}
-        {statusForButtons === "assigned" && (
-          <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
-            <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
-          </TouchableOpacity>
-        )}
-
-        {/* StartJourney / ServiceStarted: only Navigate and Reached */}
-        {statusForButtons === "pickup_started" && (
-          <View style={styles.startreach}>
-            <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
-              <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Navigate</CustomText>
+          {/* First: only Let's Start. On click → update to StartJourney, then show only Navigate + Reached */}
+          {statusForButtons === "assigned" && (
+            <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
+              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.reachedButton, { flex: 1 }]} onPress={handleReached}>
-              <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
+          )}
+
+          {/* StartJourney / ServiceStarted: only Navigate and Reached */}
+          {statusForButtons === "pickup_started" && (
+            <View style={styles.startreach}>
+              <TouchableOpacity style={[styles.navButton, { flex: 1 }]} onPress={handleNavigate}>
+                <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Navigate</CustomText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.reachedButton, { flex: 1 }]} onPress={handleReached}>
+                <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Reached: hide Navigate/Reached, show Pickup Car (or Drop Car at Garage if pickup done) */}
+          {statusForButtons === "pickup_reached" && !carPickupDone && (
+            <TouchableOpacity
+              style={[styles.startButton, { marginTop: 10 }]}
+              onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
+            >
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
+              <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
             </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Reached: hide Navigate/Reached, show Pickup Car (or Drop Car at Garage if pickup done) */}
-        {statusForButtons === "pickup_reached" && !carPickupDone && (
-          <TouchableOpacity
-            style={[styles.startButton, { marginTop: 10 }]}
-            onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
-          >
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
-            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
-          </TouchableOpacity>
-        )}
-        {statusForButtons === "pickup_reached" && carPickupDone && (
-        <TouchableOpacity
-            style={[styles.startButton, { marginTop: 10 }]}
-            onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
-          >
-            <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
-            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
-          </TouchableOpacity>
-        )}
-
-        {statusForButtons === "completed" && (
-          <View style={styles.completedHint}>
-            <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>This booking is completed.</CustomText>
-          </View>
-        )}
+          )}
+          {statusForButtons === "pickup_reached" && carPickupDone && (
+            <TouchableOpacity
+              style={[styles.startButton, { marginTop: 10 }]}
+              onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
+            >
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
+              <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+          )}
+          {statusForButtons === "completed" && (
+            <View style={styles.completedCard}>
+              <Ionicons name="checkmark-circle" size={26} color={color.primary} />
+              <CustomText style={styles.completedTitle}>
+                Booking Completed
+              </CustomText>
+              <CustomText style={styles.completedSubText}>
+                This service has been successfully completed.
+              </CustomText>
+            </View>
+          )}
         </ScrollView>
       </View>
     </View>
@@ -622,4 +627,33 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
   },
+
+  completedCard: {
+  backgroundColor: "#ecfdf8",
+  borderRadius: 14,
+  paddingVertical: 18,
+  paddingHorizontal: 16,
+  alignItems: "center",
+  justifyContent: "center",
+  marginTop: 12,
+  borderWidth: 1,
+  borderColor: "#bbf7ea",
+  elevation: 3,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+},
+
+completedTitle: {
+  color: color.primary,
+  marginTop: 2,
+  ...globalStyles.f16Bold,
+},
+
+completedSubText: {
+  color: color.primary,
+  marginTop: 2,
+    ...globalStyles.f12Medium,
+},
 });

@@ -702,7 +702,7 @@ export default function Dashboard() {
               <CustomText
                 style={[globalStyles.f14Bold, globalStyles.alineSelfend]}
               >
-                Todays Service Bookings
+                Today's Service Bookings
               </CustomText>
 
               <CustomText
@@ -746,7 +746,7 @@ export default function Dashboard() {
                 style={{ marginRight: 8 }}
               />
               <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
-                Active Services
+                Active Service
               </CustomText>
             </View>
             {(activeServices || []).length > 0 ? (

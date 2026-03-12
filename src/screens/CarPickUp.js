@@ -1208,7 +1208,7 @@ export default function CarPickUp() {
                     <CustomText
                       style={[globalStyles.textWhite, globalStyles.ml2,globalStyles.f12Bold]}
                     >
-                      Call help line
+                      Call Help Line
                     </CustomText>
                   </View>
                 </TouchableOpacity>

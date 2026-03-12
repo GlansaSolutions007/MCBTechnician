@@ -150,10 +150,10 @@ function Reportlist() {
   // Show only completed bookings (status completed and AssignDate in the past/today)
   const pastBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        const assignDate = getAssignDate(booking);
-        if (!isDateCompleted(assignDate)) return false;
-        return isBookingCompleted(booking);
-      })
+      const assignDate = getAssignDate(booking);
+      if (!isDateCompleted(assignDate)) return false;
+      return isBookingCompleted(booking);
+    })
     : [];
 
   const renderBookingCard = ({ item, index }) => {
@@ -196,7 +196,10 @@ function Reportlist() {
               />
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
                 {item.ServiceType
-                  ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
+                  ? item.ServiceType
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/\bAt\b/g, "at")
+                  .trim()
                   : "N/A"}
               </CustomText>
             </View>
@@ -213,8 +216,9 @@ function Reportlist() {
                 },
               ]}
             >
-              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite]}>
-                {driverStatus || "No Status"}
+              <CustomText style={[globalStyles.f10Bold, globalStyles.textWhite,{marginBottom:2}]}>
+                {(driverStatus || "No Status").charAt(0).toUpperCase() +
+                  (driverStatus || "No Status").slice(1)}
               </CustomText>
             </View>
           </View>
@@ -242,11 +246,13 @@ function Reportlist() {
               <CustomText
                 style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}
               >
-                RouteType:{" "}
+                Route Type:{" "}
                 <CustomText style={globalStyles.black}>
-                  {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
+                  {(item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
                     item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
-                    "N/A"}
+                    "N/A")?.replace(/([A-Z])/g, " $1")
+                    .replace(/\bTo\b/g, "to")
+                    .trim()}
                 </CustomText>
               </CustomText>
               <CustomText

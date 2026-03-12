@@ -390,9 +390,9 @@ export default function DropCarAtGarage() {
             ]}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-              Drop car at garage
+              Drop Car at Garage
             </CustomText>
-            <CustomText style={[globalStyles.f10Light, globalStyles.neutral500, globalStyles.mt1]}>
+            <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}>
               Upload images (at least one required), enter Delivery OTP and tap Complete
             </CustomText>
 
@@ -457,7 +457,7 @@ export default function DropCarAtGarage() {
               autoCapitalize="characters"
             />
 
-            <CustomText style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.neutral500]}>
+            <CustomText style={[globalStyles.f16Light, globalStyles.mt3, globalStyles.black, globalStyles.mb1]}>
               Delivery OTP
             </CustomText>
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
@@ -544,7 +544,7 @@ export default function DropCarAtGarage() {
             >
               <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
                 <Image source={helpcall} />
-                <CustomText style={[globalStyles.textWhite, globalStyles.ml2]}>Call help line</CustomText>
+                <CustomText style={[globalStyles.textWhite, globalStyles.ml2]}>Call Help Line</CustomText>
               </View>
             </TouchableOpacity>
           </View>
