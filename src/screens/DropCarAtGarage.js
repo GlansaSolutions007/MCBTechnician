@@ -195,8 +195,7 @@ export default function DropCarAtGarage() {
       );
 
       const data = response?.data;
-      console.log("Verify OTP Data:", data);
-
+      
       // ✅ Correct validation
       if (!data?.success) {
         setError(data?.message || "Invalid OTP. Please try again.");
