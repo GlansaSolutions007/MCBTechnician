@@ -18,6 +18,7 @@ import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import { API_BASE_URL, GOOGLE_MAPS_APIKEY } from "@env";
 import { stopBackgroundTracking } from "../utils/locationTracker";
+import { StatusBar } from "expo-status-bar";
 
 function decodePolyline(t) {
   const points = [];
@@ -449,6 +450,7 @@ export default function ServiceAtGarageMap() {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View style={styles.mapWrap}>
         {(mapDestination || isGeocoding) ? (
           isGeocoding ? (
@@ -629,31 +631,31 @@ const styles = StyleSheet.create({
   },
 
   completedCard: {
-  backgroundColor: "#ecfdf8",
-  borderRadius: 14,
-  paddingVertical: 18,
-  paddingHorizontal: 16,
-  alignItems: "center",
-  justifyContent: "center",
-  marginTop: 12,
-  borderWidth: 1,
-  borderColor: "#bbf7ea",
-  elevation: 3,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-},
+    backgroundColor: "#ecfdf8",
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#bbf7ea",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
 
-completedTitle: {
-  color: color.primary,
-  marginTop: 2,
-  ...globalStyles.f16Bold,
-},
+  completedTitle: {
+    color: color.primary,
+    marginTop: 2,
+    ...globalStyles.f16Bold,
+  },
 
-completedSubText: {
-  color: color.primary,
-  marginTop: 2,
+  completedSubText: {
+    color: color.primary,
+    marginTop: 2,
     ...globalStyles.f12Medium,
-},
+  },
 });

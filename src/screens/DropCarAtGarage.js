@@ -193,17 +193,24 @@ export default function DropCarAtGarage() {
         },
         { headers: { "Content-Type": "application/json" } }
       );
-      if (response?.data?.status === false || response?.data?.isValid === false) {
-        setError(response?.data?.message || "Invalid OTP.");
+
+      const data = response?.data;
+      console.log("Verify OTP Data:", data);
+
+      // ✅ Correct validation
+      if (!data?.success) {
+        setError(data?.message || "Invalid OTP. Please try again.");
         return false;
       }
+
       return true;
     } catch (err) {
-      setError(err?.response?.data?.message || "Invalid OTP.");
+      console.log("Verify OTP Error:", err?.response?.data || err);
+      setError(err?.response?.data?.message || "OTP verification failed.");
       return false;
     }
   };
-
+  
   const uploadDeliveryImages = async () => {
     const regNo = carRegistrationNumber?.trim() || "";
     for (let i = 0; i < images.length; i++) {
@@ -437,7 +444,7 @@ export default function DropCarAtGarage() {
             ]}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-             {dropHeading}
+              {dropHeading}
             </CustomText>
             <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}>
               Upload images (at least one required), enter Delivery OTP and tap Complete

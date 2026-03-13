@@ -35,6 +35,7 @@ import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
 import BookingPickDropRow from "../components/BookingPickDropRow";
+import { StatusBar } from "expo-status-bar";
 
 export default function CarPickUp() {
   const navigation = useNavigation();
@@ -235,13 +236,12 @@ export default function CarPickUp() {
         await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
       } else {
         setModalMessage(
-          response?.data?.message || "Failed to send OTP. Please try again.",
+           "Failed to send OTP. Please try again.",
         );
         setModalVisible(true);
       }
     } catch (error) {
       setModalMessage(
-        error?.response?.data?.message ||
         "Failed to send OTP. Please try again.",
       );
       setModalVisible(true);
@@ -520,7 +520,7 @@ export default function CarPickUp() {
           setModalVisible(true);
         } else {
           setModalMessage(
-            response?.data?.message || "Action failed. Please try again.",
+            "Action failed. Please try again.",
           );
           setModalVisible(true);
         }
@@ -546,6 +546,7 @@ export default function CarPickUp() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
     >
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <ScrollView
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
@@ -702,7 +703,7 @@ export default function CarPickUp() {
                         globalStyles.ml1,
                       ]}
                     >
-                       {assignTime}
+                      {assignTime}
                     </CustomText>
                   ) : (
                     (getBookingDisplayData(bookingParam).timeSlot || "")
@@ -1023,7 +1024,6 @@ export default function CarPickUp() {
                         ) {
                           setOtpValid(false);
                           setModalMessage(
-                            verifyRes?.data?.message ||
                             "Invalid OTP. Please try again.",
                           );
                           setModalVisible(true);
@@ -1033,7 +1033,6 @@ export default function CarPickUp() {
                       } catch (verifyErr) {
                         setOtpValid(false);
                         setModalMessage(
-                          verifyErr?.response?.data?.message ||
                           "Invalid OTP. Please try again.",
                         );
                         setModalVisible(true);
@@ -1087,9 +1086,7 @@ export default function CarPickUp() {
                       } catch (uploadErr) {
                         setIsUploading(false);
                         setModalMessage(
-                          uploadErr?.response?.data?.message ||
-                          uploadErr?.message ||
-                          "Image upload failed. Please try again.",
+                          "Invalid OTP or image upload failed. Please verify the OTP and try again.",
                         );
                         setModalVisible(true);
                         return; // do not clear images so user can retry
