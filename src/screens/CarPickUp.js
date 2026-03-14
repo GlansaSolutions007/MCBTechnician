@@ -236,7 +236,7 @@ export default function CarPickUp() {
         await AsyncStorage.setItem(`otpSent_${booking.BookingID}`, "true");
       } else {
         setModalMessage(
-           "Failed to send OTP. Please try again.",
+          "Failed to send OTP. Please try again.",
         );
         setModalVisible(true);
       }
@@ -724,6 +724,14 @@ export default function CarPickUp() {
                 </View>
               </View>
             </View>
+            <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+              <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                  {bookingParam?.FullAddress || "N/A"}
+                </CustomText>
+              </View>
+            </View>
           </View>
 
           {booking?.PickupDelivery?.[0]?.PickFrom?.PickupOTPVerified ===
@@ -889,7 +897,7 @@ export default function CarPickUp() {
                     style={[
                       globalStyles.f16Light,
                       globalStyles.mt3,
-                      globalStyles.black, { marginBottom: 2 }
+                      globalStyles.neutral500, { marginBottom: 2 }
                     ]}
                   >
                     Enter OTP

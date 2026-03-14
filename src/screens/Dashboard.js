@@ -1159,7 +1159,7 @@ export default function Dashboard() {
                                     </TouchableOpacity>
                                   );
                                 })()}
-                          </View>
+                              </View>
                             </View>
                           </View>
                         </Pressable>
@@ -1368,8 +1368,7 @@ export default function Dashboard() {
                                   style={styles.addressValue}
                                   numberOfLines={2}
                                 >
-                                  {item.PickupDelivery?.[0]?.PickFrom
-                                    ?.Address || "N/A"}
+                                  {item.PickupDelivery?.[0]?.PickFrom?.Address || item.Leads?.City || "N/A"}
                                 </CustomText>
                               </View>
                               <View

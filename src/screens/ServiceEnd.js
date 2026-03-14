@@ -37,9 +37,8 @@ const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${
-    secs > 0 ? ` ${secs} sec` : ""
-  }`;
+  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${secs > 0 ? ` ${secs} sec` : ""
+    }`;
 };
 
 export default function ServiceEnd() {
@@ -108,6 +107,10 @@ export default function ServiceEnd() {
     booking.Leads?.Vehicle?.RegistrationNumber ||
     carRegistrationNumber ||
     "";
+  const address = booking.PickupDelivery[0]?.PickFrom?.Address ||
+    booking.PickupDelivery[0]?.DropAt?.Address ||
+    booking.FullAddress ||
+    "N/A";
   const brandName =
     booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
   const modelName =
@@ -115,7 +118,7 @@ export default function ServiceEnd() {
   const fuelTypeName =
     booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
 
-    const assignDateTime = booking?.PickupDelivery?.[0]?.AssignDate;
+  const assignDateTime = booking?.PickupDelivery?.[0]?.AssignDate;
 
   const assignDate = assignDateTime
     ? new Date(assignDateTime).toLocaleDateString("en-IN", {
@@ -241,16 +244,16 @@ export default function ServiceEnd() {
   const fromArray =
     Array.isArray(pd) && pd.length > 0
       ? pd.reduce(
-          (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
-          null,
-        )
+        (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
+        null,
+      )
       : null;
   const carPickupDeliveryId = Number(
     legId ??
-      booking?.PickupDeliveryId ??
-      booking?.CarPickupDeliveryId ??
-      fromArray ??
-      0,
+    booking?.PickupDeliveryId ??
+    booking?.CarPickupDeliveryId ??
+    fromArray ??
+    0,
   );
   const routeType =
     currentLeg?.PickFrom?.[0]?.RouteType ??
@@ -303,8 +306,8 @@ export default function ServiceEnd() {
       console.error("Upload after-service images error:", err);
       setModalMessage(
         err?.message ||
-          err?.response?.data?.message ||
-          "Failed to upload images. Please try again.",
+        err?.response?.data?.message ||
+        "Failed to upload images. Please try again.",
       );
       setModalVisible(true);
     } finally {
@@ -388,7 +391,7 @@ export default function ServiceEnd() {
     } catch (error) {
       setModalMessage(
         error?.response?.data?.message ||
-          "Failed to send OTP. Please try again.",
+        "Failed to send OTP. Please try again.",
       );
       setModalVisible(true);
     } finally {
@@ -615,7 +618,7 @@ export default function ServiceEnd() {
       }
     }
 
- 
+
 
     try {
       await axios.post(
@@ -630,7 +633,7 @@ export default function ServiceEnd() {
       console.error("InsertTracking Completed Error:", e);
     }
 
-       // 2️⃣ After loop finishes, update booking status
+    // 2️⃣ After loop finishes, update booking status
     try {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
@@ -655,7 +658,7 @@ export default function ServiceEnd() {
       );
     }
 
-    
+
 
     navigation.navigate("CollectPayment", { booking });
   };
@@ -850,7 +853,7 @@ export default function ServiceEnd() {
                         globalStyles.ml1,
                       ]}
                     >
-                       {assignTime}
+                      {assignTime}
                     </CustomText>
                   ) : (
                     (getBookingDisplayData(booking).timeSlot || "")
@@ -869,6 +872,14 @@ export default function ServiceEnd() {
                       ))
                   )}
                 </View>
+              </View>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+              <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                  {address || "N/A"}
+                </CustomText>
               </View>
             </View>
           </View>
@@ -1024,9 +1035,8 @@ export default function ServiceEnd() {
             </CustomText>
             <CustomText
               style={[
-                globalStyles.f10Light,
+                globalStyles.f10Regular,
                 globalStyles.neutral500,
-                globalStyles.mt1,
               ]}
             >
               At least one image required. Choose files, then enter OTP and tap
@@ -1225,6 +1235,7 @@ export default function ServiceEnd() {
               globalStyles.f16Light,
               globalStyles.mt2,
               globalStyles.neutral500,
+              globalStyles.mb1,
             ]}
           >
             Enter OTP

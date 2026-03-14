@@ -391,6 +391,19 @@ export default function Bookings() {
     setRefreshing(false);
   };
 
+  const getRouteIcons = (routeType) => {
+    switch (routeType) {
+      case "CustomerToDealer":
+        return { pickIcon: "person-outline", dropIcon: "garage", pickLib: "Ionicons", dropLib: "MaterialCommunityIcons" };
+      case "DealerToDealer":
+        return { pickIcon: "garage", dropIcon: "garage", pickLib: "MaterialCommunityIcons", dropLib: "MaterialCommunityIcons" };
+      case "DealerToCustomer":
+        return { pickIcon: "garage", dropIcon: "person-outline", pickLib: "MaterialCommunityIcons", dropLib: "Ionicons" };
+      default:
+        return { pickIcon: "person-outline", dropIcon: "map-marker", pickLib: "Ionicons", dropLib: "MaterialCommunityIcons" };
+    }
+  };
+
   return (
     <ScrollView
       style={[globalStyles.bgcontainer]}
@@ -743,23 +756,53 @@ export default function Bookings() {
                               color={color.white}
                             />
                           </TouchableOpacity>
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
-                            </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
-                            </CustomText>
-                          </View>
-                          <View style={styles.addressUnderline} />
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
-                            </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.DropAt?.Address || "N/A"}
-                            </CustomText>
-                          </View>
+
+                          {(() => {
+                            const routeType = item.PickupDelivery?.[0]?.PickFrom?.RouteType;
+                            const { pickIcon, dropIcon, pickLib, dropLib } = getRouteIcons(routeType);
+
+                            const PickIcon = pickLib === "Ionicons" ? Ionicons : MaterialCommunityIcons;
+                            const DropIcon = dropLib === "Ionicons" ? Ionicons : MaterialCommunityIcons;
+
+                            return (
+                              <>
+                                {/* Pickup */}
+                                <View style={{ flex: 1, marginBottom: 8 }}>
+                                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { marginBottom: 2 }]}>
+                                    <PickIcon name={pickIcon} size={13} color={color.primary} style={{ marginRight: 4 }} />
+                                    <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                      {item.PickupDelivery?.[0]?.PickFrom?.PersonName || "N/A"}
+                                    </CustomText>
+                                  </View>
+                                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { alignItems: "flex-start" }]}>
+                                    <MaterialCommunityIcons name="map-marker" size={14} color={color.primary} style={{ marginRight: 4, marginTop: 1 }} />
+                                    <CustomText style={[styles.addressValue, { flex: 1 }]} numberOfLines={2}>
+                                      {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
+                                    </CustomText>
+                                  </View>
+                                </View>
+
+                                <View style={styles.addressUnderline} />
+
+                                {/* Drop */}
+                                <View style={{ flex: 1, marginTop: 8 }}>
+                                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { marginBottom: 2 }]}>
+                                    <DropIcon name={dropIcon} size={13} color={color.primary} style={{ marginRight: 4 }} />
+                                    <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                      {item.PickupDelivery?.[0]?.DropAt?.PersonName || "N/A"}
+                                    </CustomText>
+                                  </View>
+                                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { alignItems: "flex-start" }]}>
+                                    <MaterialCommunityIcons name="map-marker" size={14} color={color.primary} style={{ marginRight: 4, marginTop: 1 }} />
+                                    <CustomText style={[styles.addressValue, { flex: 1 }]} numberOfLines={2}>
+                                      {item.PickupDelivery?.[0]?.DropAt?.Address || "N/A"}
+                                    </CustomText>
+                                  </View>
+                                </View>
+                              </>
+                            );
+                          })()}
+
                           <View style={[globalStyles.flexrow, globalStyles.justifyend, globalStyles.alineItemscenter]}>
                             <TouchableOpacity
                               disabled={!carPicked}
@@ -817,13 +860,19 @@ export default function Bookings() {
                       item.ServiceType === "ServiceAtHome" && !completed && (
                         <View style={styles.fromToCard}>
 
-                          <View style={styles.addressLine}>
-                            <View style={styles.addressIconWrap}>
-                              <MaterialCommunityIcons name="map-marker" size={18} color={color.primary} />
+                          <View style={{ flex: 1, marginBottom: 8 }}>
+                            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { marginBottom: 2 }]}>
+                              <Ionicons name="person-outline" size={13} color={color.primary} style={{ marginRight: 4 }} />
+                              <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                {item.PickupDelivery?.[0]?.PickFrom?.PersonName || "Customer"}
+                              </CustomText>
                             </View>
-                            <CustomText style={styles.addressValue} numberOfLines={2}>
-                              {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
-                            </CustomText>
+                            <View style={[globalStyles.flexrow, { alignItems: "flex-start" }]}>
+                              <MaterialCommunityIcons name="map-marker" size={14} color={color.primary} style={{ marginRight: 4, marginTop: 1 }} />
+                              <CustomText style={[styles.addressValue, { flex: 1 }]} numberOfLines={2}>
+                                {item.PickupDelivery?.[0]?.PickFrom?.Address || item.Leads?.City || "N/A"}
+                              </CustomText>
+                            </View>
                           </View>
 
                           <View style={[globalStyles.flexrow, globalStyles.mt3, globalStyles.justifysb, globalStyles.alineItemscenter]}>
@@ -1019,6 +1068,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 2,
+    marginVertical: 4
   },
   callbuttontocustomer: {
     alignItems: "center",

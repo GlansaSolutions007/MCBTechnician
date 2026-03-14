@@ -1191,54 +1191,42 @@ export default function CustomerInfo() {
               const display = getBookingDisplayData(booking);
               return (
                 <>
-
-                  {/* <BookingPickDropRow booking={booking} style={globalStyles.mt2} /> */}
+                  {/* Row 1: Booking ID | Date */}
                   <View style={[globalStyles.flexrow, globalStyles.mt2]}>
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
                       <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                        {display.bookingTrackID}
-                      </CustomText>
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.bookingTrackID}</CustomText>
+                      </View>
                     </View>
+
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-                      <Ionicons name="calendar" size={16} color={color.primary} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                        {display.bookingDate}
-                      </CustomText>
+                      <Ionicons name="calendar" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.bookingDate}</CustomText>
+                      </View>
                     </View>
                   </View>
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2]}>
+
+                  {/* Row 2: Vehicle | Time Slot */}
+                  <View style={[globalStyles.flexrow, globalStyles.mt2]}>
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
                       <Ionicons name="car" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                      <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                        {display.vehicleDisplay}
-                      </CustomText>
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.vehicleDisplay}</CustomText>
+                      </View>
                     </View>
-                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
+
+                    <View style={[globalStyles.flexrow, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
                       <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
                       <View style={{ flexDirection: "column" }}>
                         {bookingParam?.ServiceType === "ServiceAtGarage" ? (
-                          <CustomText
-                            style={[
-                              globalStyles.f10Regular,
-                              globalStyles.black,
-                              globalStyles.ml1,
-                            ]}
-                          >
-                            {assignTime}
-                          </CustomText>
+                          <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignTime}</CustomText>
                         ) : (
                           (getBookingDisplayData(bookingParam).timeSlot || "")
                             .split(",")
                             .map((slot, index) => (
-                              <CustomText
-                                key={index}
-                                style={[
-                                  globalStyles.f10Regular,
-                                  globalStyles.black,
-                                  globalStyles.ml1,
-                                ]}
-                              >
+                              <CustomText key={index} style={[globalStyles.f10Regular, globalStyles.black]}>
                                 {slot.trim()}
                               </CustomText>
                             ))
@@ -1246,9 +1234,18 @@ export default function CustomerInfo() {
                       </View>
                     </View>
                   </View>
+
+                  {/* Row 3: Address (full width) */}
+                  <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+                    <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.fullAddress}</CustomText>
+                    </View>
+                  </View>
                 </>
               );
             })()}
+
           </View>
 
           {(modelName || vehicleNumber || brandName || fuelTypeName) && (

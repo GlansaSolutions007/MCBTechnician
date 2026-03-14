@@ -99,6 +99,7 @@ export default function DropCarAtGarage() {
   const currentLegParam = Array.isArray(pdParam) ? pdParam[0] : pdParam;
   const phoneNumber = currentLegParam?.PickFrom?.PersonNumber || bookingParam?.PickupDelivery?.PickFrom?.PersonNumber || "";
   const DropAtphoneNumber = currentLegParam?.DropAt?.PersonNumber || bookingParam?.PickupDelivery?.DropAt?.PersonNumber || "";
+  const garageaddress = bookingParam?.PickupDelivery[0]?.DropAt?.Address || "";
   console.log("DropAtphoneNumber===-----=====-----===:", currentLegParam);
   const profileImage = bookingParam?.ProfileImage || null;
 
@@ -195,7 +196,7 @@ export default function DropCarAtGarage() {
       );
 
       const data = response?.data;
-      
+
       // ✅ Correct validation
       if (!data?.success) {
         setError(data?.message || "Invalid OTP. Please try again.");
@@ -209,7 +210,7 @@ export default function DropCarAtGarage() {
       return false;
     }
   };
-  
+
   const uploadDeliveryImages = async () => {
     const regNo = carRegistrationNumber?.trim() || "";
     for (let i = 0; i < images.length; i++) {
@@ -426,6 +427,14 @@ export default function DropCarAtGarage() {
                       ))
                   )}
                 </View>
+              </View>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+              <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                  {garageaddress || "N/A"}
+                </CustomText>
               </View>
             </View>
           </View>

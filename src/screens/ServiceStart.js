@@ -650,6 +650,14 @@ export default function ServiceStart() {
                 </View>
               </View>
             </View>
+            <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+              <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                  {bookingParam?.FullAddress || "N/A"}
+                </CustomText>
+              </View>
+            </View>
           </View>
 
           {(booking.PickupDelivery[0].DriverStatus === "pickup_started" || booking.PickupDelivery[0].DriverStatus === "pickup_reached") && (
@@ -670,7 +678,7 @@ export default function ServiceStart() {
                 </CustomText>
                 <CustomText
                   style={[
-                    globalStyles.f10Light,
+                    globalStyles.f10Regular,
                     globalStyles.neutral500,
                     globalStyles.mt1,
                   ]}
@@ -777,6 +785,7 @@ export default function ServiceStart() {
                     globalStyles.f16Light,
                     globalStyles.mt3,
                     globalStyles.neutral500,
+                    globalStyles.mb1,
                   ]}
                 >
                   Enter OTP
