@@ -564,6 +564,7 @@ export default function SupervisorBookings() {
                     onPress={() =>
                       navigation.navigate("SupervisorBookingDetails", {
                         booking: customer.firstBooking,
+                        bookingId: customer.firstBooking?.BookingID,
                       })
                     }
                     android_ripple={{ color: color.neutral[100] }}
@@ -610,6 +611,7 @@ export default function SupervisorBookings() {
                         onPress={() =>
                           navigation.navigate("SupervisorBookingDetails", {
                             booking: customer.firstBooking,
+                            bookingId: customer.firstBooking?.BookingID,
                           })
                         }
                       >
@@ -640,6 +642,7 @@ export default function SupervisorBookings() {
                         onPress={() =>
                           navigation.navigate("SupervisorBookingDetails", {
                             booking: item,
+                            bookingId: item?.BookingID,
                           })
                         }
                         android_ripple={{ color: color.neutral[100] }}
@@ -705,6 +708,7 @@ export default function SupervisorBookings() {
                           onPress={() =>
                             navigation.navigate("SupervisorBookingDetails", {
                               booking: item,
+                              bookingId: item?.BookingID,
                             })
                           }
                         >
