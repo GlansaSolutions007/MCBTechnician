@@ -245,6 +245,7 @@ export default function SupervisorBookingDetails() {
           </View>
         </TouchableOpacity>
         {expanded && <View style={styles.accordionContent}>{children}</View>}
+        <View style={styles.accordionDivider} />
       </View>
     );
   };
@@ -768,7 +769,7 @@ export default function SupervisorBookingDetails() {
                 <View style={styles.fullWidthRow}>
                   <View style={styles.fullWidthLabelContainer}>
                     <Ionicons name="location-outline" size={16} color={color.primary} style={styles.infoIcon} />
-                    <CustomText style={[globalStyles.f12Bold, globalStyles.neutral600]}>Address:</CustomText>
+                    <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500]}>Address:</CustomText>
                   </View>
                   <CustomText style={[globalStyles.f12Regular, globalStyles.black, styles.fullWidthValue]}>
                     {booking.FullAddress}
@@ -778,67 +779,505 @@ export default function SupervisorBookingDetails() {
               {booking.Pincode ? (
                 <InfoRow iconName="pin-outline" label="Pincode" value={booking.Pincode} />
               ) : null}
+              {Array.isArray(booking.VehicleDetails) && booking.VehicleDetails.length > 0 && (
+                <>
+                  <InfoRow
+                    iconName="car-outline"
+                    label="Vehicle"
+                    value={`${booking.VehicleDetails[0]?.BrandName || ""} ${booking.VehicleDetails[0]?.ModelName || ""}`.trim() || "N/A"}
+                  />
+                  {booking.VehicleDetails[0]?.RegistrationNumber ? (
+                    <InfoRow
+                      iconName="pricetag-outline"
+                      label="Registration No."
+                      value={booking.VehicleDetails[0].RegistrationNumber}
+                    />
+                  ) : null}
+                  {booking.VehicleDetails[0]?.FuelTypeName ? (
+                    <InfoRow
+                      iconName="flame-outline"
+                      label="Fuel Type"
+                      value={booking.VehicleDetails[0].FuelTypeName}
+                    />
+                  ) : null}
+                  {booking.VehicleDetails[0]?.YearOfPurchase ? (
+                    <InfoRow
+                      iconName="calendar-outline"
+                      label="Year of Purchase"
+                      value={String(booking.VehicleDetails[0].YearOfPurchase)}
+                    />
+                  ) : null}
+                  {booking.VehicleDetails[0]?.KmDriven != null ? (
+                    <InfoRow
+                      iconName="speedometer-outline"
+                      label="Km Driven"
+                      value={String(booking.VehicleDetails[0].KmDriven)}
+                    />
+                  ) : null}
+                </>
+              )}
             </AccordionSection>
 
             {/* Services block right after customer details */}
             {/* Confirmed / Requested / Rejected services */}
             {booking.BookingAddOns && Array.isArray(booking.BookingAddOns) && booking.BookingAddOns.length > 0 ? (
               <AccordionSection title="Confirmed Services" iconName="checkmark-done-outline">
-                {booking.BookingAddOns.map((s, index) => (
-                  <View key={`confirmed-${index}`} style={styles.serviceCard}>
-                    <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
-                    <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
-                    <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
-                    <InfoRow iconName="cash-outline" label="Labour" value={formatAmount(s.LabourCharges)} />
-                    <InfoRow iconName="cash-outline" label="Total" value={formatAmount(s.TotalPrice)} />
-                    <InfoRow iconName="checkmark-circle-outline" label="Status" value={s.StatusName || "Confirmed"} />
-                  </View>
-                ))}
+                {booking.BookingAddOns.map((s, index) => {
+                  const supervisorLabour = Number(s?.LabourCharges || 0);
+                  const supervisorBase = Number(s?.BasePrice || 0);
+                  const supervisorPrice = Number(s?.ServicePrice || s?.Price || 0);
+                  const supervisorGstAmt = Number(s?.GSTPrice || s?.GSTAmount || 0);
+                  const supervisorTotal =
+                    supervisorLabour + supervisorPrice + supervisorGstAmt;
+
+                  const dealerPrice = Number(s?.DealerPrice || 0); // mapped to LabourCharges
+                  const dealerBasePrice = Number(s?.DealerBasePrice || 0);
+                  const dealerSparePrice = Number(s?.DealerSparePrice || 0);
+                  const dealerGstPercent = s?.DealerGSTPercent;
+                  const dealerGstAmt = Number(s?.DealerGSTAmount || 0);
+                  const dealerTotal = dealerPrice + dealerSparePrice + dealerGstAmt;
+
+                  const dealerStatus = (s?.IsDealer_Confirm || "")
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+
+                  return (
+                    <View key={`confirmed-${index}`} style={styles.serviceCard}>
+                      <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
+                      <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
+                      <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
+                      {s.Quantity != null && (
+                        <InfoRow
+                          iconName="cube-outline"
+                          label="Quantity"
+                          value={String(s.Quantity)}
+                        />
+                      )}
+                      <InfoRow
+                        iconName="checkmark-circle-outline"
+                        label="Status"
+                        value={s.StatusName || "Confirmed"}
+                      />
+
+                      <View style={styles.fullWidthRow}>
+                        <View style={styles.comparisonHeaderRow}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1 }]}>
+                            Field
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Supervisor
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Dealer
+                          </CustomText>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Labour Charges</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorLabour)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerPrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Base Price</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorBase)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerBasePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Price / Spare</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorPrice)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerSparePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST %</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {s?.GSTPercent != null ? `${Number(s.GSTPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {dealerGstPercent != null ? `${Number(dealerGstPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST Amount</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorGstAmt)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerGstAmt)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Total</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(supervisorTotal)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(dealerTotal)}
+                            </CustomText>
+                          </View>
+                        </View>
+                      </View>
+
+                      {dealerStatus === "pending" && (
+                        <CustomText
+                          style={[
+                            globalStyles.f12Bold,
+                            { color: color.alertWarning || "#eab308" },
+                          ]}
+                        >
+                          Dealer not confirmed yet
+                        </CustomText>
+                      )}
+                    </View>
+                  );
+                })}
               </AccordionSection>
             ) : null}
 
             {booking.SupervisorBookings && Array.isArray(booking.SupervisorBookings) && booking.SupervisorBookings.length > 0 ? (
               <AccordionSection title="Requested Services" iconName="help-circle-outline">
-                {booking.SupervisorBookings.map((s, index) => (
-                  <View key={`requested-${index}`} style={styles.serviceCard}>
-                    <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
-                    <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
-                    <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
-                    <InfoRow iconName="pricetag-outline" label="Base Price" value={formatAmount(s.BasePrice)} />
-                    <InfoRow iconName="cash-outline" label="Price" value={formatAmount(s.Price)} />
-                    <InfoRow iconName="checkmark-circle-outline" label="Sent To Customer" value={s.IsSent_Customer ? "Yes" : "No"} />
-                  </View>
-                ))}
+                {booking.SupervisorBookings.map((s, index) => {
+                  const supervisorLabour = Number(s?.LabourCharges || 0);
+                  const supervisorBase = Number(s?.BasePrice || 0);
+                  const supervisorPrice = Number(s?.Price || 0);
+                  const supervisorGstAmt = Number(s?.GSTAmount || 0);
+                  const supervisorTotal =
+                    supervisorLabour + supervisorPrice + supervisorGstAmt;
+
+                  const dealerPrice = Number(s?.DealerPrice || 0); // mapped to LabourCharges
+                  const dealerBasePrice = Number(s?.DealerBasePrice || 0);
+                  const dealerSparePrice = Number(s?.DealerSparePrice || 0);
+                  const dealerGstPercent = s?.DealerGSTPercent;
+                  const dealerGstAmt = Number(s?.DealerGSTAmount || 0);
+                  const dealerTotal = dealerPrice + dealerSparePrice + dealerGstAmt;
+
+                  const dealerStatus = (s?.IsDealer_Confirm || "")
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+
+                  return (
+                    <View key={`requested-${index}`} style={styles.serviceCard}>
+                      <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
+                      <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
+                      <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
+                      {s.Quantity != null && (
+                        <InfoRow
+                          iconName="cube-outline"
+                          label="Quantity"
+                          value={String(s.Quantity)}
+                        />
+                      )}
+
+                      {/* Compact supervisor vs dealer comparison */}
+                      <View style={styles.fullWidthRow}>
+                        <View style={styles.comparisonHeaderRow}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1 }]}>
+                            Field
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Supervisor
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Dealer
+                          </CustomText>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Labour Charges</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorLabour)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerPrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Base Price</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorBase)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerBasePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Price / Spare</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorPrice)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerSparePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST %</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {s?.GSTPercent != null ? `${Number(s.GSTPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {dealerGstPercent != null ? `${Number(dealerGstPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST Amount</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorGstAmt)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerGstAmt)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Total</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(supervisorTotal)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(dealerTotal)}
+                            </CustomText>
+                          </View>
+                        </View>
+                      </View>
+
+                      {/* Dealer confirmation status */}
+                      {dealerStatus === "pending" && (
+                        <CustomText
+                          style={[
+                            globalStyles.f12Bold,
+                            { color: color.alertWarning || "#eab308" },
+                          ]}
+                        >
+                          Dealer not confirmed yet
+                        </CustomText>
+                      )}
+
+                      <InfoRow
+                        iconName="checkmark-circle-outline"
+                        label="Sent To Customer"
+                        value={s.IsSent_Customer ? "Yes" : "No"}
+                      />
+                    </View>
+                  );
+                })}
               </AccordionSection>
             ) : null}
 
             {booking.CustomerRejectedBookings && Array.isArray(booking.CustomerRejectedBookings) && booking.CustomerRejectedBookings.length > 0 ? (
               <AccordionSection title="Rejected Services" iconName="close-circle-outline">
-                {booking.CustomerRejectedBookings.map((s, index) => (
-                  <View key={`rejected-${index}`} style={styles.serviceCard}>
-                    <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
-                    <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
-                    <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
-                    <InfoRow iconName="cash-outline" label="Labour" value={formatAmount(s.LabourCharges)} />
-                    <InfoRow iconName="pricetag-outline" label="Dealer Price" value={formatAmount(s.DealerPrice)} />
-                    {Array.isArray(s.Includes) && s.Includes.length > 0 ? (
+                {booking.CustomerRejectedBookings.map((s, index) => {
+                  const supervisorLabour = Number(s?.LabourCharges || 0);
+                  const supervisorBase = Number(s?.BasePrice || 0);
+                  const supervisorPrice = Number(s?.Price || 0);
+                  const supervisorGstAmt = Number(s?.GSTAmount || 0);
+                  const supervisorTotal =
+                    supervisorLabour + supervisorPrice + supervisorGstAmt;
+
+                  const dealerPrice = Number(s?.DealerPrice || 0); // mapped to LabourCharges
+                  const dealerBasePrice = Number(s?.DealerBasePrice || 0);
+                  const dealerSparePrice = Number(s?.DealerSparePrice || 0);
+                  const dealerGstPercent = s?.DealerGSTPercent;
+                  const dealerGstAmt = Number(s?.DealerGSTAmount || 0);
+                  const dealerTotal = dealerPrice + dealerSparePrice + dealerGstAmt;
+
+                  return (
+                    <View key={`rejected-${index}`} style={styles.serviceCard}>
+                      <InfoRow iconName="construct-outline" label="Service" value={s.ServiceName} />
+                      <InfoRow iconName="briefcase-outline" label="Type" value={s.ServiceType} />
+                      <InfoRow iconName="storefront-outline" label="Dealer" value={s.DealerName} />
+                      {s.Quantity != null && (
+                        <InfoRow
+                          iconName="cube-outline"
+                          label="Quantity"
+                          value={String(s.Quantity)}
+                        />
+                      )}
+
                       <View style={styles.fullWidthRow}>
-                        <View style={styles.fullWidthLabelContainer}>
-                          <Ionicons name="list-outline" size={16} color={color.primary} style={styles.infoIcon} />
-                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral600]}>Includes:</CustomText>
-                        </View>
-                        {s.Includes.map((inc) => (
-                          <CustomText
-                            key={inc.IncludeID}
-                            style={[globalStyles.f12Regular, globalStyles.black, { marginBottom: 2 }]}
-                          >
-                            • {inc.IncludeName}
+                        <View style={styles.comparisonHeaderRow}>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1 }]}>
+                            Field
                           </CustomText>
-                        ))}
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Supervisor
+                          </CustomText>
+                          <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, { flex: 1, textAlign: "right" }]}>
+                            Dealer
+                          </CustomText>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Labour Charges</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorLabour)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerPrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Base Price</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorBase)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerBasePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Price / Spare</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorPrice)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerSparePrice)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST %</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {s?.GSTPercent != null ? `${Number(s.GSTPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {dealerGstPercent != null ? `${Number(dealerGstPercent)}%` : "N/A"}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>GST Amount</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(supervisorGstAmt)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonValue}>
+                              {formatAmount(dealerGstAmt)}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <View style={styles.comparisonRow}>
+                          <CustomText style={styles.comparisonLabel}>Total</CustomText>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(supervisorTotal)}
+                            </CustomText>
+                          </View>
+                          <View style={styles.comparisonValueColumn}>
+                            <CustomText style={styles.comparisonTotalValue}>
+                              {formatAmount(dealerTotal)}
+                            </CustomText>
+                          </View>
+                        </View>
                       </View>
-                    ) : null}
-                  </View>
-                ))}
+
+                      {Array.isArray(s.Includes) && s.Includes.length > 0 ? (
+                        <View style={styles.fullWidthRow}>
+                          <View style={styles.fullWidthLabelContainer}>
+                            <Ionicons name="list-outline" size={16} color={color.primary} style={styles.infoIcon} />
+                            <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500]}>Includes:</CustomText>
+                          </View>
+                          {s.Includes.map((inc) => (
+                            <CustomText
+                              key={inc.IncludeID}
+                              style={[globalStyles.f12Regular, globalStyles.black, { marginBottom: 2 }]}
+                            >
+                              • {inc.IncludeName}
+                            </CustomText>
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
               </AccordionSection>
             ) : null}
 
@@ -955,7 +1394,11 @@ export default function SupervisorBookingDetails() {
               {booking.OurPercent != null && <InfoRow iconName="percent-outline" label="Our %" value={`${booking.OurPercent}%`} />}
               {booking.OurAmount != null && <InfoRow iconName="cash-outline" label="Our Amt." value={formatAmount(booking.OurAmount)} />}
               {booking.SelectedDealer ? <InfoRow iconName="storefront-outline" label="Selected Dealer" value={booking.SelectedDealer} /> : null}
-              {booking.TotalAmount != null ? <InfoRow iconName="wallet-outline" label="Total Amt" value={formatAmount(booking.TotalAmount)} /> : null}
+              <InfoRow
+                iconName="wallet-outline"
+                label="Total Service Price"
+                value={formatAmount(computeBookingTotal(booking))}
+              />
             </AccordionSection>
 
             {booking.Reschedules && Array.isArray(booking.Reschedules) && booking.Reschedules.length > 0 ? (
@@ -1212,26 +1655,19 @@ const styles = StyleSheet.create({
 
   // ── Accordion ───────────────────────────────────────────────
   section: {
-    marginBottom: 6,
+    marginBottom: 0,
   },
   accordionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: color.neutral[50],
-    borderWidth: 1,
-    borderColor: color.neutral[200],
-    marginBottom: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 0,
+    backgroundColor: color.white,
   },
   accordionHeaderExpanded: {
     backgroundColor: `${color.primary}08`,
-    borderColor: `${color.primary}30`,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    marginBottom: 0,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -1260,16 +1696,15 @@ const styles = StyleSheet.create({
     backgroundColor: `${color.primary}15`,
   },
   accordionContent: {
-    paddingTop: 12,
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: `${color.primary}30`,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    paddingTop: 8,
+    paddingHorizontal: 4,
+    paddingBottom: 10,
     backgroundColor: color.white,
-    marginBottom: 2,
+  },
+  accordionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: color.neutral[200],
+    marginVertical: 4,
   },
 
   // ── Info Rows ────────────────────────────────────────────────
@@ -1307,6 +1742,35 @@ const styles = StyleSheet.create({
   fullWidthValue: {
     width: "100%",
     flexWrap: "wrap",
+  },
+
+  // ── Comparison rows ───────────────────────────────────────────
+  comparisonHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  comparisonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  comparisonLabel: {
+    flex: 1,
+    ...globalStyles.f10Bold,
+    color: color.neutral[500] || "#969696",
+  },
+  comparisonValueColumn: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  comparisonValue: {
+    ...globalStyles.f10Bold,
+    color: color.neutral[900] || "#000000",
+  },
+  comparisonTotalValue: {
+    ...globalStyles.f12Bold,
+    color: color.primary || "#000000",
   },
 
   // ── Cards ────────────────────────────────────────────────────
@@ -1365,10 +1829,11 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     backgroundColor: color.white,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    marginTop: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    marginBottom: 10,
+    marginTop: 4,
     borderWidth: 1,
     borderColor: color.neutral[200],
   },
