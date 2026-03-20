@@ -348,7 +348,8 @@ function Reportlist() {
                 >
                   {item?.ServiceType === "ServiceAtGarage"
                     ? ` ${assignTime}`
-                    : getBookingDisplayData(item).timeSlot}                </CustomText>
+                    : getBookingDisplayData(item).timeSlot}
+                </CustomText>
               </View>
             </View>
           </View>

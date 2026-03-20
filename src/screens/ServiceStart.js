@@ -962,6 +962,7 @@ export default function ServiceStart() {
                     }
 
                     try {
+                      const techId = await AsyncStorage.getItem("techId");
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/InsertTracking`,
                         {
@@ -981,7 +982,7 @@ export default function ServiceStart() {
                         serviceType: booking?.ServiceType || "ServiceAtHome",
                         action: "ServiceStart",
                         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
-                        updatedBy: Number(booking?.TechID || 3),
+                        updatedBy: Number(techId),
                         role: "Technician",
                       };
                       console.log("ServiceImages/UpdateBookingStatus>>>>>>>>>>>>>>>>>>>>>", statusPayload);

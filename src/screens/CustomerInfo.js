@@ -10,6 +10,7 @@ import {
   Text,
   Vibration,
   Animated,
+  ActivityIndicator,
   AppState,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
@@ -175,13 +176,20 @@ export default function CustomerInfo() {
   const [expandedAddOns, setExpandedAddOns] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingStartRide, setLoadingStartRide] = useState(false);
+  const [loadingNavigate, setLoadingNavigate] = useState(false);
+  const [loadingReached, setLoadingReached] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
+  const [loadingCollectCash, setLoadingCollectCash] = useState(false);
   const [pulse] = useState(new Animated.Value(0));
   // const today = new Date().toISOString().split("T")[0];
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
   });
   const ServiceStart = async (item) => {
+    setLoadingNext(true);
     navigation.navigate(item.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: item });
+    setLoadingNext(false);
   };
   const ServiceEnd = async (item) => {
     // Calculate estimated time from booking if available
@@ -204,7 +212,9 @@ export default function CustomerInfo() {
     });
   };
   const CollectPayment = async (booking) => {
+    setLoadingCollectCash(true);
     navigation.navigate("CollectPayment", { booking: booking });
+    setLoadingCollectCash(false);
   };
   const onRefresh = useCallback(async () => {
     const currentBooking = route.params?.booking ?? booking;
@@ -709,6 +719,7 @@ export default function CustomerInfo() {
 
 
   const handleStartRidedirect = async () => {
+    setLoadingNavigate(true);
     // we intentionally do not await onRefresh here so the user is not kept waiting
     // before the maps app opens; the request will still complete in the
     // background and the focus listener (below) will pick up any updates.
@@ -720,9 +731,12 @@ export default function CustomerInfo() {
     }
     // Background tracking should already be controlled by user via toggle
     // No need to start it here automatically
+    setLoadingNavigate(false);
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
+    setLoadingStartRide(true);
+    const techID=await AsyncStorage.getItem("techID");
     if (pickDropId) {
       try {
         await axios.post(
@@ -741,7 +755,7 @@ export default function CustomerInfo() {
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
-        updatedBy: Number(displayBooking?.TechID || 3),
+        updatedBy: Number(techID ),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
@@ -774,10 +788,13 @@ export default function CustomerInfo() {
     } catch (error) {
       console.error("Error saving start ride flag", error);
     }
+    setLoadingStartRide(false);
     await openGoogleMaps();
   };
 
   const Reached = async () => {
+    setLoadingReached(true);
+    const techID=await AsyncStorage.getItem("techID");
     if (pickDropId) {
       try {
         await axios.post(
@@ -820,7 +837,7 @@ export default function CustomerInfo() {
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_reached",
-        updatedBy: Number(displayBooking?.TechID || 3),
+        updatedBy: Number(techID ),
         role: "Technician",
       };
       console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
@@ -848,6 +865,7 @@ export default function CustomerInfo() {
     try {
       await stopBackgroundTracking();
     } catch (_) { }
+    setLoadingReached(false);
     navigation.navigate(updatedBooking.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: updatedBooking });
   };
 
@@ -1723,20 +1741,27 @@ export default function CustomerInfo() {
                   <>
                     {driverStatus === "assigned" && (
                       <TouchableOpacity
-                        style={styles.startButton}
+                        style={[styles.startButton, loadingStartRide && { opacity: 0.7 }]}
                         onPress={handleStartRide}
+                        disabled={loadingStartRide}
                       >
-                        <Ionicons
-                          name="rocket"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText
-                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                        >
-                          Start Ride
-                        </CustomText>
+                        {loadingStartRide ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <>
+                            <Ionicons
+                              name="rocket"
+                              size={20}
+                              color="white"
+                              style={{ marginRight: 8 }}
+                            />
+                            <CustomText
+                              style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                            >
+                              Start Ride
+                            </CustomText>
+                          </>
+                        )}
                       </TouchableOpacity>
                     )}
 
@@ -1744,38 +1769,52 @@ export default function CustomerInfo() {
                       driverStatus === "ServiceStart") && (
                         <View style={styles.startreach}>
                           <TouchableOpacity
-                            style={[styles.startButton, { flex: 1 }]}
+                            style={[styles.startButton, { flex: 1 }, loadingNavigate && { opacity: 0.7 }]}
                             onPress={handleStartRidedirect}
+                            disabled={loadingNavigate}
                           >
-                            <Ionicons
-                              name="navigate"
-                              size={20}
-                              color="#fff"
-                              style={{ marginRight: 8 }}
-                            />
-                            <CustomText
-                              style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                            >
-                              Navigate
-                            </CustomText>
+                            {loadingNavigate ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <>
+                                <Ionicons
+                                  name="navigate"
+                                  size={20}
+                                  color="#fff"
+                                  style={{ marginRight: 8 }}
+                                />
+                                <CustomText
+                                  style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                                >
+                                  Navigate
+                                </CustomText>
+                              </>
+                            )}
                           </TouchableOpacity>
 
                           {driverStatus === "pickup_started" && (
                             <TouchableOpacity
-                              style={[styles.ReachedButton, { flex: 1 }]}
+                              style={[styles.ReachedButton, { flex: 1 }, loadingReached && { opacity: 0.7 }]}
                               onPress={Reached}
+                              disabled={loadingReached}
                             >
-                              <Ionicons
-                                name="flag"
-                                size={20}
-                                color="white"
-                                style={{ marginRight: 8 }}
-                              />
-                              <CustomText
-                                style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                              >
-                                Reached
-                              </CustomText>
+                              {loadingReached ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <>
+                                  <Ionicons
+                                    name="flag"
+                                    size={20}
+                                    color="white"
+                                    style={{ marginRight: 8 }}
+                                  />
+                                  <CustomText
+                                    style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                                  >
+                                    Reached
+                                  </CustomText>
+                                </>
+                              )}
                             </TouchableOpacity>
                           )}
                         </View>
@@ -1791,18 +1830,25 @@ export default function CustomerInfo() {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceStart(currentBooking)}
-                    style={[styles.NextButton, globalStyles.mb3]}
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
                   >
-                    <CustomText
-                      style={[
-                        globalStyles.f14Bold,
-                        globalStyles.mr1,
-                        globalStyles.textWhite,
-                      ]}
-                    >
-                      Next
-                    </CustomText>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
                   </TouchableOpacity>
                 );
               }
@@ -1814,18 +1860,25 @@ export default function CustomerInfo() {
                         booking: currentBooking,
                       })
                     }
-                    style={[styles.NextButton, globalStyles.mb3]}
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
                   >
-                    <CustomText
-                      style={[
-                        globalStyles.f14Bold,
-                        globalStyles.mr1,
-                        globalStyles.textWhite,
-                      ]}
-                    >
-                      Next
-                    </CustomText>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
                   </TouchableOpacity>
                 );
               }
@@ -1833,18 +1886,25 @@ export default function CustomerInfo() {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceEnd(currentBooking)}
-                    style={[styles.NextButton, globalStyles.mb3]}
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
                   >
-                    <CustomText
-                      style={[
-                        globalStyles.f14Bold,
-                        globalStyles.mr1,
-                        globalStyles.textWhite,
-                      ]}
-                    >
-                      Next
-                    </CustomText>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
                   </TouchableOpacity>
                 );
               }
@@ -1856,18 +1916,25 @@ export default function CustomerInfo() {
             ) && (
                 <TouchableOpacity
                   onPress={() => CollectPayment(updatedBookings)}
-                  style={styles.NextButton}
+                  style={[styles.NextButton, loadingCollectCash && { opacity: 0.7 }]}
+                  disabled={loadingCollectCash}
                 >
-                  <CustomText
-                    style={[
-                      globalStyles.f14Bold,
-                      globalStyles.mr1,
-                      globalStyles.textWhite,
-                    ]}
-                  >
-                    Collect Cash
-                  </CustomText>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  {loadingCollectCash ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <CustomText
+                        style={[
+                          globalStyles.f14Bold,
+                          globalStyles.mr1,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        Collect Cash
+                      </CustomText>
+                      <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    </>
+                  )}
                 </TouchableOpacity>
               )}
           </View>
@@ -2035,4 +2102,3 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 });
-

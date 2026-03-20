@@ -29,6 +29,7 @@ import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
 import BookingPickDropRow from "../components/BookingPickDropRow";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function DropCarAtGarage() {
   const navigation = useNavigation();
@@ -236,6 +237,7 @@ export default function DropCarAtGarage() {
   };
 
   const handleComplete = async () => {
+    const techId = await AsyncStorage.getItem("techID");
     const regNo = carRegistrationNumber?.trim() || "";
     setImageError("");
     setError("");
@@ -274,7 +276,7 @@ export default function DropCarAtGarage() {
           serviceType: booking?.ServiceType || "ServiceAtGarage",
           routeType: booking?.PickupDelivery[0].DropAt.RouteType,
           action: "completed",
-          updatedBy: Number(booking?.TechID || 3),
+          updatedBy: Number(techId),
           role: "Technician",
         };
         console.log("UpdateBookingStatus Payload (completed):", statusPayload);

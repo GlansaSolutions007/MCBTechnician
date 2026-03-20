@@ -640,7 +640,7 @@ export default function ServiceEnd() {
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         action: "ServiceComplete",
         routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
-        updatedBy: Number(booking?.TechID || 3),
+        updatedBy: Number(completedBy),
         role: "Technician",
       };
 

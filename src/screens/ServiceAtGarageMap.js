@@ -19,6 +19,7 @@ import { color } from "../styles/theme";
 import { API_BASE_URL, GOOGLE_MAPS_APIKEY } from "@env";
 import { stopBackgroundTracking } from "../utils/locationTracker";
 import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function decodePolyline(t) {
   const points = [];
@@ -284,6 +285,7 @@ export default function ServiceAtGarageMap() {
   };
 
   const handleStartRide = async () => {
+    const techID = await AsyncStorage.getItem("techID");
     if (!pickDropId) {
       console.warn("InsertTracking: no pickDropId (PickupDelivery.Id)");
     }
@@ -306,7 +308,7 @@ export default function ServiceAtGarageMap() {
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_started",
-        updatedBy: Number(booking?.TechID || 3),
+        updatedBy: Number(techID),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
@@ -338,6 +340,7 @@ export default function ServiceAtGarageMap() {
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
+    const techID = await AsyncStorage.getItem("techID");``
     const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber;
     console.log("phoneNumber===========-----------", phoneNumber)
     try {
@@ -359,7 +362,7 @@ export default function ServiceAtGarageMap() {
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
         action: "pickup_reached",
-        updatedBy: Number(booking?.TechID || 3),
+        updatedBy: Number(techID),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));

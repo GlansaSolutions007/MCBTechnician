@@ -103,7 +103,7 @@ export default function CarPickUp() {
     bookingParam.FullAddress ||
     bookingParam.Leads?.FullAddress ||
     bookingParam.Leads?.City ||
-    "";
+    "";    
 
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
 
@@ -181,7 +181,10 @@ export default function CarPickUp() {
     (pd && !Array.isArray(pd) ? pd?.DriverStatus : null);
 
   const refreshBooking = async () => {
-    const techId = booking?.TechID ?? bookingParam?.TechID;
+    
+     const techId = await AsyncStorage.getItem("techID");
+     console.log("TECHID___++__++_++",techId);
+    
     if (!techId || !booking?.BookingID) return null;
     try {
       const res = await axios.get(
@@ -850,7 +853,7 @@ export default function CarPickUp() {
                       globalStyles.black,
                     ]}
                   >
-                    Car Registration Number{" "}
+                    Car Registration Numberrrrr{" "}
                     <CustomText style={{ color: color.alertError }}>*</CustomText>
                     <CustomText
                       style={[
@@ -1121,13 +1124,15 @@ export default function CarPickUp() {
                           serviceType: booking?.ServiceType || "ServiceAtGarage",
                           routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
                           action: "car_picked",
-                          updatedBy: Number(booking?.TechID || 3),
+                          updatedBy: Number(techId) ,
                           role: "Technician",
                         };
                         console.log(
                           "UpdateBookingStatus==========:",
                           statusPayload,
                         );
+                        console.log("UdateByyyyyyy--",updatedBy);
+                        
                         await axios.post(
                           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                           statusPayload,
