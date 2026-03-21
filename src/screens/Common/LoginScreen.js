@@ -75,7 +75,11 @@ export default function LoginScreen() {
   };
 
   const handlePhoneNumberChange = (text) => {
-    setPhoneNumber(text);
+    // Only allow digits, max 10
+    const cleaned = text.replace(/[^0-9]/g, "");
+    if (cleaned.length <= 10) {
+      setPhoneNumber(cleaned);
+    }
     if (phoneError) {
       setPhoneError("");
     }
@@ -137,7 +141,7 @@ export default function LoginScreen() {
           if (techID) {
             startTechnicianLocationTracking(techID);
           }
-        } catch (e) {}
+        } catch (e) { }
         try {
           const tokens = await registerForPushNotificationsAsync();
           // console.log("Tokens Vishal:", tokens);
@@ -187,9 +191,9 @@ export default function LoginScreen() {
                 platform: Platform.OS,
               });
               console.log("userRole======", userRole);
-            } catch (_) {}
+            } catch (_) { }
           }
-        } catch (_) {}
+        } catch (_) { }
         navigation.replace("CustomerTabs", {
           screen: "Profile",
           params: { techID: techID },
@@ -391,6 +395,7 @@ export default function LoginScreen() {
                     keyboardType="phone-pad"
                     autoCapitalize="none"
                     editable={!inputsDisabled}
+                    maxLength={10}
                   />
                 </View>
                 {phoneError ? (

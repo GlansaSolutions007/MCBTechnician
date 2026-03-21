@@ -14,6 +14,7 @@ import {
   Linking,
   Vibration,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
@@ -1287,11 +1288,13 @@ export default function ServiceEnd() {
                   },
                 ]}
               >
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  {isLoading ? "Sending OTP" : "Send OTP"}
-                </CustomText>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                    Send OTP
+                  </CustomText>
+                )}
               </TouchableOpacity>
             ) : (
               <View
@@ -1337,13 +1340,13 @@ export default function ServiceEnd() {
               },
             ]}
           >
-            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-              {isLoading
-                ? "Verifying..."
-                : isUploadingImages
-                  ? "Uploading..."
-                  : "Completed"}
-            </CustomText>
+            {(isLoading || isUploadingImages) ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                Completed
+              </CustomText>
+            )}
           </TouchableOpacity>
           {/* )} */}
           <Modal

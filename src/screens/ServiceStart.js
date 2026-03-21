@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -51,6 +52,8 @@ export default function ServiceStart() {
   const bookingId = booking.BookingID;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const initialRegNo =
@@ -828,11 +831,13 @@ export default function ServiceStart() {
                         },
                       ]}
                     >
-                      <CustomText
-                        style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                      >
-                        {isLoading ? "Sending OTP" : "Resend OTP"}
-                      </CustomText>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                          Resend OTP
+                        </CustomText>
+                      )}
                     </TouchableOpacity>
                   ) : (
                     <View
@@ -876,7 +881,9 @@ export default function ServiceStart() {
                       marginBottom: keyboardVisible ? 10 : 0,
                     },
                   ]}
+                  disabled={loadingSubmit || isUploading}
                   onPress={async () => {
+                    setLoadingSubmit(true);
                     setImageError("");
                     setRegistrationError("");
                     setError("");
@@ -885,22 +892,26 @@ export default function ServiceStart() {
                       setError("Booking pickup info is missing. Please go back and open this booking again.");
                       setModalMessage("Booking pickup info is missing. Please go back and open this booking again.");
                       setModalVisible(true);
+                      setLoadingSubmit(false);
                       return;
                     }
 
                     if (!images || images.length < 1) {
                       setImageError("At least one image is required.");
+                      setLoadingSubmit(false);
                       return;
                     }
 
                     const regNo = carRegistrationNumber?.trim() || "";
                     if (!regNo) {
                       setRegistrationError("Car registration number is mandatory");
+                      setLoadingSubmit(false);
                       return;
                     }
 
                     if (!otp || otp.length !== 6) {
                       setError("Please enter a valid 6-digit OTP");
+                      setLoadingSubmit(false);
                       return;
                     }
 
@@ -909,6 +920,7 @@ export default function ServiceStart() {
                       setError("Customer phone number is required for OTP.");
                       setModalMessage("Customer phone number is required for OTP.");
                       setModalVisible(true);
+                      setLoadingSubmit(false);
                       return;
                     }
 
@@ -945,6 +957,7 @@ export default function ServiceStart() {
                       setError(errMsg);
                       setModalMessage(errMsg);
                       setModalVisible(true);
+                      setLoadingSubmit(false);
                       return;
                     }
 
@@ -958,6 +971,7 @@ export default function ServiceStart() {
                       setIsUploading(false);
                       setModalMessage("Image upload failed. Please try again.");
                       setModalVisible(true);
+                      setLoadingSubmit(false);
                       return;
                     }
 
@@ -1024,11 +1038,16 @@ export default function ServiceStart() {
                     setModalMessage("Service started");
                     setModalOnOkNavigateToDashboard(true);
                     setModalVisible(true);
+                    setLoadingSubmit(false);
                   }}
                 >
-                  <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
-                    Submit
-                  </CustomText>
+                  {(loadingSubmit || isUploading) ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                      Submit
+                    </CustomText>
+                  )}
                 </TouchableOpacity>
 
               </>
@@ -1072,7 +1091,9 @@ export default function ServiceStart() {
           {booking.PickupDelivery[0].DriverStatus === "ServiceStart" && (
             <View>
               <TouchableOpacity
+                disabled={loadingNext}
                 onPress={async () => {
+                  setLoadingNext(true);
                   navigation.navigate("ServiceEnd", {
                     estimatedTime: MAX_TIME,
                     actualTime: elapsedTime,
@@ -1082,14 +1103,17 @@ export default function ServiceStart() {
                   setTimerCompleted(true);
                   setTimeTaken(elapsedTime);
                   await AsyncStorage.removeItem("serviceTimerState");
+                  setLoadingNext(false);
                 }}
-                style={[globalStyles.blackButton, globalStyles.mb3]}
+                style={[globalStyles.blackButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
               >
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  Next
-                </CustomText>
+                {loadingNext ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                    Next
+                  </CustomText>
+                )}
               </TouchableOpacity>
             </View>
           )}

@@ -7,6 +7,7 @@ import {
   Linking,
   ScrollView,
   BackHandler,
+  ActivityIndicator,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
@@ -65,6 +66,8 @@ export default function CustomerToGarageMap() {
   const { booking, estimatedTime = 0, actualTime = 0, carRegistrationNumber = "" } = route.params || {};
   const [location, setLocation] = useState(null);
   const [updatedBooking, setUpdatedBooking] = useState(booking);
+  const [loadingLetsStart, setLoadingLetsStart] = useState(false);
+  const [loadingReached, setLoadingReached] = useState(false);
   const displayBooking = updatedBooking || booking;
   const mapRef = useRef(null);
   const [addressCoords, setAddressCoords] = useState(null);
@@ -292,6 +295,7 @@ export default function CustomerToGarageMap() {
   );
 
   const handleLetsStart = async () => {
+    setLoadingLetsStart(true);
     const techID = await AsyncStorage.getItem("techID");
 
     // ✅ 1. Update UI instantly
@@ -313,6 +317,7 @@ export default function CustomerToGarageMap() {
     const url = location
       ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
       : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+    setLoadingLetsStart(false);
     Linking.openURL(url).catch(() => { });
 
     // ✅ 3. Fire API calls in the background (don't await)
@@ -415,6 +420,7 @@ export default function CustomerToGarageMap() {
   };
 
   const handleReached = async () => {
+    setLoadingReached(true);
     const techID = await AsyncStorage.getItem("techID");
     try {
       await axios.post(
@@ -445,6 +451,7 @@ export default function CustomerToGarageMap() {
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
+    setLoadingReached(false);
 
     const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
     console.log("phoneNumber===============", phoneNumber)
@@ -530,16 +537,20 @@ export default function CustomerToGarageMap() {
           showsVerticalScrollIndicator={false}
         >
 
-          {driverStatus === "pickup_reached" && (
-            <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
-              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
-            </TouchableOpacity>
-          )}
-          {driverStatus === "car_picked" && (
-            <TouchableOpacity style={styles.startButton} onPress={handleLetsStart}>
-              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+          {(driverStatus === "pickup_reached" || driverStatus === "car_picked") && (
+            <TouchableOpacity
+              style={[styles.startButton, loadingLetsStart && { opacity: 0.7 }]}
+              onPress={handleLetsStart}
+              disabled={loadingLetsStart}
+            >
+              {loadingLetsStart ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+                </>
+              )}
             </TouchableOpacity>
           )}
 
@@ -549,9 +560,19 @@ export default function CustomerToGarageMap() {
                 <Ionicons name="navigate" size={18} color="#fff" style={{ marginRight: 4 }} />
                 <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]} numberOfLines={1}>Navigate</CustomText>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.twoButton, styles.reachedButton]} onPress={handleReached}>
-                <Ionicons name="flag" size={18} color="#fff" style={{ marginRight: 4 }} />
-                <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]} numberOfLines={1}>Reached</CustomText>
+              <TouchableOpacity
+                style={[styles.twoButton, styles.reachedButton, loadingReached && { opacity: 0.7 }]}
+                onPress={handleReached}
+                disabled={loadingReached}
+              >
+                {loadingReached ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="flag" size={18} color="#fff" style={{ marginRight: 4 }} />
+                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]} numberOfLines={1}>Reached</CustomText>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           )}

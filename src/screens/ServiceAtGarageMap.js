@@ -7,6 +7,7 @@ import {
   Linking,
   RefreshControl,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
@@ -106,6 +107,9 @@ export default function ServiceAtGarageMap() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [routeCoords, setRouteCoords] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingStart, setLoadingStart] = useState(false);
+  const [loadingReached, setLoadingReached] = useState(false);
+  const [loadingPickup, setLoadingPickup] = useState(false);
   const mapRef = useRef(null);
 
   const getCoordinatesFromAddress = async (address) => {
@@ -285,6 +289,7 @@ export default function ServiceAtGarageMap() {
   };
 
   const handleStartRide = async () => {
+    setLoadingStart(true);
     const techID = await AsyncStorage.getItem("techID");
     if (!pickDropId) {
       console.warn("InsertTracking: no pickDropId (PickupDelivery.Id)");
@@ -334,13 +339,15 @@ export default function ServiceAtGarageMap() {
     setUpdatedBooking(next);
     navigation.setParams({ booking: next });
     onRefresh();
+    setLoadingStart(false);
     await openGoogleMaps();
   };
 
   const handleNavigate = () => openGoogleMaps();
 
   const handleReached = async () => {
-    const techID = await AsyncStorage.getItem("techID");``
+    setLoadingReached(true);
+    const techID = await AsyncStorage.getItem("techID");
     const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber;
     console.log("phoneNumber===========-----------", phoneNumber)
     try {
@@ -405,6 +412,7 @@ export default function ServiceAtGarageMap() {
     try {
       await stopBackgroundTracking();
     } catch (_) { }
+    setLoadingReached(false);
     navigation.navigate("CarPickUp", { booking: next });
   };
 
@@ -507,9 +515,19 @@ export default function ServiceAtGarageMap() {
         >
           {/* First: only Let's Start. On click → update to StartJourney, then show only Navigate + Reached */}
           {statusForButtons === "assigned" && (
-            <TouchableOpacity style={styles.startButton} onPress={handleStartRide}>
-              <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+            <TouchableOpacity
+              style={[styles.startButton, loadingStart && { opacity: 0.7 }]}
+              onPress={handleStartRide}
+              disabled={loadingStart}
+            >
+              {loadingStart ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="rocket" size={20} color="#fff" style={{ marginRight: 8 }} />
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Let's Start</CustomText>
+                </>
+              )}
             </TouchableOpacity>
           )}
 
@@ -520,9 +538,19 @@ export default function ServiceAtGarageMap() {
                 <Ionicons name="navigate" size={20} color="#fff" style={{ marginRight: 8 }} />
                 <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Navigate</CustomText>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.reachedButton, { flex: 1 }]} onPress={handleReached}>
-                <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
-                <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
+              <TouchableOpacity
+                style={[styles.reachedButton, { flex: 1 }, loadingReached && { opacity: 0.7 }]}
+                onPress={handleReached}
+                disabled={loadingReached}
+              >
+                {loadingReached ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="flag" size={20} color="#fff" style={{ marginRight: 8 }} />
+                    <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Reached</CustomText>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           )}
@@ -530,20 +558,34 @@ export default function ServiceAtGarageMap() {
           {/* Reached: hide Navigate/Reached, show Pickup Car (or Drop Car at Garage if pickup done) */}
           {statusForButtons === "pickup_reached" && !carPickupDone && (
             <TouchableOpacity
-              style={[styles.startButton, { marginTop: 10 }]}
-              onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
+              style={[styles.startButton, { marginTop: 10 }, loadingPickup && { opacity: 0.7 }]}
+              disabled={loadingPickup}
+              onPress={() => { setLoadingPickup(true); navigation.navigate("CarPickUp", { booking: displayBooking }); }}
             >
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
-              <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+              {loadingPickup ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+                </>
+              )}
             </TouchableOpacity>
           )}
           {statusForButtons === "pickup_reached" && carPickupDone && (
             <TouchableOpacity
-              style={[styles.startButton, { marginTop: 10 }]}
-              onPress={() => navigation.navigate("CarPickUp", { booking: displayBooking })}
+              style={[styles.startButton, { marginTop: 10 }, loadingPickup && { opacity: 0.7 }]}
+              disabled={loadingPickup}
+              onPress={() => { setLoadingPickup(true); navigation.navigate("CarPickUp", { booking: displayBooking }); }}
             >
-              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
-              <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+              {loadingPickup ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>Pickup Car</CustomText>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+                </>
+              )}
             </TouchableOpacity>
           )}
           {statusForButtons === "completed" && (

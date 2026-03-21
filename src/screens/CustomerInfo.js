@@ -1912,7 +1912,7 @@ export default function CustomerInfo() {
             })()}
 
             {updatedBookings.Payments?.some(
-              (payment) => payment.PaymentStatus === "Pending"
+              (payment) => payment.PaymentStatus === "Pending" || payment.PaymentStatus === "PartialPaid"
             ) && (
                 <TouchableOpacity
                   onPress={() => CollectPayment(updatedBookings)}
