@@ -80,13 +80,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   alertTitle: {
-    ...globalStyles.f12Regular,
-    fontWeight: "600",
+    ...globalStyles.f12Bold,
     marginBottom: 12,
     textAlign: "center",
   },
   alertMessage: {
-    ...globalStyles.f10Regular,
+    ...globalStyles.f10Bold,
     color: "#333",
     textAlign: "center",
     marginBottom: 20,
@@ -98,8 +97,7 @@ const styles = StyleSheet.create({
   },
   alertButtonText: {
     color: "#fff",
-    fontWeight: "600",
-    ...globalStyles.f12Regular,
+    ...globalStyles.f12Bold,
   },
   closeIcon: {
     position: 'absolute',

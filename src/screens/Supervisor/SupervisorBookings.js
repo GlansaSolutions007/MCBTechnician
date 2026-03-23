@@ -33,7 +33,7 @@ export default function SupervisorBookings() {
   // Assign modal state
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [bookingForAssign, setBookingForAssign] = useState(null);
-  const [assignType, setAssignType] = useState("Technician"); // "Field Advisor" | "Technician"
+  const [assignType, setAssignType] = useState("Field Advisor");
   const [selectedTechnician, setSelectedTechnician] = useState(null);
   const [showTimeSlotPicker, setShowTimeSlotPicker] = useState(false);
   const [showTechnicianPicker, setShowTechnicianPicker] = useState(false);
@@ -225,17 +225,9 @@ export default function SupervisorBookings() {
       return;
     }
 
-    const isTechnician = assignType === "Technician";
-    if (isTechnician) {
-      if (selectedTechnician == null || selectedTechnician === "") {
-        setAssignError("Please select a technician.");
-        return;
-      }
-    } else {
-      if (selectedFieldAdvisor == null || selectedFieldAdvisor === "") {
-        setAssignError("Please select a field advisor.");
-        return;
-      }
+    if (selectedFieldAdvisor == null || selectedFieldAdvisor === "") {
+      setAssignError("Please select a field advisor.");
+      return;
     }
 
     try {
@@ -249,14 +241,13 @@ export default function SupervisorBookings() {
         setAssigningInProgress(false);
         return;
       }
-      if (assignType !== "Technician") {
-        const headId = supervisorHeadId != null ? Number(supervisorHeadId) : (supervisorId != null ? Number(supervisorId) : null);
-        if (headId == null || isNaN(headId)) {
-          setAssignError("Unable to assign: supervisor session missing. Please log in again.");
-          setAssigningInProgress(false);
-          return;
-        }
+      const headId = supervisorHeadId != null ? Number(supervisorHeadId) : (supervisorId != null ? Number(supervisorId) : null);
+      if (headId == null || isNaN(headId)) {
+        setAssignError("Unable to assign: supervisor session missing. Please log in again.");
+        setAssigningInProgress(false);
+        return;
       }
+
       const baseUrl = API_BASE_URL?.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
       const config = {
         headers: {
@@ -265,42 +256,17 @@ export default function SupervisorBookings() {
         },
       };
 
-      if (isTechnician) {
-        // PUT api/Bookings/assign-technician
-        // Payload: { bookingID, role: "Technician", techID, assignedTimeSlot }
-        const timeSlots = parseTimeSlots(bookingForAssign);
-        const assignedTimeSlot =
-          timeSlots.length > 0
-            ? (selectedTimeSlot != null && selectedTimeSlot !== ""
-              ? selectedTimeSlot
-              : timeSlots[0])
-            : "";
-        const url = `${baseUrl}Bookings/assign-technician`;
-        const payload = {
-          bookingID: Number(bookingForAssign.BookingID),
-          role: "Technician",
-          techID: Number(selectedTechnician),
-          assignedTimeSlot: assignedTimeSlot || "",
-        };
-        await axios.put(url, payload, config);
-      } else {
-        // POST api/Supervisor/AssignToFieldAdvisor
-        // Payload: { bookingIds: [id], fieldAdvisorId, supervisorHeadId }
-        const headId = supervisorHeadId != null ? Number(supervisorHeadId) : (supervisorId != null ? Number(supervisorId) : null);
-        const url = `${baseUrl}Supervisor/AssignToFieldAdvisor`;
-        const payload = {
-          bookingIds: [Number(bookingForAssign.BookingID)],
-          fieldAdvisorId: Number(selectedFieldAdvisor),
-          supervisorHeadId: headId,
-        };
-        await axios.post(url, payload, config);
-      }
+      const url = `${baseUrl}Supervisor/AssignToFieldAdvisor`;
+      const payload = {
+        bookingIds: [Number(bookingForAssign.BookingID)],
+        fieldAdvisorId: Number(selectedFieldAdvisor),
+        supervisorHeadId: headId,
+      };
+      await axios.post(url, payload, config);
 
       setAssignModalVisible(false);
       setBookingForAssign(null);
-      setSelectedTechnician(null);
       setSelectedFieldAdvisor(null);
-      setSelectedTimeSlot(null);
       fetchBookings();
     } catch (err) {
       console.error("Assign error:", err?.response?.data ?? err);
@@ -355,17 +321,11 @@ export default function SupervisorBookings() {
 
   const statusLower = (s) => (s ? String(s).toLowerCase().trim() : "");
 
-  /** Assign button enabled only when all validations pass */
+  /** Assign button enabled only when Field Advisor is selected */
   const canAssign = React.useMemo(() => {
     if (!bookingForAssign || bookingForAssign.BookingID == null) return false;
-    if (assignType === "Technician") {
-      if (selectedTechnician == null || selectedTechnician === "") return false;
-      const slots = parseTimeSlots(bookingForAssign);
-      if (slots.length > 0 && (!selectedTimeSlot || selectedTimeSlot === "")) return false;
-      return true;
-    }
     return selectedFieldAdvisor != null && selectedFieldAdvisor !== "";
-  }, [bookingForAssign, assignType, selectedTechnician, selectedFieldAdvisor, selectedTimeSlot]);
+  }, [bookingForAssign, selectedFieldAdvisor]);
 
   const filteredBookings = React.useMemo(() => {
     if (!filterFromDashboard || !Array.isArray(bookings)) return bookings;
@@ -604,6 +564,7 @@ export default function SupervisorBookings() {
                     onPress={() =>
                       navigation.navigate("SupervisorBookingDetails", {
                         booking: customer.firstBooking,
+                        bookingId: customer.firstBooking?.BookingID,
                       })
                     }
                     android_ripple={{ color: color.neutral[100] }}
@@ -650,6 +611,7 @@ export default function SupervisorBookings() {
                         onPress={() =>
                           navigation.navigate("SupervisorBookingDetails", {
                             booking: customer.firstBooking,
+                            bookingId: customer.firstBooking?.BookingID,
                           })
                         }
                       >
@@ -680,6 +642,7 @@ export default function SupervisorBookings() {
                         onPress={() =>
                           navigation.navigate("SupervisorBookingDetails", {
                             booking: item,
+                            bookingId: item?.BookingID,
                           })
                         }
                         android_ripple={{ color: color.neutral[100] }}
@@ -719,12 +682,10 @@ export default function SupervisorBookings() {
                           style={styles.assignIconButton}
                           onPress={() => {
                             setBookingForAssign(item);
-                            setAssignType("Technician");
-                            setSelectedTechnician(null);
+                            setAssignType("Field Advisor");
                             setSelectedFieldAdvisor(null);
                             setAssignError(null);
-                            setShowTimeSlotPicker(false);
-                            setShowTechnicianPicker(false);
+                            setShowFieldAdvisorPicker(false);
                             setShowFieldAdvisorPicker(false);
                             const slots = (item?.TimeSlot ?? item?.timeSlot ?? "")
                               ? String(item?.TimeSlot ?? item?.timeSlot ?? "")
@@ -747,6 +708,7 @@ export default function SupervisorBookings() {
                           onPress={() =>
                             navigation.navigate("SupervisorBookingDetails", {
                               booking: item,
+                              bookingId: item?.BookingID,
                             })
                           }
                         >
@@ -767,10 +729,7 @@ export default function SupervisorBookings() {
         visible={assignModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          setAssignModalVisible(false);
-          setSelectedTimeSlot(null);
-        }}
+        onRequestClose={() => setAssignModalVisible(false)}
       >
         <Pressable
           style={styles.modalOverlay}
@@ -785,10 +744,7 @@ export default function SupervisorBookings() {
                 Assign
               </CustomText>
               <Pressable
-                onPress={() => {
-                  setAssignModalVisible(false);
-                  setSelectedTimeSlot(null);
-                }}
+                onPress={() => setAssignModalVisible(false)}
                 hitSlop={12}
                 style={styles.modalCloseButton}
               >
@@ -802,219 +758,28 @@ export default function SupervisorBookings() {
               showsVerticalScrollIndicator={true}
               keyboardShouldPersistTaps="handled"
             >
-            {/* Field Advisor / Technician */}
-            <View style={styles.assignTypeRow}>
-              <Pressable
-                style={[
-                  styles.assignTypeOption,
-                  assignType === "Field Advisor" && styles.assignTypeOptionSelected,
-                ]}
-                onPress={() => {
-                  setAssignType("Field Advisor");
-                  setSelectedTechnician(null);
-                  setShowTechnicianPicker(false);
-                  setShowFieldAdvisorPicker(false);
-                }}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    assignType === "Field Advisor" && styles.checkboxSelected,
-                  ]}
-                >
-                  {assignType === "Field Advisor" && (
-                    <Ionicons name="checkmark" size={14} color={color.white} />
-                  )}
-                </View>
-                <CustomText
-                  style={[
-                    globalStyles.f12Regular,
-                    assignType === "Field Advisor" ? globalStyles.f14Bold : globalStyles.f12Regular,
-                  ]}
-                >
-                  Field Advisor
-                </CustomText>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.assignTypeOption,
-                  assignType === "Technician" && styles.assignTypeOptionSelected,
-                ]}
-                onPress={() => {
-                  setAssignType("Technician");
-                  setSelectedFieldAdvisor(null);
-                  setShowFieldAdvisorPicker(false);
-                  setShowTechnicianPicker(false);
-                }}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    assignType === "Technician" && styles.checkboxSelected,
-                  ]}
-                >
-                  {assignType === "Technician" && (
-                    <Ionicons name="checkmark" size={14} color={color.white} />
-                  )}
-                </View>
-                <CustomText
-                  style={[
-                    globalStyles.f12Regular,
-                    assignType === "Technician" ? globalStyles.f14Bold : globalStyles.f12Regular,
-                  ]}
-                >
-                  Technician
-                </CustomText>
-              </Pressable>
-            </View>
-
-            {/* Time Slot – only for Technician: from booking; single = selected by default, multiple = dropdown */}
-            {assignType === "Technician" && (
-              <View style={styles.assignField}>
-                <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.assignLabel]}>
-                  Time Slot
-                </CustomText>
-                {(() => {
-                  const timeSlots = parseTimeSlots(bookingForAssign);
-                  if (timeSlots.length === 0) {
-                    return (
-                      <View style={[styles.dropdownField, { opacity: 0.8 }]}>
-                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                          No time slots
-                        </CustomText>
-                      </View>
-                    );
-                  }
-                  if (timeSlots.length === 1) {
-                    return (
-                      <View style={styles.dropdownField}>
-                        <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                          {timeSlots[0]}
-                        </CustomText>
-                      </View>
-                    );
-                  }
-                  return (
-                    <>
-                      <Pressable
-                        style={styles.dropdownField}
-                        onPress={() => {
-                          setShowTechnicianPicker(false);
-                          setShowFieldAdvisorPicker(false);
-                          setShowTimeSlotPicker(!showTimeSlotPicker);
-                        }}
-                      >
-                        <CustomText
-                          style={[
-                            globalStyles.f12Regular,
-                            selectedTimeSlot ? globalStyles.neutral500 : globalStyles.neutral300,
-                          ]}
-                        >
-                          {selectedTimeSlot ?? "Select time slot"}
-                        </CustomText>
-                        <Ionicons name="chevron-down" size={20} color={color.neutral[500]} />
-                      </Pressable>
-                      {showTimeSlotPicker && (
-                        <View style={styles.dropdownList}>
-                          {timeSlots.map((slot) => (
-                            <Pressable
-                              key={slot}
-                              style={styles.dropdownItem}
-                              onPress={() => {
-                                setSelectedTimeSlot(slot);
-                                setShowTimeSlotPicker(false);
-                                setAssignError(null);
-                              }}
-                            >
-                              <CustomText
-                                style={[
-                                  globalStyles.f12Regular,
-                                  selectedTimeSlot === slot ? globalStyles.f14Bold : globalStyles.black,
-                                  selectedTimeSlot === slot && { color: color.primary },
-                                ]}
-                              >
-                                {slot}
-                              </CustomText>
-                            </Pressable>
-                          ))}
-                        </View>
-                      )}
-                    </>
-                  );
-                })()}
-              </View>
-            )}
-
-            {/* Select Technician or Field Advisor */}
+            {/* Select Field Advisor */}
             <View style={styles.assignField}>
               <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500, styles.assignLabel]}>
-                {assignType === "Technician" ? "Select Technician" : "Select Field Advisor"}
+                Select Field Advisor
               </CustomText>
               <Pressable
                 style={styles.dropdownField}
-                onPress={() => {
-                  setShowTimeSlotPicker(false);
-                  if (assignType === "Technician") {
-                    setShowFieldAdvisorPicker(false);
-                    setShowTechnicianPicker(!showTechnicianPicker);
-                  } else {
-                    setShowTechnicianPicker(false);
-                    setShowFieldAdvisorPicker(!showFieldAdvisorPicker);
-                  }
-                }}
+                onPress={() => setShowFieldAdvisorPicker(!showFieldAdvisorPicker)}
               >
                 <CustomText
                   style={[
                     globalStyles.f12Regular,
-                    (assignType === "Technician" ? selectedTechnician != null : selectedFieldAdvisor != null)
-                      ? globalStyles.neutral500
-                      : globalStyles.neutral300,
+                    selectedFieldAdvisor != null ? globalStyles.neutral500 : globalStyles.neutral300,
                   ]}
                 >
-                  {assignType === "Technician"
-                    ? (selectedTechnician != null
-                        ? techniciansList.find((t) => t.TechID === selectedTechnician)?.TechnicianName ?? "Select Technician"
-                        : techniciansLoading ? "Loading..." : "Select Technician")
-                    : (selectedFieldAdvisor != null
-                        ? fieldAdvisorsList.find((e) => e.Id === selectedFieldAdvisor)?.Name ?? "Select Field Advisor"
-                        : employeesLoading ? "Loading..." : "Select Field Advisor")}
+                  {selectedFieldAdvisor != null
+                    ? fieldAdvisorsList.find((e) => e.Id === selectedFieldAdvisor)?.Name ?? "Select Field Advisor"
+                    : employeesLoading ? "Loading..." : "Select Field Advisor"}
                 </CustomText>
                 <Ionicons name="chevron-down" size={20} color={color.neutral[500]} />
               </Pressable>
-              {assignType === "Technician" && showTechnicianPicker && (
-                <View style={styles.dropdownList}>
-                  {techniciansLoading ? (
-                    <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f12Regular, globalStyles.neutral500]}>
-                        Loading...
-                      </CustomText>
-                    </View>
-                  ) : techniciansList.length === 0 ? (
-                    <View style={styles.dropdownItem}>
-                      <CustomText style={[globalStyles.f12Regular, globalStyles.black]}>
-                        No technicians found
-                      </CustomText>
-                    </View>
-                  ) : (
-                    techniciansList.map((t) => (
-                      <Pressable
-                        key={t.TechID}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setSelectedTechnician(t.TechID);
-                          setShowTechnicianPicker(false);
-                          setAssignError(null);
-                        }}
-                      >
-                        <CustomText style={[globalStyles.f12Regular, globalStyles.black]}>
-                          {t.TechnicianName}
-                        </CustomText>
-                      </Pressable>
-                    ))
-                  )}
-                </View>
-              )}
-              {assignType === "Field Advisor" && showFieldAdvisorPicker && (
+              {showFieldAdvisorPicker && (
                 <View style={styles.dropdownList}>
                   {employeesLoading ? (
                     <View style={styles.dropdownItem}>
@@ -1056,14 +821,11 @@ export default function SupervisorBookings() {
             ) : null}
             </ScrollView>
 
-            {/* Cancel & Assign field advisor or technician*/}
+            {/* Cancel & Assign Field Advisor */}
             <View style={styles.assignModalActions}>
               <TouchableOpacity
                 style={styles.assignCancelButton}
-                onPress={() => {
-                  setAssignModalVisible(false);
-                  setSelectedTimeSlot(null);
-                }}
+                onPress={() => setAssignModalVisible(false)}
                 disabled={assigningInProgress}
               >
                 <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>

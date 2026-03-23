@@ -4,9 +4,10 @@ import CustomHeader from "../components/CustomHeader";
 import { color } from "../styles/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
-import SupervisorDashboard from "../screens/Supervisor/SupervisorDashboard";
+import SupervisorHomeStack from "./SupervisorHomeStack";
 import SupervisorProfileScreen from "../screens/Supervisor/SupervisorProfileScreen";
 import SuperviserBookings from "../screens/Supervisor/SupervisorBookings.js";
+import SupervisorCustomersList from "../screens/Supervisor/SupervisorCustomersList";
 
 const Tab = createBottomTabNavigator();
 
@@ -59,12 +60,14 @@ export default function SupervisorTabNavigator() {
               iconName = focused ? "home" : "home-outline";
               break;
               case "Bookings":
-                iconName = focused ? "bookmarks":"bookmarks-outline";
-                break;
+              iconName = focused ? "bookmarks" : "bookmarks-outline";
+              break;
+            case "Customers":
+              iconName = focused ? "people" : "people-outline";
+              break;
             case "Profile":
               iconName = focused ? "person" : "person-outline";
               break;
-           
             default:
               iconName = "ellipse-outline";
           }
@@ -72,18 +75,28 @@ export default function SupervisorTabNavigator() {
         },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={SupervisorDashboard}
+      <Tab.Screen
+        name="Home"
+        component={SupervisorHomeStack}
         options={{ tabBarLabel: "Home" }}
       />
       <Tab.Screen
-      name="Bookings"
-      component={SuperviserBookings}
-      options={{tabBarLabel:"Bookings",headerShown:false }}
+        name="Bookings"
+        component={SuperviserBookings}
+        options={{ tabBarLabel: "Bookings", headerShown: false }}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            navigation.navigate("Bookings", { filter: null });
+          },
+        })}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Customers"
+        component={SupervisorCustomersList}
+        options={{ tabBarLabel: "Customers", headerShown: false }}
+      />
+      <Tab.Screen
+        name="Profile"
         component={SupervisorProfileScreen}
         options={{ tabBarLabel: "Profile", headerShown: false }}
       />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -14,10 +14,16 @@ import {
   Linking,
   Vibration,
   Modal,
+  ActivityIndicator,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import buddy from "../../assets/images/buddy.png";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -25,40 +31,120 @@ import axios from "axios";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
 import { color } from "../styles/theme";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 
 const formatReadableTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${
-    secs > 0 ? ` ${secs} sec` : ""
-  }`;
+  return `${hrs > 0 ? `${hrs} hr ` : ""}${mins} min${secs > 0 ? ` ${secs} sec` : ""
+    }`;
 };
 
 export default function ServiceEnd() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { estimatedTime = 0, actualTime = 0 } = route.params || {};
+  const {
+    estimatedTime = 0,
+    actualTime = 0,
+    carRegistrationNumber: paramRegNo = "",
+  } = route.params || {};
   const [leads, setLeads] = useState([]);
   const { booking } = route.params;
-  console.log("booking=================", booking);
+
+  const refreshBooking = useCallback(async () => {
+    const currentBooking = route.params?.booking;
+    if (!currentBooking?.BookingID) return;
+    const techID = (await AsyncStorage.getItem("techID")) ?? currentBooking.TechID;
+    if (!techID) return;
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}Bookings/GetAssignedBookings`,
+        {
+          params: { Id: techID, techId: techID },
+        },
+      );
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : (res?.data?.data ?? []);
+      const fromApi = list.find(
+        (b) => b.BookingID === currentBooking.BookingID,
+      );
+      if (fromApi) {
+        navigation.setParams({
+          ...route.params,
+          booking: fromApi,
+        });
+      }
+    } catch (e) {
+      if (__DEV__)
+        console.warn(
+          "ServiceEnd refreshBooking:",
+          e?.response?.data ?? e?.message,
+        );
+    }
+  }, [route.params?.booking?.BookingID, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshBooking();
+    }, [refreshBooking]),
+  );
 
   // Merge booking data with Leads data for missing fields (same as ServiceStart.js)
-  const customerName = booking.CustomerName || booking.Leads?.FullName || "";
-  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
+  const customerName = booking.PickupDelivery[0]?.PickFrom?.PersonName;
+  const phoneNumber = booking.PickupDelivery[0]?.PickFrom?.PersonNumber;
   const profileImage = booking.ProfileImage || null;
-  const vehicleNumber = booking.VehicleNumber || booking.Leads?.Vehicle?.RegistrationNumber || "";
-  const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
-  const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
-  const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
+  const carRegistrationNumber =
+    paramRegNo ||
+    booking?.CarRegistrationNumber ||
+    booking?.VehicleNumber ||
+    booking?.Leads?.Vehicle?.RegistrationNumber ||
+    "";
+  const vehicleNumber =
+    booking.VehicleNumber ||
+    booking.Leads?.Vehicle?.RegistrationNumber ||
+    carRegistrationNumber ||
+    "";
+  const address = booking.PickupDelivery[0]?.PickFrom?.Address ||
+    booking.PickupDelivery[0]?.DropAt?.Address ||
+    booking.FullAddress ||
+    "N/A";
+  const brandName =
+    booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
+  const modelName =
+    booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
+  const fuelTypeName =
+    booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
+
+  const assignDateTime = booking?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
   // const [services, setServices] = useState(booking?.Packages || []);
   const [services, setServices] = useState(() => {
     const servicesList = [];
-    
+
     // Handle Packages
     if (booking?.Packages && Array.isArray(booking.Packages)) {
       booking.Packages.forEach((pkg, pkgIndex) => {
-        if (pkg.Category?.SubCategories && Array.isArray(pkg.Category.SubCategories)) {
+        if (
+          pkg.Category?.SubCategories &&
+          Array.isArray(pkg.Category.SubCategories)
+        ) {
           pkg.Category.SubCategories.forEach((sub, subIndex) => {
             if (sub.Includes && Array.isArray(sub.Includes)) {
               sub.Includes.forEach((inc, incIndex) => {
@@ -73,22 +159,38 @@ export default function ServiceEnd() {
         }
       });
     }
-    
+
     // Handle BookingAddOns
     if (booking?.BookingAddOns && Array.isArray(booking.BookingAddOns)) {
       booking.BookingAddOns.forEach((addOn, addOnIndex) => {
-        if (addOn.Includes && Array.isArray(addOn.Includes)) {
+        if (
+          addOn.Includes &&
+          Array.isArray(addOn.Includes) &&
+          addOn.Includes.length > 0
+        ) {
           addOn.Includes.forEach((inc, incIndex) => {
             servicesList.push({
               ...inc,
+              ServiceName: inc.ServiceName ?? inc.IncludeName,
               completed: true,
-              uniqueKey: `addon-${addOnIndex}-${incIndex}-${inc.IncludeID}`,
+              uniqueKey: `addon-${addOnIndex}-${incIndex}-${inc.IncludeID ?? incIndex}`,
             });
+          });
+        } else {
+          // Add-on has no Includes; treat the add-on as the service (use ServiceName from API)
+          servicesList.push({
+            ServiceName:
+              addOn.ServiceName ??
+              addOn.IncludeName ??
+              addOn.Description ??
+              "Service",
+            completed: true,
+            uniqueKey: `addon-${addOnIndex}-${addOn.AddOnID ?? addOnIndex}`,
           });
         }
       });
     }
-    
+
     return servicesList;
   });
 
@@ -109,13 +211,116 @@ export default function ServiceEnd() {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [images, setImages] = useState([]);
+  const [imageError, setImageError] = useState("");
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType,
+      allowsMultipleSelection: true,
+      quality: 0.5,
+    });
+    if (!result.canceled) {
+      const selected = result.assets.map((asset) => asset.uri);
+      setImages((prev) => [...prev, ...selected].slice(0, 5));
+      setImageError("");
+    }
+  };
+
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const pd = booking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd)
+      ? (pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId)
+      : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce(
+        (acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.PickupDeliveryId,
+        null,
+      )
+      : null;
+  const carPickupDeliveryId = Number(
+    legId ??
+    booking?.PickupDeliveryId ??
+    booking?.CarPickupDeliveryId ??
+    fromArray ??
+    0,
+  );
+  const routeType =
+    currentLeg?.PickFrom?.[0]?.RouteType ??
+    currentLeg?.PickFrom?.RouteType ??
+    currentLeg?.DropAt?.RouteType ??
+    "CustomerToDealer";
+
+  const uploadAfterServiceImages = async () => {
+    if (!images.length) return;
+    setIsUploadingImages(true);
+    try {
+      const baseUrl = API_BASE_URL?.endsWith("/")
+        ? API_BASE_URL
+        : `${API_BASE_URL}/`;
+      const vehicleNum = carRegistrationNumber || vehicleNumber || "";
+      for (let i = 0; i < images.length; i++) {
+        const formData = new FormData();
+        formData.append(
+          "CarPickupDeliveryId",
+          Number(carPickupDeliveryId) || 0,
+        );
+        formData.append("VehicleNumber", vehicleNum);
+        formData.append("BookingID", booking.BookingID);
+        formData.append("UploadedBy", 1);
+        formData.append("TechID", String((await AsyncStorage.getItem("techID")) ?? ""));
+        formData.append("ImageUploadType", "Delivery");
+        formData.append("ImagesType", "tech");
+        formData.append("ImageURL1", {
+          uri: images[i],
+          type: "image/jpeg",
+          name: `delivery_${i + 1}.jpg`,
+        });
+        const res = await fetch(
+          `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
+          {
+            method: "POST",
+            headers: { Accept: "application/json" },
+            body: formData,
+          },
+        );
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || `Upload failed ${res.status}`);
+        }
+      }
+      setImages([]);
+      setModalMessage("Images uploaded successfully.");
+      setModalVisible(true);
+    } catch (err) {
+      console.error("Upload after-service images error:", err);
+      setModalMessage(
+        err?.message ||
+        err?.response?.data?.message ||
+        "Failed to upload images. Please try again.",
+      );
+      setModalVisible(true);
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
 
   useEffect(() => {
     const showListener = Keyboard.addListener("keyboardDidShow", () =>
-      setKeyboardVisible(true)
+      setKeyboardVisible(true),
     );
     const hideListener = Keyboard.addListener("keyboardDidHide", () =>
-      setKeyboardVisible(false)
+      setKeyboardVisible(false),
     );
 
     return () => {
@@ -134,8 +339,8 @@ export default function ServiceEnd() {
   }, [cooldownTimer]);
 
   const startCooldownTimer = () => {
-    setOtpCooldown(60); 
-    
+    setOtpCooldown(60);
+
     const timer = setInterval(() => {
       setOtpCooldown((prev) => {
         if (prev <= 1) {
@@ -146,32 +351,48 @@ export default function ServiceEnd() {
         return prev - 1;
       });
     }, 1000);
-    
+
     setCooldownTimer(timer);
   };
 
   const sendOTP = async () => {
     try {
       setIsLoading(true);
+      if (!carPickupDeliveryId) {
+        setModalMessage(
+          "Booking pickup/delivery info is missing. Cannot send OTP.",
+        );
+        setModalVisible(true);
+        setIsLoading(false);
+        return;
+      }
+      const payload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId),
+        otpType: "Delivery",
+        phoneNumber: String(phoneNumber || "").trim(),
+      };
       const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: "SendOTP",
-        }
+        `${API_BASE_URL}ServiceImages/GenerateOTP`,
+        payload,
+        { headers: { "Content-Type": "application/json" } },
       );
 
       if (response?.data?.status === true || response?.data?.success === true) {
         setOtpSent(true);
         setModalMessage("OTP sent successfully to customer!");
         setModalVisible(true);
-        startCooldownTimer(); // Start 3-minute cooldown
+        startCooldownTimer();
       } else {
-        setModalMessage("Failed to send OTP. Please try again.");
+        setModalMessage(
+          response?.data?.message || "Failed to send OTP. Please try again.",
+        );
         setModalVisible(true);
       }
     } catch (error) {
-      setModalMessage("Failed to send OTP. Please try again.");
+      setModalMessage(
+        error?.response?.data?.message ||
+        "Failed to send OTP. Please try again.",
+      );
       setModalVisible(true);
     } finally {
       setIsLoading(false);
@@ -181,35 +402,35 @@ export default function ServiceEnd() {
   const verifyOTP = async () => {
     try {
       setIsLoading(true);
+      const verifyPayload = {
+        carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
+        otp: String(otp).trim(),
+        otpType: "Delivery",
+      };
       const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: "VerifyOTP",
-          bookingOTP: otp,
-          // loginId: booking.PhoneNumber,
-          // otp: otp,
-          // deviceToken: "dummy",
-          // deviceId: "dummy",
-        }
+        `${API_BASE_URL}ServiceImages/VerifyOTP`,
+        verifyPayload,
+        { headers: { "Content-Type": "application/json" } },
       );
-
-      if (
-        response?.data?.status === true ||
-        response?.data?.success === true ||
-        response?.data?.isValid === true
-      ) {
-        setOtpValid(true);
-        return true;
-      } else {
+      const data = response?.data;
+      const isInvalid =
+        data?.status === false ||
+        data?.isValid === false ||
+        (data?.success === false && data?.isValid !== true);
+      if (isInvalid) {
         setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
+        setModalMessage(data?.message || "Invalid OTP. Please try again.");
         setModalVisible(true);
+        setIsLoading(false);
         return false;
       }
+      setOtpValid(true);
+      return true;
     } catch (error) {
       setOtpValid(false);
-      setModalMessage("Invalid OTP. Please try again.");
+      setModalMessage(
+        error?.response?.data?.message || "Invalid OTP. Please try again.",
+      );
       setModalVisible(true);
       return false;
     } finally {
@@ -217,78 +438,244 @@ export default function ServiceEnd() {
     }
   };
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        {
-          bookingID: Number(bookingId),
-          actionType: actionType,
-          bookingOTP: otp,
-        }
-      );
-
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        setOtpValid(false);
-        setModalMessage("Invalid OTP. Please try again.");
-        setModalVisible(true);
-        return false;
-      }
-      setOtpValid(true);
-      return true;
-    } catch (error) {
-      setOtpValid(false);
-      setModalMessage("Invalid OTP. Please try again.");
-      setModalVisible(true);
-      return false;
-    }
-  };
-
   const Completedservice = async () => {
+    if (isLoading || isUploadingImages) return;
+    setIsLoading(true);
+    setError("");
+    setImageError("");
+
+    if (!images || images.length < 1) {
+      setImageError("At least one image is required.");
+      setIsLoading(false);
+      return;
+    }
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
+      setIsLoading(false);
+      return;
+    }
+    if (!carPickupDeliveryId) {
+      setModalMessage(
+        "Booking pickup/delivery info is missing. Please go back and open this booking again.",
+      );
+      setModalVisible(true);
+      setIsLoading(false);
       return;
     }
 
-    // First verify OTP with Auth API
-    const otpValid = await verifyOTP();
-    if (!otpValid) {
+    // Verify OTP first — only if valid, then upload images
+    const otpValidResult = await verifyOTP();
+    if (!otpValidResult) {
+      setIsLoading(false);
       return;
     }
 
-    // Get PaymentStatus from booking (check Payments array first, then direct property)
-    const paymentStatus = booking.Payments?.[0]?.PaymentStatus || booking.PaymentStatus;
-
-    // If PaymentStatus is null or payment is null, navigate to CollectPayment without updating status
-    if (paymentStatus === null || paymentStatus === undefined) {
-      navigation.navigate("CollectPayment", { booking });
+    // OTP valid — upload after-service images (ImageUploadType=completedservice)
+    try {
+      await uploadAfterServiceImages(true);
+    } catch (err) {
+      setIsLoading(false);
       return;
     }
 
-    // If PaymentStatus is "Success", update technician tracking and navigate to dashboard
-    if (paymentStatus === "Success") {
-      const statusUpdated = await updateTechnicianTracking("Completed");
-      if (!statusUpdated) {
-        return;
-      }
-      navigation.reset({
-        index: 0,
-        routes: [
+    // Post status "ServiceComplete" via UpdateBookingStatus
+
+    // const addOnsToUpdate = [
+    //   ...(Array.isArray(booking?.PickupDelivery?.[0]?.AddOns)
+    //     ? booking.PickupDelivery[0].AddOns
+    //     : []),
+    // ];
+    // console.log("AddOnsToUpdate======:", addOnsToUpdate);
+
+    // const completedBy = await AsyncStorage.getItem("techID");
+    // console.log("completedBy======", completedBy);
+    // let authToken = null;
+    // try {
+    //   authToken = await AsyncStorage.getItem("token");
+    // } catch (_) {}
+
+    // const addOnHeaders = {
+    //   "Content-Type": "application/json",
+    //   ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    // };
+
+    // for (const addOn of addOnsToUpdate) {
+    //   const addOnID = addOn.AddOnID;
+    //   // if (addOnID !== null) continue;
+
+    //   const addOnIdNum = Number(addOnID);
+    //   if (!Number.isFinite(addOnIdNum)) continue;
+
+    //   try {
+    //     const response = await axios.post(
+    //       `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
+    //       {
+    //         addOnID: addOnIdNum,
+    //         completedBy,
+    //         completedRole: "Technician",
+    //         is_Completed: true,
+    //         statusName: "ServiceCompleted",
+    //       },
+    //       { headers: addOnHeaders },
+    //     );
+
+    //     console.log("UpdateAddOnCompletion Responseeeeeeeeee:", response.data);
+    //   } catch (e) {
+    //     if (__DEV__) {
+    //       console.warn(
+    //         "UpdateAddOnCompletion Error:",
+    //         e?.response?.data ?? e?.message,
+    //       );
+    //     }
+    //   }
+    // }
+
+    const addOnsToUpdate = booking?.PickupDelivery?.[0]?.AddOns ?? [];
+
+    const completedBy = await AsyncStorage.getItem("techID");
+    console.log("completedBy======", completedBy);
+
+    let authToken = await AsyncStorage.getItem("token");
+    console.log("authToken======", authToken);
+
+    // const addOnHeaders = {
+    //   "Content-Type": "application/json",
+    //   ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    // };
+
+    // for (const addOn of addOnsToUpdate) {
+    //   const addOnIdNum = Number(addOn.AddOnID);
+    //   console.log("addOnIdNum-------------",addOnIdNum)
+
+    //   try {
+    //     console.log("Calling API for AddOnID:", addOnIdNum);
+
+    //     const response = await axios.put(
+    //       `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
+    //       {
+    //         addOnID: addOnIdNum,
+    //         completedBy,
+    //         completedRole: "Technician",
+    //         is_Completed: true,
+    //         statusName: "ServiceCompleted",
+    //       },
+    //       { headers: addOnHeaders }
+    //     );
+
+    //     console.log("UpdateAddOnCompletion Response:", response.data);
+    //   } catch (e) {
+    //     console.warn(
+    //       "UpdateAddOnCompletion Error:",
+    //       e?.response?.data ?? e?.message
+    //     );
+    //   }
+    // }
+
+    //  try {
+    //       const statusPayload = {
+    //         bookingID: Number(booking?.BookingID || 0),
+    //         serviceType: booking?.ServiceType || "ServiceAtGarage",
+    //         action: "ServiceComplete",
+    //         routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
+    //         updatedBy: Number(booking?.TechID || 3),
+    //         role: "Technician",
+    //       };
+    //       await axios.post(
+    //         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+    //         statusPayload,
+    //         { headers: { "Content-Type": "application/json" } },
+    //       );
+    //     } catch (e) {
+    //       console.error(
+    //         "UpdateBookingStatus (ServiceComplete) Error:",
+    //         e?.response?.data ?? e,
+    //       );
+    //     }
+
+    const addOnHeaders = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    // 1️⃣ Update all AddOns
+    for (const addOn of addOnsToUpdate) {
+      const addOnIdNum = Number(addOn.AddOnID);
+      console.log("addOnIdNum-------------", addOnIdNum);
+
+      try {
+        console.log("Calling API for AddOnID:", addOnIdNum);
+
+        const response = await axios.put(
+          `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
           {
-            name: "CustomerTabNavigator",
-            params: { screen: "Dashboard" },
+            addOnID: addOnIdNum,
+            completedBy,
+            completedRole: "Technician",
+            is_Completed: true,
+            statusName: "ServiceCompleted",
           },
-        ],
-      });
-      return;
+          { headers: addOnHeaders },
+        );
+
+        console.log("UpdateAddOnCompletion Response:", response.data);
+      } catch (e) {
+        console.warn(
+          "UpdateAddOnCompletion Error:",
+          e?.response?.data ?? e?.message,
+        );
+      }
     }
 
-    // For any other PaymentStatus (like "Pending"), navigate to CollectPayment without updating status
+
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/InsertTracking`,
+        {
+          pickDropId: Number(carPickupDeliveryId),
+          status: "completed",
+        },
+        { headers: { "Content-Type": "application/json" } },
+      );
+    } catch (e) {
+      console.error("InsertTracking Completed Error:", e);
+    }
+
+    // 2️⃣ After loop finishes, update booking status
+    try {
+      const statusPayload = {
+        bookingID: Number(booking?.BookingID || 0),
+        serviceType: booking?.ServiceType || "ServiceAtGarage",
+        action: "ServiceComplete",
+        routeType:
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
+        updatedBy: Number(completedBy),
+        role: "Technician",
+      };
+
+      const statusResponse = await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } },
+      );
+
+      console.log("UpdateBookingStatus Response:", statusResponse.data);
+    } catch (e) {
+      console.error(
+        "UpdateBookingStatus (ServiceComplete) Error:",
+        e?.response?.data ?? e,
+      );
+    }
+
+    setIsLoading(false);
     navigation.navigate("CollectPayment", { booking });
   };
+
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -402,7 +789,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {booking.BookingTrackID}
+                  {getBookingDisplayData(booking).bookingTrackID}
                 </CustomText>
               </View>
               <View
@@ -420,10 +807,11 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {booking.BookingDate}
+                  {getBookingDisplayData(booking).bookingDate}
                 </CustomText>
               </View>
             </View>
+            <BookingPickDropRow booking={booking} style={globalStyles.mt2} />
             <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
               <View
                 style={[
@@ -441,7 +829,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {modelName || vehicleNumber || "N/A"}
+                  {carRegistrationNumber || "—"}
                 </CustomText>
               </View>
               <View
@@ -452,52 +840,289 @@ export default function ServiceEnd() {
                 ]}
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
+                {/* <View style={{ flexDirection: "column" }}>
+                  {(getBookingDisplayData(booking).timeSlot || "")
+                    .split(",")
+                    .map((slot, index) => (
+                      <CustomText
+                        key={index}
+                        style={[
+                          globalStyles.f10Regular,
+                          globalStyles.black,
+                          globalStyles.ml1,
+                        ]}
+                      >
+                        {slot.trim()}
+                      </CustomText>
+                    ))}
+                </View> */}
                 <View style={{ flexDirection: "column" }}>
-                  {booking.TimeSlot?.split(",").map((slot, index) => (
+                  {booking?.ServiceType === "ServiceAtGarage" ? (
                     <CustomText
-                      key={index}
                       style={[
                         globalStyles.f10Regular,
                         globalStyles.black,
                         globalStyles.ml1,
                       ]}
                     >
-                      {slot.trim()}
+                      {assignTime}
                     </CustomText>
-                  ))}
+                  ) : (
+                    (getBookingDisplayData(booking).timeSlot || "")
+                      .split(",")
+                      .map((slot, index) => (
+                        <CustomText
+                          key={index}
+                          style={[
+                            globalStyles.f10Regular,
+                            globalStyles.black,
+                            globalStyles.ml1,
+                          ]}
+                        >
+                          {slot.trim()}
+                        </CustomText>
+                      ))
+                  )}
+                </View>
+              </View>
+            </View>
+            <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+              <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                  {address || "N/A"}
+                </CustomText>
+              </View>
+            </View>
+          </View>
+
+          <View>
+            <View>
+              <CustomText
+                style={[
+                  globalStyles.f16Bold,
+                  globalStyles.black,
+                  globalStyles.mt3,
+                ]}
+              >
+                Service Details
+              </CustomText>
+
+              <View
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgwhite,
+                  globalStyles.radius,
+                  globalStyles.p4,
+                  globalStyles.card,
+                ]}
+              >
+                <View>
+                  <CustomText
+                    style={[
+                      globalStyles.f14Bold,
+                      globalStyles.black,
+                      globalStyles.mb2,
+                    ]}
+                  >
+                    Services:
+                  </CustomText>
+                  {booking.Packages &&
+                    booking.Packages.length > 0 &&
+                    booking.Packages.map((pkg) => (
+                      <View key={pkg.PackageID} style={[globalStyles.mb3]}>
+                        {pkg.Category?.CategoryName && (
+                          <CustomText
+                            style={[
+                              globalStyles.f12Bold,
+                              globalStyles.primary,
+                              globalStyles.mb1,
+                            ]}
+                          >
+                            {pkg.Category.CategoryName}
+                          </CustomText>
+                        )}
+                        {pkg.Category?.SubCategories?.map((sub) => (
+                          <View
+                            key={sub.SubCategoryID}
+                            style={[globalStyles.ml2, globalStyles.mb1]}
+                          >
+                            {sub.Includes?.map((inc) => (
+                              <CustomText
+                                key={inc.IncludeID}
+                                style={[
+                                  globalStyles.f12Regular,
+                                  globalStyles.neutral500,
+                                  globalStyles.ml2,
+                                ]}
+                              >
+                                - {inc.IncludeName}
+                              </CustomText>
+                            ))}
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+
+                  {booking.PickupDelivery?.[0]?.AddOns &&
+                    booking.PickupDelivery?.[0]?.AddOns?.length > 0 &&
+                    booking.PickupDelivery?.[0]?.AddOns?.map((addOn) => (
+                      <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
+                        <CustomText
+                          style={[globalStyles.f12Bold, globalStyles.primary]}
+                        >
+                          • {addOn.ServiceName}
+                        </CustomText>
+                        {/* {addOn.Description && (
+                          <CustomText
+                            style={[
+                              globalStyles.f12Regular,
+                              globalStyles.neutral500,
+                              globalStyles.mt1,
+                            ]}
+                          >
+                            {addOn.Description}
+                          </CustomText>
+                        )} */}
+                        {addOn.Includes && addOn.Includes.length > 0 && (
+                          <View style={[globalStyles.ml3, globalStyles.mt1]}>
+                            {addOn.Includes.map((inc) => (
+                              <CustomText
+                                key={inc.IncludeID}
+                                style={[
+                                  globalStyles.f12Regular,
+                                  globalStyles.neutral500,
+                                ]}
+                              >
+                                - {inc.IncludeName}
+                              </CustomText>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    ))}
+
+                  {!booking.PickupDelivery?.[0]?.AddOns.length === 0 &&
+                    !booking.PickupDelivery?.[0]?.AddOns === 0 && (
+                      <CustomText
+                        style={[
+                          globalStyles.f12Regular,
+                          globalStyles.neutral500,
+                        ]}
+                      >
+                        No services available
+                      </CustomText>
+                    )}
                 </View>
               </View>
             </View>
           </View>
 
-          <View style={{ marginTop: 12 }}>
-            <CustomText style={[globalStyles.f14Bold, globalStyles.mb2]}>
-              Please check completed services
+          {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
+            <View style={[globalStyles.mb3]}></View>
+          ) : (
+            <View style={[globalStyles.mb3]}>
+              <CustomText
+                style={[globalStyles.f12Medium, globalStyles.neutral500]}
+              >
+                No pickup/delivery scheduled
+              </CustomText>
+            </View>
+          )}
+
+          {/* After-service checklist — same UI as ServiceStart; images uploaded when Completed is pressed after OTP */}
+          <View
+            style={[
+              globalStyles.mt3,
+              globalStyles.bgwhite,
+              globalStyles.radius,
+              globalStyles.pt0,
+              globalStyles.pb3,
+              globalStyles.ph3,
+              globalStyles.card,
+            ]}
+          >
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
+              After-service checklist
+            </CustomText>
+            <CustomText
+              style={[
+                globalStyles.f10Regular,
+                globalStyles.neutral500,
+              ]}
+            >
+              At least one image required. Choose files, then enter OTP and tap
+              Completed.
             </CustomText>
 
-            {Array.isArray(services) && services.map((service) => (
-              <View
-                key={service.uniqueKey}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
+            <TouchableOpacity
+              style={[
+                globalStyles.inputBox,
+                globalStyles.mt3,
+                {
+                  borderColor: imageError ? color.alertError || "#c00" : "#ccc",
+                  borderWidth: imageError ? 2 : 1,
+                },
+              ]}
+              onPress={pickImage}
+            >
+              <CustomText
+                style={[globalStyles.f16Light, globalStyles.neutral500]}
               >
-                <Pressable
-                // onPress={() => toggleService(service.IncludeID)}
-                >
-                  <Ionicons
-                    name={service.completed ? "checkbox" : "square-outline"}
-                    size={30}
-                    color={service.completed ? "#0D9276" : "#999"}
-                  />
-                </Pressable>
-                <CustomText style={[globalStyles.ml2, globalStyles.f14Bold]}>
-                  {service.IncludeName}
-                </CustomText>
+                Choose Files
+              </CustomText>
+            </TouchableOpacity>
+            {imageError ? (
+              <CustomText
+                style={[
+                  globalStyles.f12Regular,
+                  { color: color.alertError || "#c00", marginTop: 4 },
+                ]}
+              >
+                {imageError}
+              </CustomText>
+            ) : null}
+
+            {images.length > 0 && (
+              <View
+                style={[
+                  globalStyles.flexrow,
+                  globalStyles.justifycenter,
+                  globalStyles.mt3,
+                  { flexWrap: "wrap" },
+                ]}
+              >
+                {images.map((uri, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      width: "32%",
+                      marginBottom: 10,
+                      position: "relative",
+                    }}
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={{ width: 100, height: 100, borderRadius: 10 }}
+                    />
+                    <TouchableOpacity
+                      onPress={() => removeImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: 5,
+                        right: 18,
+                        backgroundColor: "#000",
+                        borderRadius: 10,
+                        padding: 2,
+                        zIndex: 1,
+                      }}
+                    >
+                      <Ionicons name="close" color="#fff" size={15} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
-            ))}
+            )}
           </View>
 
           {/* Time Summary Card */}
@@ -595,8 +1220,34 @@ export default function ServiceEnd() {
           <CustomText
             style={[
               globalStyles.f16Light,
+              globalStyles.mt3,
+              globalStyles.neutral500,
+            ]}
+          >
+            Car Registration Number
+          </CustomText>
+          <View
+            style={[
+              globalStyles.inputBox,
+              globalStyles.mt2,
+              {
+                borderColor: "#ccc",
+                borderWidth: 1,
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+              },
+            ]}
+          >
+            <CustomText style={[globalStyles.f12Medium, globalStyles.black]}>
+              {carRegistrationNumber || "—"}
+            </CustomText>
+          </View>
+          <CustomText
+            style={[
+              globalStyles.f16Light,
               globalStyles.mt2,
               globalStyles.neutral500,
+              globalStyles.mb1,
             ]}
           >
             Enter OTP
@@ -648,11 +1299,13 @@ export default function ServiceEnd() {
                   },
                 ]}
               >
-                <CustomText
-                  style={[globalStyles.f12Bold, globalStyles.textWhite]}
-                >
-                  {isLoading ? "Sending OTP" : "Resend OTP"}  
-                </CustomText>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                    Send OTP
+                  </CustomText>
+                )}
               </TouchableOpacity>
             ) : (
               <View
@@ -672,16 +1325,15 @@ export default function ServiceEnd() {
                 <CustomText
                   style={[globalStyles.f12Bold, globalStyles.textWhite]}
                 >
-                  Resend in {Math.floor(otpCooldown / 60)}:{(otpCooldown % 60).toString().padStart(2, '0')}
+                  Resend in {Math.floor(otpCooldown / 60)}:
+                  {(otpCooldown % 60).toString().padStart(2, "0")}
                 </CustomText>
               </View>
             )}
           </View>
 
           {error ? (
-            <CustomText style={{ color: "red"}}>
-              {error}
-            </CustomText>
+            <CustomText style={{ color: "red" }}>{error}</CustomText>
           ) : null}
           {/* </> */}
           {/* )} */}
@@ -689,19 +1341,23 @@ export default function ServiceEnd() {
           {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && ( */}
           <TouchableOpacity
             onPress={Completedservice}
-            disabled={isLoading}
+            disabled={isLoading || isUploadingImages}
             style={[
               globalStyles.blackButton,
               {
                 marginTop: 16,
                 marginBottom: keyboardVisible ? 130 : 80,
-                opacity: isLoading ? 0.6 : 1,
+                opacity: isLoading || isUploadingImages ? 0.6 : 1,
               },
             ]}
           >
-            <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-              {isLoading ? "Verifying..." : "Completed"}
-            </CustomText>
+            {(isLoading || isUploadingImages) ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                Completed
+              </CustomText>
+            )}
           </TouchableOpacity>
           {/* )} */}
           <Modal
@@ -710,13 +1366,46 @@ export default function ServiceEnd() {
             visible={modalVisible}
             onRequestClose={() => setModalVisible(false)}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalBox}>
+            <Pressable
+              style={styles.modalOverlay}
+              onPress={() => setModalVisible(false)}
+            >
+              <Pressable
+                style={styles.modalBox}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <View style={styles.modalIconContainer}>
+                  <Ionicons
+                    name={
+                      modalMessage.toLowerCase().includes("successfully")
+                        ? "checkmark-circle"
+                        : "alert-circle"
+                    }
+                    size={48}
+                    color={
+                      modalMessage.toLowerCase().includes("successfully")
+                        ? color.primary
+                        : color.alertError
+                    }
+                  />
+                </View>
                 <CustomText
                   style={[
-                    globalStyles.f16Bold,
+                    globalStyles.f18SemiBold,
                     globalStyles.textac,
-                    { marginTop: 10 },
+                    globalStyles.mb2,
+                  ]}
+                >
+                  {modalMessage.toLowerCase().includes("successfully")
+                    ? "Success!"
+                    : "Notice"}
+                </CustomText>
+                <CustomText
+                  style={[
+                    globalStyles.f12Regular,
+                    globalStyles.textac,
+                    globalStyles.neutral500,
+                    globalStyles.mb4,
                   ]}
                 >
                   {modalMessage}
@@ -731,68 +1420,69 @@ export default function ServiceEnd() {
                     OK
                   </CustomText>
                 </TouchableOpacity>
-              </View>
-          </View>
-        </Modal>
+              </Pressable>
+            </Pressable>
+          </Modal>
 
-        {/* Payment Completion Modal for Razorpay */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={showPaymentModal}
-          onRequestClose={() => setShowPaymentModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Ionicons
-                name="checkmark-circle"
-                size={64}
-                color="#4CAF50"
-                style={{ alignSelf: "center", marginBottom: 16 }}
-              />
-              <CustomText
-                style={[
-                  globalStyles.f20Bold,
-                  globalStyles.textac,
-                  { marginBottom: 8 },
-                ]}
-              >
-                Payment Completed!
-              </CustomText>
-              <CustomText
-                style={[
-                  globalStyles.f12Regular,
-                  globalStyles.textac,
-                  globalStyles.neutral500,
-                  { marginBottom: 24, textAlign: "center" },
-                ]}
-              >
-                Your service has been completed successfully. Payment has been processed through Razorpay.
-              </CustomText>
-              <TouchableOpacity
-                style={styles.okButton}
-                onPress={() => {
-                  setShowPaymentModal(false);
-                  navigation.reset({
-                    index: 0,
-                    routes: [
-                      {
-                        name: "CustomerTabNavigator",
-                        params: { screen: "Dashboard" },
-                      },
-                    ],
-                  });
-                }}
-              >
+          {/* Payment Completion Modal for Razorpay */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showPaymentModal}
+            onRequestClose={() => setShowPaymentModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={64}
+                  color="#4CAF50"
+                  style={{ alignSelf: "center", marginBottom: 16 }}
+                />
                 <CustomText
-                  style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  style={[
+                    globalStyles.f20Bold,
+                    globalStyles.textac,
+                    { marginBottom: 8 },
+                  ]}
                 >
-                  Go to Dashboard
+                  Payment Completed!
                 </CustomText>
-              </TouchableOpacity>
+                <CustomText
+                  style={[
+                    globalStyles.f12Regular,
+                    globalStyles.textac,
+                    globalStyles.neutral500,
+                    { marginBottom: 24, textAlign: "center" },
+                  ]}
+                >
+                  Your service has been completed successfully. Payment has been
+                  processed through Razorpay.
+                </CustomText>
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => {
+                    setShowPaymentModal(false);
+                    navigation.reset({
+                      index: 0,
+                      routes: [
+                        {
+                          name: "CustomerTabNavigator",
+                          params: { screen: "Dashboard" },
+                        },
+                      ],
+                    });
+                  }}
+                >
+                  <CustomText
+                    style={[globalStyles.textWhite, globalStyles.f14Bold]}
+                  >
+                    Go to Dashboard
+                  </CustomText>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -807,16 +1497,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalBox: {
-    width: "80%",
+    width: "85%",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 28,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 8,
+  },
+  modalIconContainer: {
+    marginBottom: 16,
   },
   okButton: {
     marginTop: 20,
@@ -825,7 +1518,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 8,
   },
-  
+
   // Time Summary Card Styles
   timeSummaryCard: {
     backgroundColor: "#fff",

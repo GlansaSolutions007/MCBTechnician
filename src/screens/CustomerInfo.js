@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -10,6 +10,8 @@ import {
   Text,
   Vibration,
   Animated,
+  ActivityIndicator,
+  AppState,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import CustomText from "../components/CustomText";
@@ -31,6 +33,8 @@ import {
   startBackgroundTracking,
   stopBackgroundTracking,
 } from "../utils/locationTracker";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
+import BookingPickDropRow from "../components/BookingPickDropRow";
 import { RefreshControl } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
@@ -56,18 +60,16 @@ export default function CustomerInfo() {
 
   // Merge booking data with Leads data for missing fields
   const customerName = booking.CustomerName || booking.Leads?.FullName || "";
-  const phoneNumber = booking.PhoneNumber || booking.Leads?.PhoneNumber || "";
   const profileImage = booking.ProfileImage || null;
   // Vehicle number: Use booking.VehicleNumber if available, otherwise use Leads.Vehicle.RegistrationNumber
-  const vehicleNumber = booking.VehicleNumber 
-    ? booking.VehicleNumber 
+  const vehicleNumber = booking.VehicleNumber
+    ? booking.VehicleNumber
     : (booking.Leads?.Vehicle?.RegistrationNumber || "");
   const brandName = booking.BrandName || booking.Leads?.Vehicle?.BrandName || "";
   const modelName = booking.ModelName || booking.Leads?.Vehicle?.ModelName || "";
   const fuelTypeName = booking.FuelTypeName || booking.Leads?.Vehicle?.FuelTypeName || "";
   const vehicleImage = booking.VehicleImage || null;
-  const fullAddress = booking.FullAddress || booking.Leads?.FullAddress || booking.Leads?.City || "";
-  
+
   // Helper function to format date (YYYY-MM-DD to DD MMM YYYY)
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -96,7 +98,7 @@ export default function CustomerInfo() {
       return timeString;
     }
   };
-  
+
   const [location, setLocation] = useState(null);
   const [addressLocation, setAddressLocation] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -110,24 +112,91 @@ export default function CustomerInfo() {
     updatedBookings?.BookingID === booking?.BookingID && updatedBookings
       ? updatedBookings
       : booking;
+  // Address for display and map: prefer FullAddress (geocode when Lat/Long null)
+  const fullAddress =
+    displayBooking?.FullAddress ||
+    displayBooking?.Leads?.FullAddress ||
+    displayBooking?.Leads?.City ||
+    (Array.isArray(displayBooking?.PickupDelivery) ? displayBooking.PickupDelivery[0]?.PickFrom?.Address : displayBooking?.PickupDelivery?.PickFrom?.Address) ||
+    "";
+  const pd = displayBooking?.PickupDelivery;
+  const currentLeg = Array.isArray(pd) ? pd[0] : pd;
+  // const pickupPhoneNumber =
+  //   currentLeg?.PickFrom?.PersonNumber ??
+  //   (Array.isArray(displayBooking?.PickupDelivery) && displayBooking.PickupDelivery[0]
+  //     ? displayBooking.PickupDelivery[0]?.PickFrom?.PersonNumber
+  //     : null) ??
+  //   displayBooking?.Leads?.PhoneNumber ??
+  //   booking?.PhoneNumber ??
+  //   "";
+  const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
+  console.log("pickupPhoneNumber===============", pickupPhoneNumber);
+
+  const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    : "";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
+
+  const driverStatus =
+    displayBooking?.DriverStatus ?? currentLeg?.DriverStatus;
+  const legId =
+    currentLeg?.Id ??
+    currentLeg?.ID ??
+    currentLeg?.id ??
+    currentLeg?.PickupDeliveryId ??
+    (pd && !Array.isArray(pd) ? pd?.Id ?? pd?.ID ?? pd?.PickupDeliveryId : undefined);
+  const fromArray =
+    Array.isArray(pd) && pd.length > 0
+      ? pd.reduce((acc, l) => acc ?? l?.Id ?? l?.ID ?? l?.id ?? l?.PickupDeliveryId, null)
+      : null;
+  const firstLegId = Array.isArray(pd) && pd.length > 0
+    ? (pd[0]?.Id ?? pd[0]?.ID ?? pd[0]?.id ?? pd[0]?.PickupDeliveryId)
+    : null;
+  const pickDropId = Number(
+    legId ?? displayBooking?.PickupDeliveryId ?? displayBooking?.CarPickupDeliveryId ?? fromArray ?? firstLegId ?? 0
+  );
+  const routeType =
+    currentLeg?.PickFrom?.RouteType ??
+    (Array.isArray(currentLeg?.PickFrom) ? currentLeg?.PickFrom?.[0]?.RouteType : null) ??
+    currentLeg?.DropAt?.RouteType ??
+    "CustomerToDealer";
   const [expandedPackages, setExpandedPackages] = useState({});
   const [expandedAddOns, setExpandedAddOns] = useState({});
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingStartRide, setLoadingStartRide] = useState(false);
+  const [loadingNavigate, setLoadingNavigate] = useState(false);
+  const [loadingReached, setLoadingReached] = useState(false);
+  const [loadingNext, setLoadingNext] = useState(false);
+  const [loadingCollectCash, setLoadingCollectCash] = useState(false);
   const [pulse] = useState(new Animated.Value(0));
   // const today = new Date().toISOString().split("T")[0];
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
   });
   const ServiceStart = async (item) => {
-    navigation.navigate("ServiceStart", { booking: item });
+    setLoadingNext(true);
+    navigation.navigate(item.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: item });
+    setLoadingNext(false);
   };
   const ServiceEnd = async (item) => {
     // Calculate estimated time from booking if available
-    const estimatedTime = item.TotalEstimatedDurationMinutes 
-      ? item.TotalEstimatedDurationMinutes * 60 
+    const estimatedTime = item.TotalEstimatedDurationMinutes
+      ? item.TotalEstimatedDurationMinutes * 60
       : 0;
-    
+
     // Calculate actual time if service has started
     let actualTime = 0;
     if (item.ServiceStartedAt) {
@@ -135,7 +204,7 @@ export default function CustomerInfo() {
       const currentTime = new Date();
       actualTime = Math.floor((currentTime - startTime) / 1000); // Convert to seconds
     }
-    
+
     navigation.navigate("ServiceEnd", {
       booking: item,
       estimatedTime: estimatedTime,
@@ -143,36 +212,74 @@ export default function CustomerInfo() {
     });
   };
   const CollectPayment = async (booking) => {
+    setLoadingCollectCash(true);
     navigation.navigate("CollectPayment", { booking: booking });
+    setLoadingCollectCash(false);
   };
-  const onRefresh = async () => {
-    if (!booking?.BookingID || !booking?.TechID) return;
+  const onRefresh = useCallback(async () => {
+    const currentBooking = route.params?.booking ?? booking;
+    if (!currentBooking?.BookingID) {
+      setLoading(false);
+      return;
+    }
+    const techID = await AsyncStorage.getItem("techID"); // ← read from storage
+    if (!techID) { setLoading(false); return; }
+
     setRefreshing(true);
     setLoading(true);
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${booking.TechID}`
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`
       );
 
-      if (response.data && response.data.length > 0) {
-        const fromApi = response.data.find(
-          (b) => b.BookingID === booking.BookingID
+      const data = Array.isArray(response?.data) ? response.data : response?.data?.data ?? [];
+      if (data.length > 0) {
+        const fromApi = data.find(
+          (b) => b.BookingID === currentBooking.BookingID
         );
-        setUpdatedBookings((prev) => {
-          if (!fromApi) return prev;
-          // Don't overwrite optimistic StartJourney/Reached with stale status from API
-          const statusOrder = { Confirmed: 1, StartJourney: 2, Reached: 3, ServiceStarted: 4, Completed: 5 };
-          const prevOrder = statusOrder[prev?.BookingStatus] || 0;
-          const apiOrder = statusOrder[fromApi.BookingStatus] || 0;
-          if (apiOrder < prevOrder) {
-            const merged = { ...fromApi, BookingStatus: prev.BookingStatus };
-            navigation.setParams({ booking: merged });
-            return merged;
-          }
-          navigation.setParams({ booking: fromApi });
-          return fromApi;
-        });
+        if (fromApi) {
+          setUpdatedBookings((prev) => {
+            const getStatus = (b) =>
+              b?.DriverStatus ??
+              (Array.isArray(b?.PickupDelivery)
+                ? b.PickupDelivery[0]?.DriverStatus
+                : b?.PickupDelivery?.DriverStatus);
+            const statusOrder = {
+              assigned: 1,
+              pickup_started: 2,
+              pickup_reached: 3,
+              car_picked: 4,
+              ServiceStart: 5,
+              completed: 6,
+              ServiceComplete: 7,
+              Confirmed: 1,
+              StartJourney: 2,
+              Reached: 3,
+              ServiceStarted: 4,
+              Completed: 5,
+            };
+            const prevStatus = getStatus(prev);
+            const apiStatus = getStatus(fromApi);
+            const prevOrder = statusOrder[prevStatus] ?? 0;
+            const apiOrder = statusOrder[apiStatus] ?? 0;
+            if (apiOrder < prevOrder && prevStatus) {
+              const merged = {
+                ...fromApi,
+                DriverStatus: prevStatus,
+                PickupDelivery: Array.isArray(fromApi.PickupDelivery)
+                  ? fromApi.PickupDelivery.map((leg, i) =>
+                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                  )
+                  : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
+              };
+              navigation.setParams({ booking: merged });
+              return merged;
+            }
+            navigation.setParams({ booking: fromApi });
+            return fromApi;
+          });
+        }
       }
     } catch (error) {
       console.error("Error refreshing booking:", error);
@@ -180,12 +287,13 @@ export default function CustomerInfo() {
       setRefreshing(false);
       setLoading(false);
     }
-  };
+  }, [booking?.BookingID, route.params?.booking?.BookingID, navigation]);
+
   // Refetch when screen is focused (initial open + go back and open again)
   useFocusEffect(
-    React.useCallback(() => {
-      if (booking?.BookingID) onRefresh();
-    }, [booking?.BookingID])
+    useCallback(() => {
+      if (route.params?.booking?.BookingID) onRefresh();
+    }, [onRefresh, route.params?.booking?.BookingID])
   );
 
   useEffect(() => {
@@ -214,18 +322,58 @@ export default function CustomerInfo() {
   //   return () => clearInterval(interval);
   // }, []);
 
+  // When component mounts or booking changes we look for the start-ride flag.
+  // If it's present we know the user previously opened an external map link and may
+  // have left the app.  Clearing the flag and refreshing here makes sure the
+  // booking data is up‑to‑date and prevents the navigator from landing back on
+  // the dashboard when the app comes back into the foreground.
   useEffect(() => {
     const checkIfStarted = async () => {
       try {
         const flag = await AsyncStorage.getItem(
           `startRide_done_${booking.BookingID}`
         );
+        if (flag === "true") {
+          await AsyncStorage.removeItem(`startRide_done_${booking.BookingID}`);
+          navigation.reset({
+            index: 0,
+            routes: [
+              { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+            ],
+          });
+        }
       } catch (error) {
         console.error("Error reading start ride flag", error);
       }
     };
     checkIfStarted();
-  }, [booking.BookingID]);
+  }, [booking.BookingID, onRefresh, navigation, booking]);
+
+  // keep track of app state so we can detect when the user returns from the maps
+  // application.  If the ride-start flag is still set we make sure the screen is
+  // restored rather than letting the navigator default back to the dashboard.
+  useEffect(() => {
+    const listener = AppState.addEventListener("change", async (nextState) => {
+      if (nextState === "active") {
+        try {
+          const flag = await AsyncStorage.getItem(`startRide_done_${booking.BookingID}`);
+          if (flag === "true") {
+            await AsyncStorage.removeItem(`startRide_done_${booking.BookingID}`);
+            navigation.reset({
+              index: 0,
+              routes: [
+                { name: "CustomerTabNavigator", params: { screen: "Dashboard" } },
+              ],
+            });
+          }
+        } catch (err) {
+          console.error("AppState flag check error", err);
+        }
+      }
+    });
+
+    return () => listener.remove();
+  }, [booking.BookingID, navigation, onRefresh, booking]);
 
   useEffect(() => {
     if (Array.isArray(booking) && booking.length > 0) {
@@ -255,9 +403,9 @@ export default function CustomerInfo() {
   const rawLat = booking?.latitude ?? booking?.Latitude;
   const rawLng = booking?.longitude ?? booking?.Longitude;
   // Check if coordinates are valid (not null/undefined and are valid numbers)
-  const hasValidCoordinates = rawLat != null && rawLng != null && 
-                              !isNaN(Number(rawLat)) && !isNaN(Number(rawLng)) &&
-                              Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng));
+  const hasValidCoordinates = rawLat != null && rawLng != null &&
+    !isNaN(Number(rawLat)) && !isNaN(Number(rawLng)) &&
+    Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng));
   const Latitude = hasValidCoordinates ? Number(rawLat) : null;
   const Longitude = hasValidCoordinates ? Number(rawLng) : null;
 
@@ -325,7 +473,7 @@ export default function CustomerInfo() {
                   mapRef.current.animateToRegion(coords, 1000);
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
             // Route will be fetched by the useEffect that watches location and addressLocation
           }
         );
@@ -338,16 +486,17 @@ export default function CustomerInfo() {
     return () => {
       try {
         subscription && subscription.remove && subscription.remove();
-      } catch (_) {}
+      } catch (_) { }
       subscription = null;
     };
   }, []);
 
-  // Always geocode FullAddress to show customer location on map
+  // Geocode FullAddress when Lat/Long are null so map shows customer location from address
   useEffect(() => {
+    if (!fullAddress || fullAddress.trim() === "") return;
+    setAddressLocation(null); // reset so we re-geocode when address changes
     const geocodeAddressLocation = async () => {
-      // Always geocode FullAddress when available to show customer location
-      if (fullAddress && fullAddress.trim() !== "" && !addressLocation) {
+      if (fullAddress && fullAddress.trim() !== "") {
         setIsGeocoding(true);
         try {
           const geocodedLocation = await geocodeAddress(fullAddress);
@@ -403,7 +552,7 @@ export default function CustomerInfo() {
       ) {
         return;
       }
-      
+
       // Use provided destination or fallback to default destination
       const routeDestination = dest || destination;
       if (
@@ -494,7 +643,7 @@ export default function CustomerInfo() {
   // Geocode address to get coordinates
   const geocodeAddress = async (address) => {
     if (!address || address.trim() === "") return null;
-    
+
     try {
       const response = await axios.get(
         `https://maps.googleapis.com/maps/api/geocode/json`,
@@ -524,7 +673,7 @@ export default function CustomerInfo() {
   const openGoogleMaps = async () => {
     try {
       let url = "";
-      
+
       // Determine destination - prioritize geocoded address location, then coordinates, then address string
       let destinationCoords = null;
       if (addressLocation) {
@@ -532,11 +681,11 @@ export default function CustomerInfo() {
       } else if (hasValidCoordinates && destination) {
         destinationCoords = destination;
       }
-      
+
       // If we have current location and destination coordinates, show route
       if (location && destinationCoords) {
         url = `https://www.google.com/maps/dir/?api=1&origin=${location.Latitude},${location.Longitude}&destination=${destinationCoords.Latitude},${destinationCoords.Longitude}&travelmode=driving`;
-      } 
+      }
       // If we have destination coordinates but no current location, just show destination
       else if (destinationCoords) {
         url = `https://www.google.com/maps/?api=1&q=${destinationCoords.Latitude},${destinationCoords.Longitude}`;
@@ -550,7 +699,7 @@ export default function CustomerInfo() {
       else if (hasValidCoordinates) {
         url = `https://www.google.com/maps/?api=1&q=${Latitude},${Longitude}`;
       }
-      
+
       if (url) {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
@@ -567,42 +716,12 @@ export default function CustomerInfo() {
     }
   };
 
-  const updateTechnicianTracking = async (actionType) => {
-    try {
-      const payload = {
-        bookingID: Number(bookingId),
-        actionType: actionType,
-      };
-      const response = await axios.post(
-        `${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`,
-        
-        payload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log("response====================",response.data);
-      console.log("response====================",`${API_BASE_URL}TechnicianTracking/UpdateTechnicianTracking`);
-      if (
-        response?.data?.status === false ||
-        response?.data?.isValid === false
-      ) {
-        Alert.alert(
-          "Error",
-          response?.data?.message || `Failed to update ${actionType}.`
-        );
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error(`Error sending ${actionType} action:`, error.message);
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || `Failed to send ${actionType} action.`
-      );
-      return false;
-    }
-  };
 
   const handleStartRidedirect = async () => {
+    setLoadingNavigate(true);
+    // we intentionally do not await onRefresh here so the user is not kept waiting
+    // before the maps app opens; the request will still complete in the
+    // background and the focus listener (below) will pick up any updates.
     onRefresh();
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
@@ -611,35 +730,147 @@ export default function CustomerInfo() {
     }
     // Background tracking should already be controlled by user via toggle
     // No need to start it here automatically
+    setLoadingNavigate(false);
     await openGoogleMaps();
   };
   const handleStartRide = async () => {
-    const success = await updateTechnicianTracking("StartJourney");
-    if (!success) return;
-    // Update UI immediately: status StartJourney → show Reached button (API may not return updated status yet)
-    const updatedBooking = { ...booking, BookingStatus: "StartJourney" };
+    setLoadingStartRide(true);
+    const techID = await AsyncStorage.getItem("techID");
+    if (pickDropId) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          { pickDropId, status: "pickup_started" },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } catch (e) {
+        console.error("InsertTracking Error:", e?.response?.data ?? e);
+      }
+    }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType:
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
+        action: "pickup_started",
+        updatedBy: Number(techID),
+        role: "Technician",
+      };
+      console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_started");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
+    // Optimistic UI update
+    const rawPD = booking?.PickupDelivery;
+    const updatedPD = Array.isArray(rawPD)
+      ? rawPD.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg)
+      : { ...rawPD, DriverStatus: "pickup_started" };
+    const updatedBooking = { ...booking, PickupDelivery: updatedPD };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
-    onRefresh();
+
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
     } catch (error) {
       console.error("Error saving start ride flag", error);
     }
+    setLoadingStartRide(false);
+    // Fire onRefresh in background — don't block maps from opening
+    onRefresh();
     await openGoogleMaps();
   };
 
   const Reached = async () => {
-    const success = await updateTechnicianTracking("Reached");
-    if (!success) return;
-    const updatedBooking = { ...booking, BookingStatus: "Reached" };
+    setLoadingReached(true);
+    const techID = await AsyncStorage.getItem("techID");
+    if (pickDropId) {
+      try {
+        await axios.post(
+          `${API_BASE_URL}ServiceImages/InsertTracking`,
+          { pickDropId, status: "pickup_reached" },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } catch (e) {
+        console.error("InsertTracking Error====================:", pickDropId);
+      }
+    }
+
+    const pickupPhoneNumber = displayBooking?.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
+    const carPickupDeliveryIdValue = Number(pickDropId) || 0;
+    if (!carPickupDeliveryIdValue) {
+      if (__DEV__) console.warn("GenerateOTP skipped: CarPickupDeliveryId is missing for this booking.");
+    } else {
+      try {
+        const generateOtpPayload = {
+          CarPickupDeliveryId: carPickupDeliveryIdValue,
+          carPickupDeliveryId: carPickupDeliveryIdValue,
+          otpType: "Pickup",
+          phoneNumber: String(pickupPhoneNumber || "").trim(),
+        };
+        const genOtpRes = await axios.post(
+          `${API_BASE_URL}ServiceImages/GenerateOTP`,
+          generateOtpPayload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
+        console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
+      } catch (e) {
+        console.error("GenerateOTP Error:", e?.response?.data ?? e);
+      }
+    }
+
+    try {
+      const statusPayload = {
+        bookingID: Number(displayBooking?.BookingID || 0),
+        serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
+        routeType:
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
+        action: "pickup_reached",
+        updatedBy: Number(techID),
+        role: "Technician",
+      };
+      console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
+      await axios.post(
+        `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
+        statusPayload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("UpdateBookingStatus posted for pickup_reached");
+    } catch (e) {
+      console.error("UpdateBookingStatus Error:", e?.response?.data || e);
+    }
+
+    // Requested removal of updateTechnicianTracking
+    const rawPD2 = booking?.PickupDelivery;
+    const updatedPD2 = Array.isArray(rawPD2)
+      ? rawPD2.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg)
+      : { ...rawPD2, DriverStatus: "pickup_reached" };
+    const updatedBooking = { ...booking, PickupDelivery: updatedPD2 };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
     onRefresh();
     try {
       await stopBackgroundTracking();
-    } catch (_) {}
-    navigation.navigate("ServiceStart", { booking: updatedBooking });
+    } catch (_) { }
+    setLoadingReached(false);
+    navigation.navigate(updatedBooking.ServiceType === "ServiceAtGarage" ? "CarPickUp" : "ServiceStart", { booking: updatedBooking });
   };
 
   const isSameISTDate = (dateStr) => {
@@ -880,6 +1111,7 @@ export default function CustomerInfo() {
 
   const CustomerInfoSkeleton = () => (
     <ScrollView style={[globalStyles.bgcontainer]}>
+      <StatusBar style="dark" />
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
           <SkeletonCustomerCard />
@@ -910,6 +1142,7 @@ export default function CustomerInfo() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
           {/* <AvailabilityHeader /> */}
@@ -936,8 +1169,8 @@ export default function CustomerInfo() {
                 source={
                   profileImage
                     ? {
-                        uri: `https://api.mycarsbuddy.com/images/${profileImage}`,
-                      }
+                      uri: `https://api.mycarsbuddy.com/images/${profileImage}`,
+                    }
                     : defaultAvatar
                 }
                 style={{ width: 46, height: 46, borderRadius: 10 }}
@@ -949,15 +1182,15 @@ export default function CustomerInfo() {
                 <CustomText
                   style={[globalStyles.f12Medium, globalStyles.neutral500]}
                 >
-                  Mobile: {phoneNumber}
+                  Mobile: {pickupPhoneNumber || "N/A"}
                 </CustomText>
               </View>
               <TouchableOpacity
                 onPress={() => {
                   Vibration.vibrate([0, 200, 100, 300]);
 
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
+                  if (pickupPhoneNumber) {
+                    Linking.openURL(`tel:${pickupPhoneNumber}`);
                   } else {
                     Alert.alert("Error", "Phone number not available");
                   }
@@ -976,94 +1209,65 @@ export default function CustomerInfo() {
               </TouchableOpacity>
             </View>
             <View style={[globalStyles.divider, globalStyles.mt2]} />
-            <View style={[globalStyles.flexrow]}>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                  globalStyles.w40,
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="card-account-details-outline"
-                  size={16}
-                  color={color.primary}
-                  style={{ marginRight: 6 }}
-                />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.BookingTrackID}
-                </CustomText>
-              </View>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <Ionicons name="calendar" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {booking.BookingDate}
-                </CustomText>
-              </View>
-            </View>
-            <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                  globalStyles.w40,
-                ]}
-              >
-                <Ionicons name="car" size={16} color={color.primary} />
-                <CustomText
-                  style={[
-                    globalStyles.f10Regular,
-                    globalStyles.black,
-                    globalStyles.ml1,
-                  ]}
-                >
-                  {modelName || vehicleNumber || "N/A"}
-                </CustomText>
-              </View>
-              <View
-                style={[
-                  globalStyles.flexrow,
-                  globalStyles.mt2,
-                  globalStyles.alineItemscenter,
-                ]}
-              >
-                <Ionicons name="time-outline" size={16} color={color.primary} />
-                <View style={{ flexDirection: "column" }}>
-                  {booking.TimeSlot && booking.TimeSlot.split(",").map((slot, index) => (
-                    <CustomText
-                      key={index}
-                      style={[
-                        globalStyles.f10Regular,
-                        globalStyles.black,
-                        globalStyles.ml1,
-                      ]}
-                    >
-                      {slot.trim()}
-                    </CustomText>
-                  ))}
-                </View>
-              </View>
-            </View>
+            {(() => {
+              const display = getBookingDisplayData(booking);
+              return (
+                <>
+                  {/* Row 1: Booking ID | Date */}
+                  <View style={[globalStyles.flexrow, globalStyles.mt2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
+                      <MaterialCommunityIcons name="card-account-details-outline" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.bookingTrackID}</CustomText>
+                      </View>
+                    </View>
+
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
+                      <Ionicons name="calendar" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.bookingDate}</CustomText>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Row 2: Vehicle | Time Slot */}
+                  <View style={[globalStyles.flexrow, globalStyles.mt2]}>
+                    <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.w40]}>
+                      <Ionicons name="car" size={16} color={color.primary} style={{ marginRight: 6 }} />
+                      <View>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.vehicleDisplay}</CustomText>
+                      </View>
+                    </View>
+
+                    <View style={[globalStyles.flexrow, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
+                      <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+                      <View style={{ flexDirection: "column" }}>
+                        {bookingParam?.ServiceType === "ServiceAtGarage" ? (
+                          <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignTime}</CustomText>
+                        ) : (
+                          (getBookingDisplayData(bookingParam).timeSlot || "")
+                            .split(",")
+                            .map((slot, index) => (
+                              <CustomText key={index} style={[globalStyles.f10Regular, globalStyles.black]}>
+                                {slot.trim()}
+                              </CustomText>
+                            ))
+                        )}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Row 3: Address (full width) */}
+                  <View style={[globalStyles.flexrow, globalStyles.mt2, { alignItems: "flex-start" }]}>
+                    <Ionicons name="home" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                      <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.fullAddress}</CustomText>
+                    </View>
+                  </View>
+                </>
+              );
+            })()}
+
           </View>
 
           {(modelName || vehicleNumber || brandName || fuelTypeName) && (
@@ -1243,10 +1447,9 @@ export default function CustomerInfo() {
               </View>
             </>
           )}
-          <View style={[globalStyles.divider, globalStyles.mt5]} />
 
           {/* Map Section - Always show, display map when coordinates or geocoded address available */}
-          <View style={[globalStyles.mt3]}>
+          {/* <View style={[globalStyles.mt3]}>
             <CustomText style={[globalStyles.f16Bold, globalStyles.black]}>
               Location
             </CustomText>
@@ -1256,12 +1459,11 @@ export default function CustomerInfo() {
                   ref={mapRef}
                   style={{ flex: 1 }}
                   initialRegion={
-                    // Prioritize geocoded address location (customer location from FullAddress)
                     addressLocation
                       ? {
                           latitude: addressLocation.Latitude,
                           longitude: addressLocation.Longitude,
-                          latitudeDelta: 0.05, // Show area around customer location
+                          latitudeDelta: 0.05, 
                           longitudeDelta: 0.05,
                         }
                       : hasValidCoordinates
@@ -1281,7 +1483,6 @@ export default function CustomerInfo() {
                   showsUserLocation={!!location}
                   showsMyLocationButton={!!location}
                 >
-                  {/* Customer Location Marker - Always show when geocoded from FullAddress */}
                   {addressLocation && (
                     <Marker
                       coordinate={{
@@ -1294,7 +1495,6 @@ export default function CustomerInfo() {
                     />
                   )}
 
-                  {/* Destination Marker - Show if we have valid coordinates (may be same as customer location) */}
                   {hasValidCoordinates && (
                     <Marker
                       coordinate={{
@@ -1307,7 +1507,6 @@ export default function CustomerInfo() {
                     />
                   )}
 
-                  {/* Route Polyline - Show route from current location to customer location */}
                   {routeCoords && routeCoords.length > 0 && location && addressLocation && (
                     <Polyline
                       coordinates={routeCoords.map(coord => ({
@@ -1364,10 +1563,10 @@ export default function CustomerInfo() {
                 </View>
               </View>
             )}
-          </View>
+          </View> */}
 
           <View>
-            <CustomText style={[globalStyles.f16Bold, globalStyles.black,globalStyles.mt3]}>
+            <CustomText style={[globalStyles.f16Bold, globalStyles.black, globalStyles.mt3]}>
               Service Details
             </CustomText>
 
@@ -1392,9 +1591,9 @@ export default function CustomerInfo() {
                 >
                   Services:
                 </CustomText>
-                
+
                 {/* Packages - Point-wise */}
-                {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
+                {/* {booking.Packages && booking.Packages.length > 0 && booking.Packages.map((pkg) => (
                   <View key={pkg.PackageID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
@@ -1446,10 +1645,10 @@ export default function CustomerInfo() {
                       </View>
                     )}
                   </View>
-                ))}
+                ))} */}
 
                 {/* BookingAddOns - Point-wise */}
-                {booking.BookingAddOns && booking.BookingAddOns.length > 0 && booking.BookingAddOns.map((addOn) => (
+                {booking.PickupDelivery?.[0]?.AddOns && booking.PickupDelivery?.[0]?.AddOns?.length > 0 && booking.PickupDelivery?.[0]?.AddOns?.map((addOn) => (
                   <View key={addOn.AddOnID} style={[globalStyles.mb3]}>
                     <CustomText
                       style={[
@@ -1459,23 +1658,23 @@ export default function CustomerInfo() {
                     >
                       • {addOn.ServiceName}
                     </CustomText>
-                    {addOn.Description && (
+                    {/* {addOn.Description && (
                       <CustomText
                         style={[
                           globalStyles.f12Regular,
                           globalStyles.neutral500,
                           globalStyles.mt1,
-                          globalStyles.ml3,
+                         
                         ]}
                       >
                         {addOn.Description}
                       </CustomText>
-                    )}
+                    )} */}
                     {addOn.Includes && addOn.Includes.length > 0 && (
                       <View style={[globalStyles.ml3, globalStyles.mt1]}>
                         {addOn.Includes.map((inc) => (
                           <CustomText
-                            key={inc.IncludeID}
+                            key={inc.AddOnID}
                             style={[
                               globalStyles.f12Regular,
                               globalStyles.neutral500,
@@ -1490,52 +1689,20 @@ export default function CustomerInfo() {
                 ))}
 
                 {(!booking.Packages || booking.Packages.length === 0) &&
-                 (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
-                  <CustomText
-                    style={[globalStyles.f12Regular, globalStyles.neutral500]}
-                  >
-                    No services available
-                  </CustomText>
-                )}
+                  (!booking.BookingAddOns || booking.BookingAddOns.length === 0) && (
+                    <CustomText
+                      style={[globalStyles.f12Regular, globalStyles.neutral500]}
+                    >
+                      No services available
+                    </CustomText>
+                  )}
               </View>
-
-              {/* Divider */}
-              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
 
               {/* Pickup and Delivery Details */}
               {booking.PickupDelivery && booking.PickupDelivery.length > 0 ? (
                 <View style={[globalStyles.mb3]}>
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb2]}>
-                    <Ionicons name="arrow-down-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                    <CustomText
-                      style={[globalStyles.f14Bold, globalStyles.black]}
-                    >
-                      Pickup
-                    </CustomText>
-                  </View>
-                  <View style={{ marginLeft: 22 }}>
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                    >
-                      {formatDate(booking.PickupDelivery[0].PickupDate)} {booking.PickupDelivery[0].PickupTime && `(${formatTime(booking.PickupDelivery[0].PickupTime)})`}
-                    </CustomText>
-                  </View>
 
-                  <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mt2, globalStyles.mb2]}>
-                    <Ionicons name="arrow-up-circle" size={16} color={color.primary} style={{ marginRight: 6 }} />
-                    <CustomText
-                      style={[globalStyles.f14Bold, globalStyles.black]}
-                    >
-                      Delivery
-                    </CustomText>
-                  </View>
-                  <View style={{ marginLeft: 22 }}>
-                    <CustomText
-                      style={[globalStyles.f12Medium, globalStyles.neutral500]}
-                    >
-                      {formatDate(booking.PickupDelivery[0].DeliveryDate)} {booking.PickupDelivery[0].DeliveryTime && `(${formatTime(booking.PickupDelivery[0].DeliveryTime)})`}
-                    </CustomText>
-                  </View>
+
                 </View>
               ) : (
                 <View style={[globalStyles.mb3]}>
@@ -1547,137 +1714,47 @@ export default function CustomerInfo() {
                 </View>
               )}
 
-              {/* Divider */}
-              <View style={[globalStyles.divider, globalStyles.mt3, globalStyles.mb3]} />
 
-              {/* Price - Aligned at bottom */}
-              <View style={[globalStyles.flexrow, globalStyles.justifysb, globalStyles.alineItemscenter]}>
-                <CustomText style={[globalStyles.f14Bold, globalStyles.black]}>
-                  Total Price:
-                </CustomText>
-                <CustomText style={[globalStyles.f24Bold, globalStyles.primary]}>
-                  {"₹"}
-                  {booking.TotalPrice ||
-                    (booking.BookingAddOns &&
-                      booking.BookingAddOns.reduce(
-                        (sum, addOn) => sum + (Number(addOn.TotalPrice) || 0),
-                        0
-                      )) ||
-                    0}
-                </CustomText>
-              </View>
+
             </View>
           </View>
         </View>
+        {booking.Notes && booking.Notes.length > 140 && (
+          <View style={[globalStyles.container, globalStyles.pt2]}>
+            <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
+              <CustomText style={[globalStyles.f12Bold, globalStyles.neutral500]}>
+                {isNoteExpanded ? "Show less" : "Show more"}
+              </CustomText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View
           style={[
             globalStyles.container,
-            globalStyles.bgBlack,
             globalStyles.pb5,
+            { backgroundColor: color.background || "#f5f5f5" },
           ]}
         >
-          {/* <CustomText
-            style={[
-              globalStyles.f16Bold,
-              globalStyles.textWhite,
-              globalStyles.mt2,
-            ]}
-          >
-            Customer Note:{" "}
-            <CustomText
-              style={[globalStyles.f12Regular, globalStyles.textyellow]}
-            >
-              {getNotePreview(booking.Notes)}
-            </CustomText>
-          </CustomText> */}
-          {booking.Notes && booking.Notes.length > 140 && (
-            <TouchableOpacity onPress={() => setIsNoteExpanded((v) => !v)}>
-              <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                {isNoteExpanded ? "Show less" : "Show more"}
-              </CustomText>
-            </TouchableOpacity>
-          )}
-
-          <View
-            style={[
-              globalStyles.flexrow,
-              globalStyles.justifysb,
-              globalStyles.mt2,
-              // globalStyles.p4,
-            ]}
-          ></View>
-
-          <View style={[globalStyles.mt2]}>
+          <View >
             <View>
-              {/* {booking.BookingStatus === "Confirmed" && (
-                <TouchableOpacity
-                  style={styles.startride}
-                  onPress={handleStartRide}
-                >
-                  <Ionicons
-                    name="rocket"
-                    size={20}
-                    color="white"
-                    style={{ marginRight: 8 }}
-                  />
-                  <CustomText style={styles.startButtonText}>
-                    Start Ride
-                  </CustomText>
-                </TouchableOpacity>
-              )} */}
 
-              {/* {(booking.BookingStatus === "StartJourney" ||
-                booking.BookingStatus === "ServiceStarted") && ( */}
-              {/* <View style={styles.startreach}> */}
-              {displayBooking.BookingStatus !== "Completed" && (
+              {driverStatus &&
+                driverStatus !== "ServiceComplete" &&
+                driverStatus !== "completed" && (
                   <>
-                    {displayBooking.BookingStatus === "Confirmed" && (
+                    {driverStatus === "assigned" && (
                       <TouchableOpacity
-                        style={styles.startButton}
+                        style={[styles.startButton, loadingStartRide && { opacity: 0.7 }]}
                         onPress={handleStartRide}
+                        disabled={loadingStartRide}
                       >
-                        <Ionicons
-                          name="rocket"
-                          size={20}
-                          color="white"
-                          style={{ marginRight: 8 }}
-                        />
-                        <CustomText
-                          style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                        >
-                          Start Ride
-                        </CustomText>
-                      </TouchableOpacity>
-                    )}
-
-                    {(displayBooking.BookingStatus === "StartJourney" ||
-                      displayBooking.BookingStatus === "ServiceStarted") && (
-                      <View style={styles.startreach}>
-                        <TouchableOpacity
-                          style={[styles.startButton, { flex: 1 }]}
-                          onPress={handleStartRidedirect}
-                        >
-                          <Ionicons
-                            name="navigate"
-                            size={20}
-                            color="#fff"
-                            style={{ marginRight: 8 }}
-                          />
-                          <CustomText
-                            style={[globalStyles.f14Bold, globalStyles.textWhite]}
-                          >
-                            Navigate
-                          </CustomText>
-                        </TouchableOpacity>
-
-                        {displayBooking.BookingStatus === "StartJourney" && (
-                          <TouchableOpacity
-                            style={[styles.ReachedButton, { flex: 1 }]}
-                            onPress={Reached}
-                          >
+                        {loadingStartRide ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <>
                             <Ionicons
-                              name="flag"
+                              name="rocket"
                               size={20}
                               color="white"
                               style={{ marginRight: 8 }}
@@ -1685,12 +1762,67 @@ export default function CustomerInfo() {
                             <CustomText
                               style={[globalStyles.f14Bold, globalStyles.textWhite]}
                             >
-                              Reached
+                              Start Ride
                             </CustomText>
-                          </TouchableOpacity>
+                          </>
                         )}
-                      </View>
+                      </TouchableOpacity>
                     )}
+
+                    {(driverStatus === "pickup_started" ||
+                      driverStatus === "ServiceStart") && (
+                        <View style={styles.startreach}>
+                          <TouchableOpacity
+                            style={[styles.startButton, { flex: 1 }, loadingNavigate && { opacity: 0.7 }]}
+                            onPress={handleStartRidedirect}
+                            disabled={loadingNavigate}
+                          >
+                            {loadingNavigate ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <>
+                                <Ionicons
+                                  name="navigate"
+                                  size={20}
+                                  color="#fff"
+                                  style={{ marginRight: 8 }}
+                                />
+                                <CustomText
+                                  style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                                >
+                                  Navigate
+                                </CustomText>
+                              </>
+                            )}
+                          </TouchableOpacity>
+
+                          {driverStatus === "pickup_started" && (
+                            <TouchableOpacity
+                              style={[styles.ReachedButton, { flex: 1 }, loadingReached && { opacity: 0.7 }]}
+                              onPress={Reached}
+                              disabled={loadingReached}
+                            >
+                              {loadingReached ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <>
+                                  <Ionicons
+                                    name="flag"
+                                    size={20}
+                                    color="white"
+                                    style={{ marginRight: 8 }}
+                                  />
+                                  <CustomText
+                                    style={[globalStyles.f14Bold, globalStyles.textWhite]}
+                                  >
+                                    Reached
+                                  </CustomText>
+                                </>
+                              )}
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
                   </>
                 )}
               {/* </View> */}
@@ -1698,70 +1830,117 @@ export default function CustomerInfo() {
             </View>
             {(() => {
               const currentBooking = displayBooking;
-              const bookingStatus = currentBooking.BookingStatus;
-              
-              if (bookingStatus === "Reached") {
+              if (driverStatus === "pickup_reached") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceStart(currentBooking)}
-                    style={[styles.NextButton, globalStyles.mb3]}
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
                   >
-                    <CustomText
-                      style={[
-                        globalStyles.f14Bold,
-                        globalStyles.mr1,
-                        globalStyles.textWhite,
-                      ]}
-                    >
-                      Next
-                    </CustomText>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
                   </TouchableOpacity>
                 );
               }
-              
-              if (bookingStatus === "ServiceStarted") {
+              if (driverStatus === "car_picked") {
+                return (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("CustomerToGarageMap", {
+                        booking: currentBooking,
+                      })
+                    }
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
+                  >
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                );
+              }
+              if (driverStatus === "ServiceStart") {
                 return (
                   <TouchableOpacity
                     onPress={() => ServiceEnd(currentBooking)}
-                    style={[styles.NextButton, globalStyles.mb3]}
+                    style={[styles.NextButton, globalStyles.mb3, loadingNext && { opacity: 0.7 }]}
+                    disabled={loadingNext}
                   >
-                    <CustomText
-                      style={[
-                        globalStyles.f14Bold,
-                        globalStyles.mr1,
-                        globalStyles.textWhite,
-                      ]}
-                    >
-                      Next
-                    </CustomText>
-                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <CustomText
+                          style={[
+                            globalStyles.f14Bold,
+                            globalStyles.mr1,
+                            globalStyles.textWhite,
+                          ]}
+                        >
+                          Next
+                        </CustomText>
+                        <Ionicons name="arrow-forward" size={20} color="#fff" />
+                      </>
+                    )}
                   </TouchableOpacity>
                 );
               }
-              
               return null;
             })()}
 
             {updatedBookings.Payments?.some(
-              (payment) => payment.PaymentStatus === "Pending"
+              (payment) => payment.PaymentStatus === "Pending" || payment.PaymentStatus === "PartialPaid"
             ) && (
-              <TouchableOpacity
-                onPress={() => CollectPayment(updatedBookings)}
-                style={styles.NextButton}
-              >
-                <CustomText
-                  style={[
-                    globalStyles.f14Bold,
-                    globalStyles.mr1,
-                    globalStyles.textWhite,
-                  ]}
+                <TouchableOpacity
+                  onPress={() => CollectPayment(updatedBookings)}
+                  style={[styles.NextButton, loadingCollectCash && { opacity: 0.7 }]}
+                  disabled={loadingCollectCash}
                 >
-                  Collect Cash
-                </CustomText>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
-              </TouchableOpacity>
-            )}
+                  {loadingCollectCash ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <CustomText
+                        style={[
+                          globalStyles.f14Bold,
+                          globalStyles.mr1,
+                          globalStyles.textWhite,
+                        ]}
+                      >
+                        Collect Cash
+                      </CustomText>
+                      <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
           </View>
         </View>
       </View>
@@ -1927,4 +2106,3 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 });
-

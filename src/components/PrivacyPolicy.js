@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, StatusBar } from "react-native";
 import CustomText from "./CustomText";
 import globalStyles from "../styles/globalStyles";
 import { FontAwesome6, Feather, Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,7 @@ function PrivacyPolicy() {
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30, paddingTop: 20 }}
     >
+      <StatusBar barStyle="dark-content" backgroundColor={color.background} />
       <View style={[globalStyles.container]}>
         <CustomText style={[globalStyles.f14Bold, globalStyles.mb3]}>
           At My Car Buddy, we value your privacy and are committed to protecting

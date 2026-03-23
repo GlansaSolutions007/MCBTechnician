@@ -13,10 +13,14 @@ import LeaveRequest from "../screens/LeaveRequest";
 import LeaveRequestList from "../screens/LeaveRequestList";
 // import LiveTrackingMap from "../components/LiveTrackingMap";
 import ServiceStart from "../screens/ServiceStart";
+import CarPickUp from "../screens/CarPickUp";
 import ServiceEnd from "../screens/ServiceEnd";
 import CollectPayment from "../screens/CollectPayment";
 import Bookings from "../screens/Bookings";
 import Notifications from "../screens/Notifications";
+import ServiceAtGarageMap from "../screens/ServiceAtGarageMap";
+import CustomerToGarageMap from "../screens/CustomerToGarageMap";
+import DropCarAtGarage from "../screens/DropCarAtGarage";
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +49,11 @@ export default function CustomerStackNavigator() {
         name="customerInfo"
         component={CustomerInfo}
         options={{ title: "Customer Info" }}
+      />
+      <Stack.Screen
+        name="ServiceAtGarageMap"
+        component={ServiceAtGarageMap}
+        options={{ title: "Car PickUp Map" }}
       />
       <Stack.Screen
         name="reviews"
@@ -82,6 +91,41 @@ export default function CustomerStackNavigator() {
         options={{ title: "Service Start" }}
       />
       <Stack.Screen
+        name="CarPickUp"
+        component={CarPickUp}
+        options={{ title: "Car Pick Up" }}
+      />
+      <Stack.Screen
+        name="CustomerToGarageMap"
+        component={CustomerToGarageMap}
+        options={({ navigation }) => ({
+          title: "Tracking Map",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Booking")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}} />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="DropCarAtGarage"
+        component={DropCarAtGarage}
+        options={({ navigation }) => ({
+          title: "Car Drop",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Booking")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}} />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <Stack.Screen
         name="ServiceEnd"
         component={ServiceEnd}
         options={{ title: "Service End" }}
@@ -106,7 +150,7 @@ export default function CustomerStackNavigator() {
               }}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}}/>
             </TouchableOpacity>
           ),
         })}
@@ -114,7 +158,27 @@ export default function CustomerStackNavigator() {
       <Stack.Screen
         name="Booking"
         component={Bookings}
-        options={{ title: "Booking" }}
+        options={({ navigation }) => ({
+          title: "Bookings",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: "CustomerTabNavigator",
+                      params: { screen: "Dashboard" },
+                    },
+                  ],
+                });
+              }}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" style={{marginRight:30}}/>
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Stack.Screen
         name="Notifications"

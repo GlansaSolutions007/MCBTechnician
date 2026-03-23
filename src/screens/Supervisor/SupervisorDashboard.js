@@ -12,7 +12,7 @@ import { color } from "../../styles/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../../components/CustomText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "@env";
 import axios from "axios";
 
@@ -20,7 +20,7 @@ export default function SupervisorDashboard() {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const [supervisorPhone, setSupervisorPhone] = useState("");
-  const [usersCount, setUsersCount] = useState(0);
+  const [bookingsCount, setBookingsCount] = useState(0);
   const [activeServicesCount, setActiveServicesCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [issuesCount, setIssuesCount] = useState(0);
@@ -38,22 +38,7 @@ export default function SupervisorDashboard() {
         config.headers = { Authorization: `Bearer ${supervisorToken}` };
       }
 
-      // 1. Total Users (technicians) – TechniciansDetails
-      let technicians = [];
-      try {
-        const techRes = await axios.get(`${baseUrl}TechniciansDetails`, config);
-        const techData = techRes?.data;
-        if (techData?.jsonResult && Array.isArray(techData.jsonResult)) {
-          technicians = techData.jsonResult;
-        } else if (Array.isArray(techData)) {
-          technicians = techData;
-        }
-      } catch (e) {
-        console.error("Error fetching technicians:", e);
-      }
-      setUsersCount(technicians.length);
-
-      // 2. Bookings – Supervisor/AssingedBookings (active, pending, issues)
+      // Bookings – Supervisor/AssingedBookings (total, active, pending, issues)
       if (!supervisorId) {
         setActiveServicesCount(0);
         setPendingCount(0);
@@ -87,6 +72,8 @@ export default function SupervisorDashboard() {
         (b) => b && b.BookingID != null
       );
 
+      setBookingsCount(validBookings.length);
+
       const statusLower = (s) => (s ? String(s).toLowerCase().trim() : "");
 
       const active = validBookings.filter((b) => {
@@ -104,7 +91,7 @@ export default function SupervisorDashboard() {
       setIssuesCount(issues.length);
     } catch (error) {
       console.error("Error fetching dashboard counts:", error);
-      setUsersCount(0);
+      setBookingsCount(0);
       setActiveServicesCount(0);
       setPendingCount(0);
       setIssuesCount(0);
@@ -122,12 +109,11 @@ export default function SupervisorDashboard() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadSupervisorInfo();
-      fetchDashboardCounts();
-    }, [loadSupervisorInfo, fetchDashboardCounts])
-  );
+  // Load once on mount; reload only on pull-to-refresh
+  useEffect(() => {
+    loadSupervisorInfo();
+    fetchDashboardCounts();
+  }, [loadSupervisorInfo, fetchDashboardCounts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -202,23 +188,23 @@ export default function SupervisorDashboard() {
             >
               <TouchableOpacity
                 style={[styles.statCard, { backgroundColor: color.primary }]}
-                onPress={() => navigation.navigate("Bookings", { filter: "users" })}
+                onPress={() => navigation.navigate("Bookings")}
                 activeOpacity={0.85}
               >
                 <MaterialCommunityIcons
-                  name="account-group"
+                  name="clipboard-list"
                   size={32}
                   color={color.white}
                 />
                 <CustomText
                   style={[globalStyles.f24Bold, globalStyles.textWhite, globalStyles.mt2]}
                 >
-                  {usersCount}
+                  {bookingsCount}
                 </CustomText>
                 <CustomText
                   style={[globalStyles.f12Regular, globalStyles.textWhite, { opacity: 0.9 }]}
                 >
-                  Total Users
+                  Total Bookings
                 </CustomText>
               </TouchableOpacity>
 
@@ -324,6 +310,8 @@ export default function SupervisorDashboard() {
                 borderRadius: 10,
               },
             ]}
+            onPress={() => navigation.navigate("Customers")}
+            activeOpacity={0.7}
           >
             <Ionicons name="people-outline" size={24} color={color.primary} />
             <CustomText

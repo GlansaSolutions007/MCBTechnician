@@ -1,7 +1,8 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, StatusBar } from "react-native";
 import CustomText from "./CustomText";
 import globalStyles from "../styles/globalStyles";
+import { color } from "../styles/theme";
 import {
   FontAwesome5,
   MaterialIcons,
@@ -17,6 +18,7 @@ function TermsAndConditions() {
       style={[globalStyles.bgcontainer]}
       contentContainerStyle={{ paddingBottom: 30, paddingTop: 20 }}
     >
+      <StatusBar barStyle="dark-content" backgroundColor={color.background} />
       <View style={[globalStyles.container]}>
         <CustomText style={[globalStyles.f14Bold, globalStyles.mb3]}>
           Effective Date:

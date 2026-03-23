@@ -10,6 +10,7 @@ import {
   Pressable,
   StatusBar,
 } from "react-native";
+import Constants from "expo-constants";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
@@ -138,12 +139,15 @@ export default function LeaveRequest() {
     navigation.navigate("leaveRequestList");
   };
 
+  const statusBarHeight = Constants.statusBarHeight ?? 0;
+
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      style={[globalStyles.bgcontainer]}
-    >
+    <View style={styles.screenWrapper}>
       <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingTop: statusBarHeight }]}
+        style={[globalStyles.bgcontainer, styles.scrollFill]}
+      >
       {/* Header Section */}
       <View style={styles.headerSection}>
         <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, globalStyles.mb3]}>
@@ -394,10 +398,26 @@ export default function LeaveRequest() {
         </Pressable>
       </Modal>
     </ScrollView>
+      <View style={[styles.stickyStatusBar, { height: statusBarHeight }]} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+  },
+  scrollFill: {
+    flex: 1,
+  },
+  stickyStatusBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: color.primary,
+    zIndex: 10,
+  },
   // Header Section
   headerSection: {
     backgroundColor: color.primary,
@@ -407,7 +427,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     marginBottom: 20,
-    marginTop: 50,
   },
   backButton: {
     width: 40,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
@@ -21,49 +21,61 @@ import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/nativ
 import { RAZORPAY_KEY, RAZORPAY_SECRET } from "@env";
 import base64 from "react-native-base64";
 import { API_BASE_URL } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // import qrImage from "../../assets/images/QrCode.jpeg.jpg";
 import { color } from "../styles/theme";
 import { encode } from "base64-arraybuffer";
 import helpcall from "../../assets/icons/Customer Care.png";
+import { getBookingDisplayData } from "../utils/bookingDisplay";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { booking } = route.params;
+  const { booking, amount: amountFromParams } = route.params || {};
   const [qrImage, setQrImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [qrId, setQrId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
-console.log("qrId",qrId)
-
-  // Calculate total amount to collect with fallbacks
-  const getCollectAmount = () => {
-    // First try booking TotalPrice
-    if (booking?.TotalPrice) {
-      return booking.TotalPrice;
+  // Amount: from params (Dashboard) or from booking (ServiceEnd etc.)
+  const collectAmount =
+    amountFromParams != null && amountFromParams !== ""
+      ? Number(amountFromParams)
+      : booking?.PickupDelivery?.[0]?.TotalPrice ??
+        booking?.TotalPrice ??
+        getBookingDisplayData(booking)?.totalPrice ??
+        (booking?.BookingAddOns?.length
+          ? booking.BookingAddOns.reduce((sum, a) => sum + Number(a?.TotalPrice || 0), 0)
+          : null);
+  const refreshBooking = useCallback(async () => {
+    const currentBooking = route.params?.booking;
+    if (!currentBooking?.BookingID) return;
+    const techID = currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    if (!techID) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings`, {
+        params: { Id: techID, techId: techID },
+      });
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      const fromApi = list.find((b) => b.BookingID === currentBooking.BookingID);
+      if (fromApi) {
+        navigation.setParams({
+          ...route.params,
+          booking: fromApi,
+        });
+      }
+    } catch (e) {
+      if (__DEV__) console.warn("CollectPayment refreshBooking:", e?.response?.data ?? e?.message);
     }
-    // Try pending payment amount
-    const pendingPayment = booking?.Payments?.find(
-      (p) => p?.PaymentStatus === "Pending"
-    );
-    if (pendingPayment?.Amount) {
-      return pendingPayment.Amount;
-    }
-    // Calculate from BookingAddOns
-    if (booking?.BookingAddOns && booking.BookingAddOns.length > 0) {
-      return booking.BookingAddOns.reduce(
-        (sum, addOn) => sum + (addOn.TotalPrice || 0),
-        0
-      );
-    }
-    return 0;
-  };
+  }, [route.params?.booking?.BookingID, navigation]);
 
-  const collectAmount = getCollectAmount();
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshBooking();
+    }, [refreshBooking])
+  );
 
-  // Handle back button to navigate directly to dashboard
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -76,11 +88,11 @@ console.log("qrId",qrId)
             },
           ],
         });
-        return true; // Prevent default back behavior
+        return true;
       };
 
       const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      
+
       return () => backHandler.remove();
     }, [navigation])
   );
@@ -104,39 +116,28 @@ console.log("qrId",qrId)
     }
   };
 
-  // const Dashboard = async () => {
-  //   navigation.reset({
-  //     index: 0,
-  //     routes: [
-  //       {
-  //         name: "CustomerTabNavigator",
-  //         params: { screen: "Dashboard" },
-  //       },
-  //     ],
-  //   });
-  // };
-
   useEffect(() => {
     const generateQR = async () => {
+      if (!booking?.BookingID) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-
-        const bookingID = booking?.BookingID;
-        console.log("bookingID",bookingID)
-        const amount = Math.round(Number(collectAmount));
+        const bookingID = booking.BookingID;
+        const amount = Math.round(Number(collectAmount)) || 0;
 
         const qrResponse = await axios.post(
           // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
           `${API_BASE_URL}payments/qr`,
           {
             // responseType: "arraybuffer",
-              bookingID: bookingID,
-              amount: amount,
+            bookingID: bookingID,
+            amount: amount,
           }
         );
         console.log("qrResponse", qrResponse?.data);
 
-        // Extract identifiers and URLs from response
         const responseData = qrResponse?.data;
         const returnedQrId =
           responseData?.qrId ||
@@ -149,7 +150,6 @@ console.log("qrId",qrId)
         if (returnedQrId) {
           setQrId(String(returnedQrId));
         } else {
-          // Fallback: try extracting from booking payments array if present
           const pendingPaymentFromBooking = booking?.Payments?.find(
             (p) => p?.PaymentStatus === "Pending"
           );
@@ -162,21 +162,19 @@ console.log("qrId",qrId)
           }
         }
 
-        // Determine QR content/source
         const directImageUrl = responseData?.imageUrl || responseData?.qrImageUrl;
         const razorpayShortLink =
           responseData?.url ||
           responseData?.paymentUrl ||
           (typeof responseData === "string" ? responseData : null);
 
-        // If backend returned a page/link (e.g., https://rzp.io/rzp/XXXX), generate a QR image from it
         const qrImageUrl = directImageUrl
           ? directImageUrl
           : razorpayShortLink
-          ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=2&data=${encodeURIComponent(
+            ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=2&data=${encodeURIComponent(
               razorpayShortLink
             )}`
-          : null;
+            : null;
 
         setQrImage(qrImageUrl);
         console.log(qrImageUrl);
@@ -189,9 +187,8 @@ console.log("qrId",qrId)
     };
 
     generateQR();
-  }, [booking]);
+  }, [booking, collectAmount]);
 
-  // Poll payment status by QR ID and open modal when captured
   useEffect(() => {
     if (!qrId) return;
 
@@ -201,7 +198,7 @@ console.log("qrId",qrId)
         const res = await axios.get(`${API_BASE_URL}Payments/status/${qrId}`);
         const status = res?.data?.status || res?.data?.Status;
         const success = res?.data?.success;
-console.log("status",status);
+        console.log("status==========", status);
         if (!isActive) return;
         if (status) {
           setPaymentStatus(status);
@@ -215,7 +212,6 @@ console.log("status",status);
           setShowSuccessModal(true);
         }
       } catch (e) {
-        // keep polling on transient errors
       }
     }, 3000);
 
@@ -259,7 +255,7 @@ console.log("status",status);
               { marginTop: 4 },
             ]}
           >
-            ₹{collectAmount}
+            ₹{collectAmount != null && collectAmount !== "" ? Number(collectAmount) : "—"}
           </CustomText>
         </View>
 
@@ -306,7 +302,7 @@ console.log("status",status);
           onPress={() => {
             Vibration.vibrate([0, 200, 100, 300]);
 
-            const phoneNumber = booking.PhoneNumber;
+            const phoneNumber = booking.PickupDelivery[0].PickFrom.PersonNumber;
             if (phoneNumber) {
               Linking.openURL(`tel:${phoneNumber}`);
             } else {
@@ -326,37 +322,37 @@ console.log("status",status);
         </TouchableOpacity>
 
         <TouchableOpacity
-                style={[
-                  globalStyles.flex1,
-                  globalStyles.bgBlack,
-                  globalStyles.borderRadiuslarge,
-                  globalStyles.p4,
-                  globalStyles.justifycenter,
-                  globalStyles.alineItemscenter,
-                  globalStyles.mt5,
-                ]}
-                onPress={() => {
-                  Vibration.vibrate([0, 200, 100, 300]);
+          style={[
+            globalStyles.flex1,
+            globalStyles.bgBlack,
+            globalStyles.borderRadiuslarge,
+            globalStyles.p4,
+            globalStyles.justifycenter,
+            globalStyles.alineItemscenter,
+            globalStyles.mt5,
+          ]}
+          onPress={() => {
+            Vibration.vibrate([0, 200, 100, 300]);
 
-                  const phoneNumber = 7075243939;
-                  if (phoneNumber) {
-                    Linking.openURL(`tel:${phoneNumber}`);
-                  } else {
-                    Alert.alert("Error", "Phone number not available");
-                  }
-                }}
-              >
-                <View
-                  style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-                >
-                  <Image source={helpcall} />
-                  <CustomText
-                    style={[globalStyles.textWhite, globalStyles.ml2]}
-                  >
-                    Call help line
-                  </CustomText>
-                </View>
-              </TouchableOpacity>
+            const phoneNumber = 7075243939;
+            if (phoneNumber) {
+              Linking.openURL(`tel:${phoneNumber}`);
+            } else {
+              Alert.alert("Error", "Phone number not available");
+            }
+          }}
+        >
+          <View
+            style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
+          >
+            <Image source={helpcall} />
+            <CustomText
+              style={[globalStyles.textWhite, globalStyles.ml2]}
+            >
+              Call Help Line
+            </CustomText>
+          </View>
+        </TouchableOpacity>
 
         {/* <TouchableOpacity
           onPress={handleCompletePayment}
@@ -397,7 +393,7 @@ console.log("status",status);
                 { marginTop: 4 },
               ]}
             >
-               {successMessage} 
+              {successMessage}
             </CustomText>
 
 

@@ -11,6 +11,7 @@ import {
   StatusBar,
   Animated,
 } from "react-native";
+import Constants from "expo-constants";
 import CustomText from "../../components/CustomText";
 import globalStyles from "../../styles/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
@@ -503,10 +504,16 @@ export default function ProfileScreen() {
     );
   };
 
+  const statusBarHeight = Constants.statusBarHeight ?? 0;
+
   const ProfileSkeleton = () => (
-    <ScrollView style={[globalStyles.bgcontainer]} showsVerticalScrollIndicator={false}>
+    <View style={styles.screenWrapper}>
       <StatusBar backgroundColor={color.primary} barStyle="light-content" />
-      
+      <ScrollView
+        style={[globalStyles.bgcontainer, styles.scrollFill]}
+        contentContainerStyle={{ paddingTop: statusBarHeight }}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header Section Skeleton */}
       <View style={styles.headerSection}>
         <View style={[globalStyles.container, globalStyles.pt5]}>
@@ -541,6 +548,8 @@ export default function ProfileScreen() {
         <SkeletonLogoutButton />
       </View>
     </ScrollView>
+      <View style={[styles.stickyStatusBar, { height: statusBarHeight }]} />
+    </View>
   );
 
   if (loading) {
@@ -557,8 +566,13 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={[globalStyles.bgcontainer]} showsVerticalScrollIndicator={false}>
+    <View style={styles.screenWrapper}>
       <StatusBar backgroundColor={color.primary} barStyle="light-content" />
+      <ScrollView
+        style={[globalStyles.bgcontainer, styles.scrollFill]}
+        contentContainerStyle={{ paddingTop: statusBarHeight }}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header Section with Gradient Background */}
       <View style={styles.headerSection}>
         <View style={[globalStyles.container, globalStyles.pt5]}>
@@ -821,10 +835,26 @@ export default function ProfileScreen() {
         </Pressable>
       </Modal>
     </ScrollView>
+      <View style={[styles.stickyStatusBar, { height: statusBarHeight }]} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+  },
+  scrollFill: {
+    flex: 1,
+  },
+  stickyStatusBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: color.primary,
+    zIndex: 10,
+  },
   // Header Section
   headerSection: {
     backgroundColor: color.primary,

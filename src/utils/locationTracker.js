@@ -133,7 +133,12 @@ export async function startTechnicianLocationTracking(technicianId) {
         heading: coords.heading || null,
       });
     } catch (error) {
-      console.log("Error updating location:", error);
+      const msg = error?.message || String(error);
+      if (msg.includes("PERMISSION_DENIED") || msg.includes("permission")) {
+        console.log("Location update skipped (permission or rules):", msg.slice(0, 60));
+      } else {
+        console.log("Error updating location:", error);
+      }
     }
   };
 
