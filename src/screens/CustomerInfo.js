@@ -44,16 +44,10 @@ export default function CustomerInfo() {
   const bookingParam = route?.params?.booking;
   if (!bookingParam) {
     return (
-      <ScrollView style={[globalStyles.bgcontainer]} refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
+      <View style={[globalStyles.bgcontainer, globalStyles.justifycenter, globalStyles.alineItemscenter, { flex: 1 }]}>
         <StatusBar style="dark" />
-        <View style={[globalStyles.container, globalStyles.justifycenter]}>
-          <CustomText style={[globalStyles.f16Bold]}>
-            No booking data.
-          </CustomText>
-        </View>
-      </ScrollView>
+        <CustomText style={[globalStyles.f16Bold]}>No booking data.</CustomText>
+      </View>
     );
   }
   const booking = bookingParam;
@@ -239,46 +233,46 @@ export default function CustomerInfo() {
           (b) => b.BookingID === currentBooking.BookingID
         );
         if (fromApi) {
-          setUpdatedBookings((prev) => {
-            const getStatus = (b) =>
-              b?.DriverStatus ??
-              (Array.isArray(b?.PickupDelivery)
-                ? b.PickupDelivery[0]?.DriverStatus
-                : b?.PickupDelivery?.DriverStatus);
-            const statusOrder = {
-              assigned: 1,
-              pickup_started: 2,
-              pickup_reached: 3,
-              car_picked: 4,
-              ServiceStart: 5,
-              completed: 6,
-              ServiceComplete: 7,
-              Confirmed: 1,
-              StartJourney: 2,
-              Reached: 3,
-              ServiceStarted: 4,
-              Completed: 5,
+          // Compute next booking state outside the updater — never call navigation inside setState
+          const getStatus = (b) =>
+            b?.DriverStatus ??
+            (Array.isArray(b?.PickupDelivery)
+              ? b.PickupDelivery[0]?.DriverStatus
+              : b?.PickupDelivery?.DriverStatus);
+          const statusOrder = {
+            assigned: 1,
+            pickup_started: 2,
+            pickup_reached: 3,
+            car_picked: 4,
+            ServiceStart: 5,
+            completed: 6,
+            ServiceComplete: 7,
+            Confirmed: 1,
+            StartJourney: 2,
+            Reached: 3,
+            ServiceStarted: 4,
+            Completed: 5,
+          };
+          const prevStatus = getStatus(updatedBookings);
+          const apiStatus = getStatus(fromApi);
+          const prevOrder = statusOrder[prevStatus] ?? 0;
+          const apiOrder = statusOrder[apiStatus] ?? 0;
+          let nextBooking;
+          if (apiOrder < prevOrder && prevStatus) {
+            nextBooking = {
+              ...fromApi,
+              DriverStatus: prevStatus,
+              PickupDelivery: Array.isArray(fromApi.PickupDelivery)
+                ? fromApi.PickupDelivery.map((leg, i) =>
+                  i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
+                )
+                : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
             };
-            const prevStatus = getStatus(prev);
-            const apiStatus = getStatus(fromApi);
-            const prevOrder = statusOrder[prevStatus] ?? 0;
-            const apiOrder = statusOrder[apiStatus] ?? 0;
-            if (apiOrder < prevOrder && prevStatus) {
-              const merged = {
-                ...fromApi,
-                DriverStatus: prevStatus,
-                PickupDelivery: Array.isArray(fromApi.PickupDelivery)
-                  ? fromApi.PickupDelivery.map((leg, i) =>
-                    i === 0 ? { ...leg, DriverStatus: prevStatus } : leg
-                  )
-                  : { ...fromApi.PickupDelivery, DriverStatus: prevStatus },
-              };
-              navigation.setParams({ booking: merged });
-              return merged;
-            }
-            navigation.setParams({ booking: fromApi });
-            return fromApi;
-          });
+          } else {
+            nextBooking = fromApi;
+          }
+          setUpdatedBookings(nextBooking);
+          navigation.setParams({ booking: nextBooking });
         }
       }
     } catch (error) {
