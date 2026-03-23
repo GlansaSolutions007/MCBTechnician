@@ -75,8 +75,9 @@ export default function DropCarAtGarage() {
     let mounted = true;
     const fetchAssigned = async () => {
       try {
-        const techId = booking?.TechID ?? route?.params?.booking?.TechID;
+        const techId = await AsyncStorage.getItem("techID"); // ← from storage
         if (!techId) return;
+
         const response = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techId}`);
         if (response?.data && Array.isArray(response.data) && mounted) {
           const idToMatch = booking?.BookingID ?? route?.params?.booking?.BookingID;
@@ -91,7 +92,7 @@ export default function DropCarAtGarage() {
     return () => {
       mounted = false;
     };
-  }, [booking?.BookingID, booking?.TechID]);
+  }, [booking?.BookingID]);
 
   const customerName = bookingParam?.CustomerName || bookingParam?.Leads?.FullName || "";
   const GarageName = bookingParam?.PickupDelivery[0]?.DropAt?.PersonName;

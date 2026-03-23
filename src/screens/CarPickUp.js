@@ -1050,6 +1050,9 @@ export default function CarPickUp() {
                         return; // do not upload images, do not clear images
                       }
 
+                      // Fetch techID from AsyncStorage for updatedBy and formData
+                      const techId = await AsyncStorage.getItem("techID");
+
                       // Post images only after OTP is valid (above verify step passed) — use fetch like ServiceStart/ServiceEnd so multipart boundary is set correctly
                       try {
                         setIsUploading(true);
@@ -1067,7 +1070,7 @@ export default function CarPickUp() {
                           formData.append("UploadedBy", 1);
                           formData.append(
                             "TechID",
-                            String(booking?.TechID ?? ""),
+                            String(techId ?? ""),
                           );
                           formData.append("ImageUploadType", "Pickup");
                           formData.append("ImagesType", "tech");
@@ -1119,20 +1122,23 @@ export default function CarPickUp() {
                       }
 
                       try {
+                        const pd0 = booking?.PickupDelivery?.[0];
                         const statusPayload = {
                           bookingID: Number(booking?.BookingID || 0),
                           serviceType: booking?.ServiceType || "ServiceAtGarage",
-                          routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                          routeType:
+                            pd0?.PickFrom?.RouteType ??
+                            pd0?.DropAt?.RouteType ??
+                            pd0?.RouteType ??
+                            "CustomerToDealer" ?? "DealerToCustomer" ,
                           action: "car_picked",
-                          updatedBy: Number(techId) ,
+                          updatedBy: Number(techId),
                           role: "Technician",
                         };
                         console.log(
                           "UpdateBookingStatus==========:",
                           statusPayload,
                         );
-                        console.log("UdateByyyyyyy--",updatedBy);
-                        
                         await axios.post(
                           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                           statusPayload,

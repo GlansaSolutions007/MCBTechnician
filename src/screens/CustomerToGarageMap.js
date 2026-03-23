@@ -335,7 +335,11 @@ export default function CustomerToGarageMap() {
           {
             bookingID: Number(booking?.BookingID || 0),
             serviceType: booking?.ServiceType || "ServiceAtGarage",
-            routeType: booking?.PickupDelivery[0].PickFrom.RouteType,
+            routeType:
+              booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+              booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+              booking?.PickupDelivery?.[0]?.RouteType ??
+              "CustomerToDealer",
             action: "in_transit",
             updatedBy: Number(techID),
             role: "Technician",
@@ -349,68 +353,7 @@ export default function CustomerToGarageMap() {
     })();
   };
 
-  // const handleLetsStart = async () => {
-  //   const techID = await AsyncStorage.getItem("techID");
-  //   try {
-  //     // ✅ 1. Update UI instantly
-  //     setUpdatedBooking((prev) => {
-  //       if (!prev) return prev;
 
-  //       const updated = { ...prev };
-
-  //       if (Array.isArray(updated.PickupDelivery)) {
-  //         updated.PickupDelivery = updated.PickupDelivery.map((leg, index) =>
-  //           index === 0 ? { ...leg, DriverStatus: "in_transit" } : leg
-  //         );
-  //       } else if (updated.PickupDelivery) {
-  //         updated.PickupDelivery = {
-  //           ...updated.PickupDelivery,
-  //           DriverStatus: "in_transit",
-  //         };
-  //       }
-
-  //       return updated;
-  //     });
-
-  //     // ✅ 2. Call InsertTracking
-  //     if (carPickupDeliveryId > 0) {
-  //       await axios.post(
-  //         `${API_BASE_URL}ServiceImages/InsertTracking`,
-  //         { pickDropId: carPickupDeliveryId, status: "in_transit" },
-  //         { headers: { "Content-Type": "application/json" } }
-  //       );
-  //     }
-
-  //     // ✅ 3. Update booking status
-  //     await axios.post(
-  //       `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
-  //       {
-  //         bookingID: Number(booking?.BookingID || 0),
-  //         serviceType: booking?.ServiceType || "ServiceAtGarage",
-  //         routeType: booking?.PickupDelivery[0].PickFrom.RouteType,
-  //         action: "in_transit",
-  //         updatedBy: Number(techID ),
-  //         role: "Technician",
-  //       },
-  //       { headers: { "Content-Type": "application/json" } }
-  //     );
-  //     console.log("routeType===============", routeType)
-
-  //     // ✅ 4. Refresh booking from API (optional but recommended)
-  //     await onRefresh();
-
-  //   } catch (e) {
-  //     console.error("Error:", e);
-  //   }
-
-  //   // ✅ 5. Open maps
-  //   const dest = `${garageCoords.latitude},${garageCoords.longitude}`;
-  //   const url = location
-  //     ? `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${dest}&travelmode=driving`
-  //     : `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
-
-  //   Linking.openURL(url).catch(() => { });
-  // };
 
   const handleNavigate = () => {
     if (location) {
@@ -436,7 +379,11 @@ export default function CustomerToGarageMap() {
       const statusPayload = {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType:
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          "CustomerToDealer",
         action: "drop_reached",
         updatedBy: Number(techID),
         role: "Technician",
@@ -451,13 +398,13 @@ export default function CustomerToGarageMap() {
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
-    setLoadingReached(false);
 
     const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
-    console.log("phoneNumber===============", phoneNumber)
+    console.log("phoneNumber===============", phoneNumber);
     try {
       const payload = {
-        CarPickupDeliveryId: Number(carPickupDeliveryId),
+        // CarPickupDeliveryId: Number(carPickupDeliveryId),
+        carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Delivery",
         phoneNumber: String(phoneNumber).trim(),
       };
@@ -466,8 +413,11 @@ export default function CustomerToGarageMap() {
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("OTP ================>>>>>>>>>>", payload);
-    } catch (e) { }
+      console.log("GenerateOTP response:", response?.data);
+    } catch (e) {
+      console.error("GenerateOTP Error:", e?.response?.data || e);
+    }
+    setLoadingReached(false);
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,
       estimatedTime,

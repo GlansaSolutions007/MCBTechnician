@@ -222,16 +222,15 @@ export default function CustomerInfo() {
       setLoading(false);
       return;
     }
-    if (!currentBooking?.TechID) {
-      setLoading(false);
-      return;
-    }
+    const techID = await AsyncStorage.getItem("techID"); // ← read from storage
+    if (!techID) { setLoading(false); return; }
+
     setRefreshing(true);
     setLoading(true);
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${currentBooking.TechID}`
+        `${API_BASE_URL}Bookings/GetAssignedBookings?Id=${techID}`
       );
 
       const data = Array.isArray(response?.data) ? response.data : response?.data?.data ?? [];
@@ -288,7 +287,7 @@ export default function CustomerInfo() {
       setRefreshing(false);
       setLoading(false);
     }
-  }, [booking?.BookingID, booking?.TechID, route.params?.booking?.BookingID, navigation]);
+  }, [booking?.BookingID, route.params?.booking?.BookingID, navigation]);
 
   // Refetch when screen is focused (initial open + go back and open again)
   useFocusEffect(
@@ -736,7 +735,7 @@ export default function CustomerInfo() {
   };
   const handleStartRide = async () => {
     setLoadingStartRide(true);
-    const techID=await AsyncStorage.getItem("techID");
+    const techID = await AsyncStorage.getItem("techID");
     if (pickDropId) {
       try {
         await axios.post(
@@ -753,9 +752,14 @@ export default function CustomerInfo() {
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType:
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
         action: "pickup_started",
-        updatedBy: Number(techID ),
+        updatedBy: Number(techID),
         role: "Technician",
       };
       console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
@@ -770,18 +774,13 @@ export default function CustomerInfo() {
     }
 
     // Optimistic UI update
-    const updatedBooking = {
-      ...booking,
-      PickupDelivery: {
-        ...booking.PickupDelivery,
-        DriverStatus: "pickup_started"
-      }
-    };
+    const rawPD = booking?.PickupDelivery;
+    const updatedPD = Array.isArray(rawPD)
+      ? rawPD.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg)
+      : { ...rawPD, DriverStatus: "pickup_started" };
+    const updatedBooking = { ...booking, PickupDelivery: updatedPD };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
-
-    // Recall API to get latest status from server so UI stays in sync
-    await onRefresh();
 
     try {
       await AsyncStorage.setItem(`startRide_done_${booking.BookingID}`, "true");
@@ -789,12 +788,14 @@ export default function CustomerInfo() {
       console.error("Error saving start ride flag", error);
     }
     setLoadingStartRide(false);
+    // Fire onRefresh in background — don't block maps from opening
+    onRefresh();
     await openGoogleMaps();
   };
 
   const Reached = async () => {
     setLoadingReached(true);
-    const techID=await AsyncStorage.getItem("techID");
+    const techID = await AsyncStorage.getItem("techID");
     if (pickDropId) {
       try {
         await axios.post(
@@ -835,9 +836,14 @@ export default function CustomerInfo() {
       const statusPayload = {
         bookingID: Number(displayBooking?.BookingID || 0),
         serviceType: displayBooking?.ServiceType || "ServiceAtGarage",
-        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+        routeType:
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
         action: "pickup_reached",
-        updatedBy: Number(techID ),
+        updatedBy: Number(techID),
         role: "Technician",
       };
       console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
@@ -852,13 +858,11 @@ export default function CustomerInfo() {
     }
 
     // Requested removal of updateTechnicianTracking
-    const updatedBooking = {
-      ...booking,
-      PickupDelivery: {
-        ...booking.PickupDelivery,
-        DriverStatus: "pickup_reached"
-      }
-    };
+    const rawPD2 = booking?.PickupDelivery;
+    const updatedPD2 = Array.isArray(rawPD2)
+      ? rawPD2.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg)
+      : { ...rawPD2, DriverStatus: "pickup_reached" };
+    const updatedBooking = { ...booking, PickupDelivery: updatedPD2 };
     navigation.setParams({ booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
     onRefresh();

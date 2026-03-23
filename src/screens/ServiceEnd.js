@@ -56,8 +56,7 @@ export default function ServiceEnd() {
   const refreshBooking = useCallback(async () => {
     const currentBooking = route.params?.booking;
     if (!currentBooking?.BookingID) return;
-    const techID =
-      currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    const techID = (await AsyncStorage.getItem("techID")) ?? currentBooking.TechID;
     if (!techID) return;
     try {
       const res = await axios.get(
@@ -279,7 +278,7 @@ export default function ServiceEnd() {
         formData.append("VehicleNumber", vehicleNum);
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
-        formData.append("TechID", String(booking.TechID ?? ""));
+        formData.append("TechID", String((await AsyncStorage.getItem("techID")) ?? ""));
         formData.append("ImageUploadType", "Delivery");
         formData.append("ImagesType", "tech");
         formData.append("ImageURL1", {
@@ -422,6 +421,7 @@ export default function ServiceEnd() {
         setOtpValid(false);
         setModalMessage(data?.message || "Invalid OTP. Please try again.");
         setModalVisible(true);
+        setIsLoading(false);
         return false;
       }
       setOtpValid(true);
@@ -439,15 +439,19 @@ export default function ServiceEnd() {
   };
 
   const Completedservice = async () => {
+    if (isLoading || isUploadingImages) return;
+    setIsLoading(true);
     setError("");
     setImageError("");
 
     if (!images || images.length < 1) {
       setImageError("At least one image is required.");
+      setIsLoading(false);
       return;
     }
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
+      setIsLoading(false);
       return;
     }
     if (!carPickupDeliveryId) {
@@ -455,12 +459,14 @@ export default function ServiceEnd() {
         "Booking pickup/delivery info is missing. Please go back and open this booking again.",
       );
       setModalVisible(true);
+      setIsLoading(false);
       return;
     }
 
     // Verify OTP first — only if valid, then upload images
     const otpValidResult = await verifyOTP();
     if (!otpValidResult) {
+      setIsLoading(false);
       return;
     }
 
@@ -468,6 +474,7 @@ export default function ServiceEnd() {
     try {
       await uploadAfterServiceImages(true);
     } catch (err) {
+      setIsLoading(false);
       return;
     }
 
@@ -640,7 +647,12 @@ export default function ServiceEnd() {
         bookingID: Number(booking?.BookingID || 0),
         serviceType: booking?.ServiceType || "ServiceAtGarage",
         action: "ServiceComplete",
-        routeType: booking?.PickupDelivery?.[0]?.DropAt?.RouteType,
+        routeType:
+          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+          booking?.PickupDelivery?.[0]?.RouteType ??
+          routeType ??
+          "CustomerToDealer",
         updatedBy: Number(completedBy),
         role: "Technician",
       };
@@ -659,8 +671,7 @@ export default function ServiceEnd() {
       );
     }
 
-
-
+    setIsLoading(false);
     navigation.navigate("CollectPayment", { booking });
   };
 

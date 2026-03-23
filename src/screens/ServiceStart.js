@@ -123,7 +123,7 @@ export default function ServiceStart() {
   const refreshBooking = useCallback(async () => {
     const currentBooking = route.params?.booking;
     if (!currentBooking?.BookingID) return;
-    const techID = currentBooking.TechID ?? (await AsyncStorage.getItem("techID"));
+    const techID = (await AsyncStorage.getItem("techID")) ?? currentBooking.TechID;
     if (!techID) return;
     try {
       const res = await axios.get(`${API_BASE_URL}Bookings/GetAssignedBookings`, {
@@ -190,7 +190,7 @@ export default function ServiceStart() {
       formData.append("VehicleNumber", regNo);
       formData.append("BookingID", booking.BookingID);
       formData.append("UploadedBy", 1);
-      formData.append("TechID", String(booking.TechID ?? ""));
+      formData.append("TechID", String((await AsyncStorage.getItem("techID")) ?? ""));
       formData.append("ImageUploadType", "Pickup");
       formData.append("ImagesType", "tech");
       formData.append("ImageURL1", {
@@ -299,7 +299,7 @@ export default function ServiceStart() {
         const formData = new FormData();
         formData.append("BookingID", booking.BookingID);
         formData.append("UploadedBy", 1);
-        formData.append("TechID", String(booking.TechID ?? ""));
+        formData.append("TechID", String((await AsyncStorage.getItem("techID")) ?? ""));
         formData.append("ImageUploadType", "before");
         formData.append("ImagesType", "tech");
         formData.append("ImageURL1", {
@@ -946,6 +946,7 @@ export default function ServiceStart() {
                         setError(data?.message || "Invalid OTP. Please try again.");
                         setModalMessage(data?.message || "Invalid OTP. Please try again.");
                         setModalVisible(true);
+                        setLoadingSubmit(false);
                         return;
                       }
                     } catch (verifyErr) {
@@ -975,8 +976,9 @@ export default function ServiceStart() {
                       return;
                     }
 
+                    const techId = await AsyncStorage.getItem("techID");
+
                     try {
-                      const techId = await AsyncStorage.getItem("techId");
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/InsertTracking`,
                         {
@@ -995,7 +997,12 @@ export default function ServiceStart() {
                         bookingID: Number(booking?.BookingID || 0),
                         serviceType: booking?.ServiceType || "ServiceAtHome",
                         action: "ServiceStart",
-                        routeType: booking?.PickupDelivery?.[0]?.PickFrom?.RouteType,
+                        routeType:
+                          booking?.PickupDelivery?.[0]?.PickFrom?.RouteType ??
+                          booking?.PickupDelivery?.[0]?.DropAt?.RouteType ??
+                          booking?.PickupDelivery?.[0]?.RouteType ??
+                          routeType ??
+                          "CustomerToDealer",
                         updatedBy: Number(techId),
                         role: "Technician",
                       };
