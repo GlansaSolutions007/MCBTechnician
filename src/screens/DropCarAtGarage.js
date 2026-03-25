@@ -23,7 +23,7 @@ import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import { API_BASE_URL, API_BASE_URL_IMAGE } from "@env";
 import defaultAvatar from "../../assets/images/buddy.png";
@@ -53,6 +53,7 @@ export default function DropCarAtGarage() {
   const [isUploading, setIsUploading] = useState(false);
   const [verifyingComplete, setVerifyingComplete] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [otpEnabled, setOtpEnabled] = useState(false);
 
   const pd = booking?.PickupDelivery;
   const currentLeg = Array.isArray(pd) ? pd[0] : pd;
@@ -337,6 +338,39 @@ export default function DropCarAtGarage() {
   const routeType =
     bookingParam?.PickupDelivery?.[0]?.DropAt?.RouteType || "";
 
+  const paymentStatus =
+    bookingParam?.PaymentStatus ??
+    bookingParam?.Payments?.[0]?.PaymentStatus ??
+    null;
+
+  const totalPrice =
+    bookingParam?.TotalPrice ??
+    bookingParam?.PickupDelivery?.[0]?.TotalPrice ??
+    null;
+
+  const isDealerToCustomer = routeType === "DealerToCustomer";
+
+  // Payment is required only when DealerToCustomer AND status is not yet "Success"
+  const needsPaymentFirst =
+    isDealerToCustomer &&
+    paymentStatus !== "Success" &&
+    (paymentStatus === null || paymentStatus === "PartialPaid");
+
+  // When returning from CollectPayment (or if bookingParam refreshes with Success), enable the OTP section
+  useFocusEffect(
+    React.useCallback(() => {
+      if (
+        route.params?.paymentCollected === true ||
+        bookingParam?.PaymentStatus === "Success" ||
+        !isDealerToCustomer
+      ) {
+        setOtpEnabled(true);
+      } else {
+        setOtpEnabled(false);
+      }
+    }, [route.params?.paymentCollected, bookingParam?.PaymentStatus, isDealerToCustomer])
+  );
+
   const dropHeading =
     routeType === "DealerToCustomer"
       ? "Drop Car at Home"
@@ -477,10 +511,50 @@ export default function DropCarAtGarage() {
             <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
               {dropHeading}
             </CustomText>
+             {otpEnabled && (
             <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}>
               Upload images (at least one required), enter Delivery OTP and tap Complete
             </CustomText>
 
+             )}
+             {needsPaymentFirst && !otpEnabled && (
+  <CustomText style={[globalStyles.f10Regular, globalStyles.neutral500, globalStyles.mt1]}>
+Collect Payment first to enable OTP and complete the drop process
+            </CustomText>
+)}
+            {/* Collect Cash button — shown for DealerToCustomer when payment is pending/partial */}
+            {needsPaymentFirst && !otpEnabled && (
+              <TouchableOpacity
+                style={[
+                  globalStyles.mt3,
+                  globalStyles.bgprimary,
+                  globalStyles.borderRadiuslarge,
+                  {
+                    width: "100%",
+                    minHeight: 50,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexDirection: "row",
+                  },
+                ]}
+                onPress={() =>
+                  navigation.navigate("CollectPayment", {
+                    booking: bookingParam,
+                    amount: totalPrice,
+                    fromDropCar: true,
+                  })
+                }
+              >
+                <Ionicons name="cash-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                  Collect Cash
+                </CustomText>
+              </TouchableOpacity>
+            )}
+
+            {/* Image upload, OTP entry and Complete button — shown only when payment is done (or not required) */}
+            {otpEnabled && (
+            <View>
             <TouchableOpacity
               style={[
                 globalStyles.inputBox,
@@ -571,7 +645,9 @@ export default function DropCarAtGarage() {
                   {isLoading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>Resend OTP</CustomText>
+                    <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
+                      {isDealerToCustomer ? "Send OTP" : "Resend OTP"}
+                    </CustomText>
                   )}
                 </TouchableOpacity>
               ) : (
@@ -610,6 +686,8 @@ export default function DropCarAtGarage() {
                 <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>Complete</CustomText>
               )}
             </TouchableOpacity>
+            </View>
+            )}
           </View>
 
           <View style={globalStyles.mt3}>

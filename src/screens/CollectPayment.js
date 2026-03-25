@@ -33,7 +33,7 @@ import * as ImagePicker from "expo-image-picker";
 export default function CollectPayment() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { booking, amount: amountFromParams } = route.params || {};
+  const { booking, amount: amountFromParams, fromDropCar } = route.params || {};
   const [qrImage, setQrImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -199,15 +199,19 @@ export default function CollectPayment() {
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: "CustomerTabNavigator",
-              params: { screen: "Dashboard" },
-            },
-          ],
-        });
+        if (fromDropCar) {
+          navigation.goBack();
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: "CustomerTabNavigator",
+                params: { screen: "Dashboard" },
+              },
+            ],
+          });
+        }
         return true;
       };
 
@@ -617,21 +621,28 @@ export default function CollectPayment() {
               style={[styles.button, styles.doneButton]}
               onPress={() => {
                 setShowSuccessModal(false);
-                navigation.reset({
-                  index: 0,
-                  routes: [
-                    {
-                      name: "CustomerTabNavigator",
-                      params: { screen: "Dashboard" },
-                    },
-                  ],
-                });
+                if (fromDropCar) {
+                  navigation.navigate("DropCarAtGarage", {
+                    booking,
+                    paymentCollected: true,
+                  });
+                } else {
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: "CustomerTabNavigator",
+                        params: { screen: "Dashboard" },
+                      },
+                    ],
+                  });
+                }
               }}
             >
               <CustomText
                 style={[globalStyles.textWhite, globalStyles.f14Bold]}
               >
-                Home
+                {fromDropCar ? "Back to Drop Off" : "Home"}
               </CustomText>
             </Pressable>
           </Pressable>

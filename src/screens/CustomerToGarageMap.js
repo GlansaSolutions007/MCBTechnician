@@ -399,6 +399,7 @@ export default function CustomerToGarageMap() {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
+    if (routeType !== "DealerToCustomer") {
     const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
     console.log("phoneNumber===============", phoneNumber);
     try {
@@ -417,6 +418,7 @@ export default function CustomerToGarageMap() {
     } catch (e) {
       console.error("GenerateOTP Error:", e?.response?.data || e);
     }
+  }
     setLoadingReached(false);
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,

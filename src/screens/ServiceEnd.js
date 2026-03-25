@@ -697,12 +697,25 @@ export default function ServiceEnd() {
   };
 
 
-  // Auto-navigate to CollectPayment 4 seconds after service completion
+  // Auto-navigate after service completion:
+  // If payment is already done (PaymentStatus === 'Success') go to Dashboard,
+  // otherwise go to CollectPayment
   useEffect(() => {
     if (!serviceCompleted) return;
     const timer = setTimeout(() => {
       setModalVisible(false);
-      navigation.navigate("CollectPayment", { booking });
+      const paymentStatus =
+        booking?.PaymentStatus ??
+        booking?.Payments?.[0]?.PaymentStatus ??
+        null;
+      if (paymentStatus === "Success") {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "CustomerTabNavigator", params: { screen: "Dashboard" } }],
+        });
+      } else {
+        navigation.navigate("CollectPayment", { booking });
+      }
     }, 4000);
     return () => clearTimeout(timer);
   }, [serviceCompleted]);
@@ -1492,7 +1505,7 @@ export default function ServiceEnd() {
                   ]}
                 >
                   Your service has been completed successfully. Payment has been
-                  processed through Razorpay.
+                  processed.
                 </CustomText>
                 <TouchableOpacity
                   style={styles.okButton}
