@@ -363,7 +363,7 @@ export default function CustomerToGarageMap() {
   };
 
   const handleReached = async () => {
-    setLoadingReached(true);
+    setLoadingReached(true);  
     const techID = await AsyncStorage.getItem("techID");
     try {
       await axios.post(

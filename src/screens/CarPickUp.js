@@ -15,6 +15,7 @@ import {
   Platform,
   Keyboard,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -56,6 +57,7 @@ export default function CarPickUp() {
   const bookingId = booking.BookingID;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const initialRegNo =
@@ -267,7 +269,14 @@ export default function CarPickUp() {
     };
   }, []);
 
+  const MAX_IMAGES = 5;
+
   const pickImage = async () => {
+    if (images.length >= MAX_IMAGES) {
+      setImageError(`You can upload a maximum of ${MAX_IMAGES} images.`);
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType,
       allowsMultipleSelection: true,
@@ -276,8 +285,15 @@ export default function CarPickUp() {
 
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 6));
-      setImageError("");
+      const combined = [...images, ...selected];
+
+      if (combined.length > MAX_IMAGES) {
+        setImageError(`You can upload a maximum of ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} have been added.`);
+        setImages(combined.slice(0, MAX_IMAGES));
+      } else {
+        setImages(combined);
+        setImageError("");
+      }
     }
   };
 
@@ -752,7 +768,7 @@ export default function CarPickUp() {
                   ]}
                 >
                   <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                    Pre-Service Checklist
+                    Pre-Service Images
                   </CustomText>
                   <CustomText
                     style={[
@@ -853,7 +869,7 @@ export default function CarPickUp() {
                       globalStyles.black,
                     ]}
                   >
-                    Car Registration Numberrrrr{" "}
+                    Car Registration Number{" "}
                     <CustomText style={{ color: color.alertError }}>*</CustomText>
                     <CustomText
                       style={[
@@ -992,12 +1008,18 @@ export default function CarPickUp() {
                         justifyContent: "center",
                         alignItems: "center",
                         marginBottom: keyboardVisible ? 10 : 0,
+                        opacity: isSubmitting ? 0.7 : 1,
                       },
                     ]}
+                    disabled={isSubmitting}
                     onPress={async () => {
-                      // Validation: At least one image required (Pre-service checklist)
-                      if (!images.length || images.length < 1) {
-                        setImageError("Please upload at least one image");
+                      // Validation: At least 1 and at most 5 images required (Pre-service checklist)
+                      if (images.length < 1) {
+                        setImageError("Please upload at least 1 pre-service image.");
+                        return;
+                      }
+                      if (images.length > 5) {
+                        setImageError("You can upload a maximum of 5 pre-service images.");
                         return;
                       }
                       setImageError("");
@@ -1018,6 +1040,7 @@ export default function CarPickUp() {
                         return;
                       }
 
+                      setIsSubmitting(true);
                       try {
                         const verifyPayload = {
                           carPickupDeliveryId: Number(carPickupDeliveryId),
@@ -1038,6 +1061,7 @@ export default function CarPickUp() {
                             "Invalid OTP. Please try again.",
                           );
                           setModalVisible(true);
+                          setIsSubmitting(false);
                           return; // do not upload images, do not clear images
                         }
                         setOtpValid(true);
@@ -1047,6 +1071,7 @@ export default function CarPickUp() {
                           "Invalid OTP. Please try again.",
                         );
                         setModalVisible(true);
+                        setIsSubmitting(false);
                         return; // do not upload images, do not clear images
                       }
 
@@ -1099,6 +1124,7 @@ export default function CarPickUp() {
                         setImages([]);
                       } catch (uploadErr) {
                         setIsUploading(false);
+                        setIsSubmitting(false);
                         setModalMessage(
                           "Invalid OTP or image upload failed. Please verify the OTP and try again.",
                         );
@@ -1205,6 +1231,7 @@ export default function CarPickUp() {
                       );
 
                       // Car Pick Up is garage flow only → always go to CustomerToGarageMap
+                      setIsSubmitting(false);
                       navigation.navigate("CustomerToGarageMap", {
                         booking: updatedBooking,
                         estimatedTime: estimatedTime,
@@ -1214,11 +1241,18 @@ export default function CarPickUp() {
                       });
                     }}
                   >
-                    <CustomText
-                      style={[globalStyles.f16Bold, globalStyles.textWhite]}
-                    >
-                      Submit
-                    </CustomText>
+                    {isSubmitting ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <ActivityIndicator size="small" color="#fff" />
+                        <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                          Submitting...
+                        </CustomText>
+                      </View>
+                    ) : (
+                      <CustomText style={[globalStyles.f16Bold, globalStyles.textWhite]}>
+                        Submit
+                      </CustomText>
+                    )}
                   </TouchableOpacity>
                 </>
 

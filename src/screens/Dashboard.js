@@ -156,6 +156,10 @@ export default function Dashboard() {
     navigation.navigate("customerInfo", { booking: item });
   };
 
+  const ServiceEnd = async (item) => {
+    navigation.navigate("ServiceEnd", { booking: item });
+  }
+
   const openBooking = (item) => {
     const estimatedTime = item.TotalEstimatedDurationMinutes
       ? item.TotalEstimatedDurationMinutes * 60
@@ -1169,7 +1173,11 @@ export default function Dashboard() {
                     {item.ServiceType === "ServiceAtHome" &&
                       item.PickupDelivery?.[0] && (
                         <Pressable
-                          onPress={() => CustomerInfo(item)}
+                          onPress={() =>
+                            item?.PickupDelivery?.[0]?.DriverStatus === "ServiceStart"
+                              ? ServiceEnd(item)
+                              : CustomerInfo(item)
+                          }
                           key={`${item.BookingID ?? "active"}-${index}`}
                           style={[
                             driverStatus === "completed"

@@ -272,7 +272,7 @@ export default function CustomerInfo() {
             nextBooking = fromApi;
           }
           setUpdatedBookings(nextBooking);
-          navigation.setParams({ booking: nextBooking });
+          navigation.navigate("customerInfo", { booking: nextBooking });
         }
       }
     } catch (error) {
@@ -773,7 +773,7 @@ export default function CustomerInfo() {
       ? rawPD.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_started" } : leg)
       : { ...rawPD, DriverStatus: "pickup_started" };
     const updatedBooking = { ...booking, PickupDelivery: updatedPD };
-    navigation.setParams({ booking: updatedBooking });
+    navigation.navigate("customerInfo", { booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
 
     try {
@@ -857,7 +857,7 @@ export default function CustomerInfo() {
       ? rawPD2.map((leg, i) => i === 0 ? { ...leg, DriverStatus: "pickup_reached" } : leg)
       : { ...rawPD2, DriverStatus: "pickup_reached" };
     const updatedBooking = { ...booking, PickupDelivery: updatedPD2 };
-    navigation.setParams({ booking: updatedBooking });
+    navigation.navigate("customerInfo", { booking: updatedBooking });
     setUpdatedBookings(updatedBooking);
     onRefresh();
     try {
@@ -1909,9 +1909,10 @@ export default function CustomerInfo() {
               return null;
             })()}
 
-            {updatedBookings.Payments?.some(
-              (payment) => payment.PaymentStatus === "Pending" || payment.PaymentStatus === "PartialPaid"
-            ) && (
+            {(updatedBookings.PaymentStatus == null || updatedBookings.PaymentStatus === "PartialPaid")
+              && (updatedBookings?.PickupDelivery?.[0]?.DriverStatus === "completed" ||
+                updatedBookings?.PickupDelivery?.[0]?.DriverTracking?.some((t) => t.Status === "completed")) &&
+              (
                 <TouchableOpacity
                   onPress={() => CollectPayment(updatedBookings)}
                   style={[styles.NextButton, loadingCollectCash && { opacity: 0.7 }]}

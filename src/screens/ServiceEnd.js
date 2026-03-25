@@ -214,17 +214,33 @@ export default function ServiceEnd() {
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState("");
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [serviceCompleted, setServiceCompleted] = useState(false);
+
+  const MAX_IMAGES = 5;
 
   const pickImage = async () => {
+    if (images.length >= MAX_IMAGES) {
+      setImageError(`You can upload a maximum of ${MAX_IMAGES} images.`);
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType,
       allowsMultipleSelection: true,
       quality: 0.5,
     });
+
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 5));
-      setImageError("");
+      const combined = [...images, ...selected];
+
+      if (combined.length > MAX_IMAGES) {
+        setImageError(`You can upload a maximum of ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} have been added.`);
+        setImages(combined.slice(0, MAX_IMAGES));
+      } else {
+        setImages(combined);
+        setImageError("");
+      }
     }
   };
 
@@ -300,8 +316,6 @@ export default function ServiceEnd() {
         }
       }
       setImages([]);
-      setModalMessage("Images uploaded successfully.");
-      setModalVisible(true);
     } catch (err) {
       console.error("Upload after-service images error:", err);
       setModalMessage(
@@ -444,8 +458,13 @@ export default function ServiceEnd() {
     setError("");
     setImageError("");
 
-    if (!images || images.length < 1) {
-      setImageError("At least one image is required.");
+    if (images.length < 1) {
+      setImageError("Please upload at least 1 post-service image.");
+      setIsLoading(false);
+      return;
+    }
+    if (images.length > 5) {
+      setImageError("You can upload a maximum of 5 post-service images.");
       setIsLoading(false);
       return;
     }
@@ -672,9 +691,21 @@ export default function ServiceEnd() {
     }
 
     setIsLoading(false);
-    navigation.navigate("CollectPayment", { booking });
+    setServiceCompleted(true);
+    setModalMessage("Service completed successfully!");
+    setModalVisible(true);
   };
 
+
+  // Auto-navigate to CollectPayment 4 seconds after service completion
+  useEffect(() => {
+    if (!serviceCompleted) return;
+    const timer = setTimeout(() => {
+      setModalVisible(false);
+      navigation.navigate("CollectPayment", { booking });
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [serviceCompleted]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -1043,7 +1074,7 @@ export default function ServiceEnd() {
             ]}
           >
             <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-              After-service checklist
+              Post-Service Images
             </CustomText>
             <CustomText
               style={[
@@ -1051,8 +1082,7 @@ export default function ServiceEnd() {
                 globalStyles.neutral500,
               ]}
             >
-              At least one image required. Choose files, then enter OTP and tap
-              Completed.
+              Upload at least 1 image (up to 5), enter OTP and tap Completed.
             </CustomText>
 
             <TouchableOpacity
@@ -1069,7 +1099,7 @@ export default function ServiceEnd() {
               <CustomText
                 style={[globalStyles.f16Light, globalStyles.neutral500]}
               >
-                Choose Files
+                Choose Files{images.length > 0 ? ` (${images.length} selected)` : ""}
               </CustomText>
             </TouchableOpacity>
             {imageError ? (
@@ -1412,7 +1442,12 @@ export default function ServiceEnd() {
                 </CustomText>
                 <TouchableOpacity
                   style={styles.okButton}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    setModalVisible(false);
+                    if (serviceCompleted) {
+                      navigation.navigate("CollectPayment", { booking });
+                    }
+                  }}
                 >
                   <CustomText
                     style={[globalStyles.textWhite, globalStyles.f14Bold]}

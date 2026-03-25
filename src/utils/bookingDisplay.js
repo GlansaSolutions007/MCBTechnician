@@ -53,5 +53,6 @@ export function getBookingDisplayData(booking) {
     pickFrom: booking.PickupDelivery?.PickFrom || null,
     dropAt: booking.PickupDelivery?.DropAt || null,
     profileImage: booking.ProfileImage || null,
+    pickupdate: booking.PickupDelivery?.AssignDate ? String(booking.PickupDelivery?.AssignDate):"-",
   };
 }

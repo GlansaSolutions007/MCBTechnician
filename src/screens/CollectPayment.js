@@ -14,6 +14,7 @@ import {
   BackHandler,
 } from "react-native";
 import CustomText from "../components/CustomText";
+import CustomAlert from "../components/CustomAlert";
 import globalStyles from "../styles/globalStyles";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ import { color } from "../styles/theme";
 import { encode } from "base64-arraybuffer";
 import helpcall from "../../assets/icons/Customer Care.png";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
+import * as ImagePicker from "expo-image-picker";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
@@ -38,16 +40,33 @@ export default function CollectPayment() {
   const [qrId, setQrId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
+  const [proofImages, setProofImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    status: "info",
+    title: "",
+    message: "",
+  });
+
+  const showCustomAlert = (title, message, status = "info") => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      status,
+    });
+  };
   // Amount: from params (Dashboard) or from booking (ServiceEnd etc.)
   const collectAmount =
     amountFromParams != null && amountFromParams !== ""
       ? Number(amountFromParams)
       : booking?.PickupDelivery?.[0]?.TotalPrice ??
-        booking?.TotalPrice ??
-        getBookingDisplayData(booking)?.totalPrice ??
-        (booking?.BookingAddOns?.length
-          ? booking.BookingAddOns.reduce((sum, a) => sum + Number(a?.TotalPrice || 0), 0)
-          : null);
+      booking?.TotalPrice ??
+      getBookingDisplayData(booking)?.totalPrice ??
+      (booking?.BookingAddOns?.length
+        ? booking.BookingAddOns.reduce((sum, a) => sum + Number(a?.TotalPrice || 0), 0)
+        : null);
   const refreshBooking = useCallback(async () => {
     const currentBooking = route.params?.booking;
     if (!currentBooking?.BookingID) return;
@@ -69,6 +88,107 @@ export default function CollectPayment() {
       if (__DEV__) console.warn("CollectPayment refreshBooking:", e?.response?.data ?? e?.message);
     }
   }, [route.params?.booking?.BookingID, navigation]);
+
+  const MAX_IMAGES = 2;
+  const MAX_SIZE_MB = 5;
+
+  const pickImage = async () => {
+    if (proofImages.length >= MAX_IMAGES) {
+      showCustomAlert("Limit Reached", "You can upload maximum 2 images only");
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      showCustomAlert("Permission required", "Please allow access to upload images");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const image = result.assets[0];
+
+      // ✅ Type validation
+      if (!image.mimeType?.startsWith("image/")) {
+        showCustomAlert("Invalid File", "Only image files are allowed");
+        return;
+      }
+
+      // ✅ Size validation
+      const sizeInMB = image.fileSize / (1024 * 1024);
+      if (sizeInMB > MAX_SIZE_MB) {
+        showCustomAlert("File Too Large", "Image must be less than 5MB");
+        return;
+      }
+
+      setProofImages((prev) => [...prev, image]);
+    }
+  };
+
+  const removeImage = (index) => {
+    const updated = [...proofImages];
+    updated.splice(index, 1);
+    setProofImages(updated);
+  };
+
+  const handleCashAddonPayment = async () => {
+    if (proofImages.length === 0) {
+      showCustomAlert("Error", "Please upload at least one proof image");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const techID = await AsyncStorage.getItem("techID");
+
+      const formData = new FormData();
+
+      formData.append("bookingID", booking?.BookingID);
+      formData.append("amountPaid", collectAmount);
+      formData.append("paymentMode", "Cash");
+      formData.append("paymentStatus", "Success");
+      formData.append("paymentType", "Static");
+      formData.append("couponAmount", 0);
+      formData.append("couponCode", "");
+      formData.append("createdBy", techID);
+
+      // ✅ Append multiple images
+      proofImages.forEach((img, index) => {
+        formData.append("ProofAttachment", {
+          uri: img.uri,
+          name: `proof_${index}.jpg`,
+          type: img.mimeType || "image/jpeg",
+        });
+      });
+
+      const response = await axios.post(
+        `${API_BASE_URL}Payments/InsertBookingAddOnsPayment`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response?.status === 200) {
+        setSuccessMessage("Cash Payment Collected");
+        setShowSuccessModal(true);
+        setProofImages([]); // reset
+      }
+    } catch (error) {
+      console.error("Cash Payment Error:", error?.response?.data || error);
+      showCustomAlert("Error", "Failed to upload payment");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -229,7 +349,7 @@ export default function CollectPayment() {
             globalStyles.mt3,
             globalStyles.mb6,
             {
-              backgroundColor: "#f8f9fa",
+              backgroundColor: "#fff",
               paddingVertical: 16,
               paddingHorizontal: 28,
               borderRadius: 16,
@@ -243,7 +363,7 @@ export default function CollectPayment() {
           ]}
         >
           <CustomText
-            style={[globalStyles.f18, globalStyles.textac, globalStyles.gray]}
+            style={[globalStyles.f12Bold, globalStyles.textac, globalStyles.gray]}
           >
             Collect Amount
           </CustomText>
@@ -258,8 +378,30 @@ export default function CollectPayment() {
             ₹{collectAmount != null && collectAmount !== "" ? Number(collectAmount) : "—"}
           </CustomText>
         </View>
+        <View style={styles.sectionCard}>
 
-        <View
+          <View style={styles.sectionHeader}>
+
+            <Ionicons name="qr-code-outline" size={20} color={color.primary} />
+            <CustomText style={[globalStyles.f14Bold, globalStyles.ml2]}>
+              Scan & Pay (UPI / QR)
+            </CustomText>
+          </View>
+
+          <View style={{ alignItems: "center" }}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#000" />
+            ) : qrImage ? (
+              <Image source={{ uri: qrImage }} style={{ width: 220, height: 220 }} />
+            ) : (
+              <CustomText style={[globalStyles.gray]}>
+                Failed to load QR code
+              </CustomText>
+            )}
+          </View>
+        </View>
+
+        {/* <View
           style={[
             globalStyles.mt2,
             globalStyles.mb6,
@@ -295,65 +437,129 @@ export default function CollectPayment() {
               Failed to load QR code
             </CustomText>
           )}
+        </View> */}
+
+        <View style={styles.orContainer}>
+          <View style={styles.line} />
+          <CustomText style={styles.orText}>OR</CustomText>
+          <View style={styles.line} />
         </View>
 
-        <TouchableOpacity
-          style={styles.callButton}
-          onPress={() => {
-            Vibration.vibrate([0, 200, 100, 300]);
-
-            const phoneNumber = booking.PickupDelivery[0].PickFrom.PersonNumber;
-            if (phoneNumber) {
-              Linking.openURL(`tel:${phoneNumber}`);
-            } else {
-              Alert.alert("Error", "Phone number not available");
-            }
-          }}
-        >
-          <Ionicons
-            name="call"
-            size={25}
-            color="#fff"
-            style={styles.callIcon}
-          />
-          <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
-            Call to customer
-          </CustomText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            globalStyles.flex1,
-            globalStyles.bgBlack,
-            globalStyles.borderRadiuslarge,
-            globalStyles.p4,
-            globalStyles.justifycenter,
-            globalStyles.alineItemscenter,
-            globalStyles.mt5,
-          ]}
-          onPress={() => {
-            Vibration.vibrate([0, 200, 100, 300]);
-
-            const phoneNumber = 7075243939;
-            if (phoneNumber) {
-              Linking.openURL(`tel:${phoneNumber}`);
-            } else {
-              Alert.alert("Error", "Phone number not available");
-            }
-          }}
-        >
-          <View
-            style={[globalStyles.flexrow, globalStyles.alineItemscenter]}
-          >
-            <Image source={helpcall} />
-            <CustomText
-              style={[globalStyles.textWhite, globalStyles.ml2]}
-            >
-              Call Help Line
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cash-outline" size={20} color={color.primary} />
+            <CustomText style={[globalStyles.f14Bold, globalStyles.ml2]}>
+              Cash Collection (Add-ons)
             </CustomText>
           </View>
-        </TouchableOpacity>
 
+          {/* Upload */}
+          <TouchableOpacity
+            style={{
+              borderWidth: 1,
+              borderColor: "#ddd",
+              borderRadius: 10,
+              padding: 12,
+              alignItems: "center",
+              marginBottom: 12,
+              backgroundColor: "#fafafa",
+            }}
+            onPress={pickImage}
+          >
+            <CustomText style={[globalStyles.f12Bold]}>
+              {proofImages.length > 0 ? "Add Another Image" : "Upload Payment Proof"}
+            </CustomText>
+          </TouchableOpacity>
+
+          {/* Preview */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {proofImages.map((img, index) => (
+              <View key={index} style={{ marginRight: 10, marginBottom: 10 }}>
+                <Image
+                  source={{ uri: img.uri }}
+                  style={{ width: 90, height: 90, borderRadius: 10 }}
+                />
+
+                <TouchableOpacity
+                  onPress={() => removeImage(index)}
+                  style={{
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                    backgroundColor: "red",
+                    borderRadius: 20,
+                    paddingHorizontal: 6,
+                  }}
+                >
+                  <CustomText style={{ color: "#fff", fontSize: 12 }}>X</CustomText>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          {/* Submit */}
+          <TouchableOpacity
+            style={[
+              globalStyles.blackButton,
+              { marginTop: 10, opacity: uploading ? 0.6 : 1 },
+            ]}
+            onPress={handleCashAddonPayment}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <CustomText style={[globalStyles.f14Bold, globalStyles.textWhite]}>
+                Confirm Cash Payment
+              </CustomText>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="call-outline" size={20} color={color.primary} />
+            <CustomText style={[globalStyles.f14Bold, globalStyles.ml2]}>
+              Contact
+            </CustomText>
+          </View>
+
+          {/* Call Customer */}
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={() => {
+              Vibration.vibrate([0, 200, 100, 300]);
+
+              const phoneNumber =
+                booking?.PickupDelivery?.[0]?.PickFrom?.PersonNumber;
+
+              if (phoneNumber) {
+                Linking.openURL(`tel:${phoneNumber}`);
+              } else {
+                showCustomAlert("Error", "Phone number not available", "error");
+              }
+            }}
+          >
+            <Ionicons name="call" size={20} color="#fff" style={styles.callIcon} />
+            <CustomText style={[globalStyles.textWhite]}>
+              Call Customer
+            </CustomText>
+          </TouchableOpacity>
+
+          {/* Help Line */}
+          <TouchableOpacity
+            style={[styles.callButton, { marginTop: 10, backgroundColor: "#000" }]}
+            onPress={() => {
+              Vibration.vibrate([0, 200, 100, 300]);
+              Linking.openURL(`tel:7075243939`);
+            }}
+          >
+            <Image source={helpcall} />
+            <CustomText style={[globalStyles.textWhite, globalStyles.ml2]}>
+              Call Help Line
+            </CustomText>
+          </TouchableOpacity>
+        </View>
         {/* <TouchableOpacity
           onPress={handleCompletePayment}
           style={[
@@ -367,6 +573,16 @@ export default function CollectPayment() {
           </CustomText>
         </TouchableOpacity> */}
       </View>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        status={alertConfig.status}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() =>
+          setAlertConfig((prev) => ({ ...prev, visible: false }))
+        }
+      />
 
       <Modal
         animationType="fade"
@@ -453,7 +669,24 @@ const styles = StyleSheet.create({
     padding: 5,
     zIndex: 1,
   },
+  sectionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginVertical: 10,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 3,
+  },
 
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -534,5 +767,23 @@ const styles = StyleSheet.create({
     width: "45%",
     alignItems: "center",
     marginBottom: 16,
+  },
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 12,
+    width: "100%",
+  },
+
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#ddd",
+  },
+
+  orText: {
+    marginHorizontal: 10,
+    color: "#888",
+    ...globalStyles.f10Bold,
   },
 });

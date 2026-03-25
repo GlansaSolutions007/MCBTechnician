@@ -70,6 +70,8 @@ export default function DropCarAtGarage() {
   );
   const [bookingParam, setBookingParam] = useState(booking);
   console.log("bookingParam===============00000000000000", bookingParam?.Leads?.Vehicle)
+  console.log('bookingsssssssssss',bookingParam);
+  
   // console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
   useEffect(() => {
     let mounted = true;
@@ -131,16 +133,31 @@ export default function DropCarAtGarage() {
     };
   }, []);
 
+  const MAX_IMAGES = 5;
+
   const pickImage = async () => {
+    if (images.length >= MAX_IMAGES) {
+      setImageError(`You can upload a maximum of ${MAX_IMAGES} images.`);
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType,
       allowsMultipleSelection: true,
       quality: 0.5,
     });
+
     if (!result.canceled) {
       const selected = result.assets.map((a) => a.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 6));
-      setImageError("");
+      const combined = [...images, ...selected];
+
+      if (combined.length > MAX_IMAGES) {
+        setImageError(`You can upload a maximum of ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} have been added.`);
+        setImages(combined.slice(0, MAX_IMAGES));
+      } else {
+        setImages(combined);
+        setImageError("");
+      }
     }
   };
 
@@ -214,6 +231,7 @@ export default function DropCarAtGarage() {
   };
 
   const uploadDeliveryImages = async () => {
+    const techId = await AsyncStorage.getItem("techID");
     const regNo = carRegistrationNumber?.trim() || "";
     for (let i = 0; i < images.length; i++) {
       const formData = new FormData();
@@ -221,7 +239,7 @@ export default function DropCarAtGarage() {
       formData.append("VehicleNumber", regNo);
       formData.append("BookingID", booking.BookingID);
       formData.append("UploadedBy", 1);
-      formData.append("TechID", booking.TechID ?? "");
+      formData.append("TechID", techId ?? "");
       formData.append("ImageUploadType", "Delivery");
       formData.append("ImagesType", "tech");
       formData.append("ImageURL1", {
@@ -243,16 +261,18 @@ export default function DropCarAtGarage() {
     setImageError("");
     setError("");
 
-    // At least one drop car image required
-    if (!images || images.length < 1) {
-      setImageError("At least one image is required.");
+    if (images.length < 1) {
+      setImageError("Please upload at least 1 post-service image.");
+      return;
+    }
+    if (images.length > 5) {
+      setImageError("You can upload a maximum of 5 post-service images.");
       return;
     }
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
-
     setVerifyingComplete(true);
     try {
       // Verify delivery OTP — if invalid, do not post images
@@ -505,7 +525,7 @@ export default function DropCarAtGarage() {
               </View>
             )}
 
-            <CustomText style={[globalStyles.f16Bold, globalStyles.mt3, globalStyles.black]}>
+            <CustomText style={[globalStyles.f14Bold, globalStyles.mt3, globalStyles.black]}>
               Car Registration Number
             </CustomText>
             <TextInput

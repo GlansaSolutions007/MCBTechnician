@@ -269,7 +269,14 @@ export default function ServiceStart() {
     };
   }, []);
 
+  const MAX_IMAGES = 5;
+
   const pickImage = async () => {
+    if (images.length >= MAX_IMAGES) {
+      setImageError(`You can upload a maximum of ${MAX_IMAGES} images.`);
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType,
       allowsMultipleSelection: true,
@@ -278,8 +285,15 @@ export default function ServiceStart() {
 
     if (!result.canceled) {
       const selected = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selected].slice(0, 6));
-      setImageError("");
+      const combined = [...images, ...selected];
+
+      if (combined.length > MAX_IMAGES) {
+        setImageError(`You can upload a maximum of ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} have been added.`);
+        setImages(combined.slice(0, MAX_IMAGES));
+      } else {
+        setImages(combined);
+        setImageError("");
+      }
     }
   };
 
@@ -677,7 +691,7 @@ export default function ServiceStart() {
                 ]}
               >
                 <CustomText style={[globalStyles.f14Bold, globalStyles.mt3]}>
-                  Pre-Service Checklist
+                  Pre-Service Images
                 </CustomText>
                 <CustomText
                   style={[
@@ -686,7 +700,9 @@ export default function ServiceStart() {
                     globalStyles.mt1,
                   ]}
                 >
-                  At least one image required. Choose files, then enter OTP and tap Submit.
+                  Upload at least one image (up to 5){" "}
+                  <CustomText style={{ color: color.alertError }}>*</CustomText>{" "}
+                  and enter OTP to start
                 </CustomText>
                 <TouchableOpacity
                   style={[
@@ -1042,7 +1058,7 @@ export default function ServiceStart() {
                       })
                     );
 
-                    setModalMessage("Service started");
+                    setModalMessage("Service Started");
                     setModalOnOkNavigateToDashboard(true);
                     setModalVisible(true);
                     setLoadingSubmit(false);

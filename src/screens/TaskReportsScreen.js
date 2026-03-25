@@ -118,12 +118,14 @@ function TaskReportsScreen() {
 
   const getAssignDate = (booking) => {
     const pd = booking?.PickupDelivery;
-    if (!pd) return booking?.BookingDate ?? booking?.TechAssignDate ?? null;
+        console.log("getttttt",pd[0]?.AssignDate);
+    //if (!pd) return booking?.BookingDate ?? booking?.TechAssignDate ?? null;
     if (Array.isArray(pd) && pd.length > 0) {
       const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
-      return sorted[0]?.AssignDate ?? booking?.BookingDate ?? booking?.TechAssignDate ?? null;
+      return sorted[0]?.AssignDate ?? null;
     }
-    return pd?.AssignDate ?? booking?.BookingDate ?? booking?.TechAssignDate ?? null;
+    
+    return pd[0]?.AssignDate ?? null;
   };
 
   const getDriverStatus = (booking) => {
@@ -152,6 +154,9 @@ function TaskReportsScreen() {
         return !isBookingCompleted(booking); // pending only
       })
     : [];
+
+    console.log('Upcommmmmm',upcomingBookings);
+    
 
   const renderBookingCard = ({ item, index }) => {
     const driverStatus = getDriverStatus(item);
@@ -235,7 +240,7 @@ function TaskReportsScreen() {
               <CustomText
                 style={[globalStyles.f12Medium, globalStyles.neutral500, globalStyles.mt1]}
               >
-                RouteType:{" "}
+                Route Type:{" "}
                 <CustomText style={globalStyles.black}>
                   {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
                     item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
@@ -298,7 +303,8 @@ function TaskReportsScreen() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {getBookingDisplayData(item).bookingDate}
+                  {getAssignDate(item)? String(getAssignDate(item)).slice(0, 10)
+                    : "N/A"}
                 </CustomText>
               </View>
               <View style={styles.cardMetaItem}>
