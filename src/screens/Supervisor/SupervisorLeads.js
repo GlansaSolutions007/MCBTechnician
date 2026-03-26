@@ -298,10 +298,6 @@ export default function SupervisorLeads() {
       const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`;
       const endpoint = 'Leads/GetLeadsByIds';
       const url = `${baseUrl}${endpoint}?LeadIds=${encodeURIComponent(leadId)}`;
-      
-      console.log("Fetching leads from URL:", url);
-      console.log("Base URL:", baseUrl);
-      console.log("LeadId being used:", leadId);
 
       const config = {};
 
@@ -312,9 +308,6 @@ export default function SupervisorLeads() {
       }
 
       const response = await axios.get(url, config);
-
-      console.log("Leads API Response:", response?.data);
-      console.log("Response status:", response?.status);
 
       let leadsData = [];
       const res = response?.data;
@@ -406,7 +399,6 @@ export default function SupervisorLeads() {
       }
 
       const response = await axios.post(url, payload, config);
-      console.log("Save Personal Info Response:", response.data);
 
       setSaveSuccess(true);
       setTimeout(() => {
@@ -454,7 +446,6 @@ export default function SupervisorLeads() {
       }
 
       const response = await axios.post(url, payload, config);
-      console.log("Save Car Details Response:", response.data);
 
       setSaveSuccess(true);
       setTimeout(() => {

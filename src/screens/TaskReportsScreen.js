@@ -118,7 +118,7 @@ function TaskReportsScreen() {
 
   const getAssignDate = (booking) => {
     const pd = booking?.PickupDelivery;
-        console.log("getttttt",pd[0]?.AssignDate);
+        // console.log("getttttt",pd[0]?.AssignDate);
     //if (!pd) return booking?.BookingDate ?? booking?.TechAssignDate ?? null;
     if (Array.isArray(pd) && pd.length > 0) {
       const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
@@ -153,10 +153,7 @@ function TaskReportsScreen() {
         if (!isFutureDate(assignDate)) return false;
         return !isBookingCompleted(booking); // pending only
       })
-    : [];
-
-    console.log('Upcommmmmm',upcomingBookings);
-    
+    : [];    
 
   const renderBookingCard = ({ item, index }) => {
     const driverStatus = getDriverStatus(item);

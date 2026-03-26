@@ -42,7 +42,7 @@ export default function CarPickUp() {
   const navigation = useNavigation();
   const route = useRoute();
   const { booking } = route.params;
-  console.log("booking===============", booking);
+  // console.log("booking===============", booking);
   const [isLoading, setIsLoading] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState(null);
@@ -185,7 +185,6 @@ export default function CarPickUp() {
   const refreshBooking = async () => {
     
      const techId = await AsyncStorage.getItem("techID");
-     console.log("TECHID___++__++_++",techId);
     
     if (!techId || !booking?.BookingID) return null;
     try {
@@ -227,7 +226,7 @@ export default function CarPickUp() {
         otpType: "Pickup",
         phoneNumber: String(dealerpersonnumber || "").trim(),
       };
-      console.log("payload===========-----------", payload);
+      // console.log("payload===========-----------", payload);
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         payload,
@@ -1161,16 +1160,16 @@ export default function CarPickUp() {
                           updatedBy: Number(techId),
                           role: "Technician",
                         };
-                        console.log(
-                          "UpdateBookingStatus==========:",
-                          statusPayload,
-                        );
+                        // console.log(
+                        //   "UpdateBookingStatus==========:",
+                        //   statusPayload,
+                        // );
                         await axios.post(
                           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                           statusPayload,
                           { headers: { "Content-Type": "application/json" } },
                         );
-                        console.log("UpdateBookingStatus posted for car_picked");
+                        // console.log("UpdateBookingStatus posted for car_picked");
                       } catch (e) {
                         console.error(
                           "UpdateBookingStatus Error:",

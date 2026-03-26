@@ -131,7 +131,7 @@ export default function CustomerToGarageMap() {
       }
     } catch (error) {
       setIsGeocoding(false);
-      console.log("Geocoding error:", error);
+      // console.log("Geocoding error:", error);
     }
   };
 
@@ -388,20 +388,20 @@ export default function CustomerToGarageMap() {
         updatedBy: Number(techID),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (drop_reached):", JSON.stringify(statusPayload, null, 2));
+      // console.log("UpdateBookingStatus Payload (drop_reached):", JSON.stringify(statusPayload, null, 2));
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for drop_reached");
+      // console.log("UpdateBookingStatus posted for drop_reached");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
     if (routeType !== "DealerToCustomer") {
     const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
-    console.log("phoneNumber===============", phoneNumber);
+    // console.log("phoneNumber===============", phoneNumber);
     try {
       const payload = {
         // CarPickupDeliveryId: Number(carPickupDeliveryId),
@@ -414,7 +414,7 @@ export default function CustomerToGarageMap() {
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("GenerateOTP response:", response?.data);
+      // console.log("GenerateOTP response:", response?.data);
     } catch (e) {
       console.error("GenerateOTP Error:", e?.response?.data || e);
     }

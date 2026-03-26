@@ -71,7 +71,7 @@ export default function ProfileScreen() {
         data: { type: "test" },
       });
     } catch (e) {
-      console.log('sendTest error (technician):', e?.response?.data || e?.message || e);
+      // console.log('sendTest error (technician):', e?.response?.data || e?.message || e);
       alert(`Send failed: ${e?.response?.data?.message || e?.message || 'Unknown error'}`);
     }
   };
@@ -81,7 +81,7 @@ export default function ProfileScreen() {
       await testNotifications.testNewBooking();
       alert('Test notification sent successfully!');
     } catch (e) {
-      console.log('Test notification error:', e);
+      // console.log('Test notification error:', e);
       alert(`Test failed: ${e?.message || 'Unknown error'}`);
     }
   };

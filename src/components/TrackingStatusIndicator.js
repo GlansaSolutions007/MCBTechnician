@@ -58,16 +58,16 @@ export default function TrackingStatusIndicator({ technicianId }) {
     try {
       if (trackingStatus?.backgroundTrackingActive) {
         await stopBackgroundTracking();
-        console.log(
-          "Background Tracking Stopped",
-          "Location updates will only work when the app is open."
-        );
+        // console.log(
+        //   "Background Tracking Stopped",
+        //   "Location updates will only work when the app is open."
+        // );
       } else {
         await startBackgroundTracking(technicianId);
-        console.log(
-          "Background Tracking Started",
-          "Your location will be shared with customers even when the app is closed."
-        );
+        // console.log(
+        //   "Background Tracking Started",
+        //   "Your location will be shared with customers even when the app is closed."
+        // );
       }
       await updateTrackingStatus();
     } catch (error) {

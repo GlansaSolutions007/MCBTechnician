@@ -260,7 +260,7 @@ export default function CollectPayment() {
             amount: amount,
           }
         );
-        console.log("qrResponse", qrResponse?.data);
+        // console.log("qrResponse", qrResponse?.data);
 
         const responseData = qrResponse?.data;
         const returnedQrId =
@@ -301,7 +301,7 @@ export default function CollectPayment() {
             : null;
 
         setQrImage(qrImageUrl);
-        console.log(qrImageUrl);
+        // console.log(qrImageUrl);
       } catch (error) {
         console.error("QR Generation Error:", error);
         console.log("Error", "Failed to generate QR code");
@@ -322,7 +322,7 @@ export default function CollectPayment() {
         const res = await axios.get(`${API_BASE_URL}Payments/status/${qrId}`);
         const status = res?.data?.status || res?.data?.Status;
         const success = res?.data?.success;
-        console.log("status==========", status);
+        // console.log("status==========", status);
         if (!isActive) return;
         if (status) {
           setPaymentStatus(status);

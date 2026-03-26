@@ -34,12 +34,12 @@ export default function App() {
   useEffect(() => {
     const receivedSub = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log("Notification received (technician):", notification);
+        // console.log("Notification received (technician):", notification);
       }
     );
     const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        console.log("Notification response (technician):", response);
+        // console.log("Notification response (technician):", response);
       }
     );
     return () => {

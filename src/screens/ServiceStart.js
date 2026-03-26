@@ -220,13 +220,13 @@ export default function ServiceStart() {
         return;
       }
       const phoneNumber = bookingParam?.PickupDelivery[0]?.PickFrom?.PersonNumber;
-      console.log("phoneNumber===============", phoneNumber)
+      // console.log("phoneNumber===============", phoneNumber)
       const payload = {
         carPickupDeliveryId: Number(carPickupDeliveryId),
         otpType: "Pickup",
         phoneNumber: String(phoneNumber).trim(),
       };
-      console.log("ServiceImages/GenerateOTP POST data (Resend OTP):", JSON.stringify(payload, null, 2));
+      // console.log("ServiceImages/GenerateOTP POST data (Resend OTP):", JSON.stringify(payload, null, 2));
 
       const response = await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
@@ -234,7 +234,7 @@ export default function ServiceStart() {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      console.log("ServiceImages/GenerateOTP response:", JSON.stringify(response?.data, null, 2));
+      // console.log("ServiceImages/GenerateOTP response:", JSON.stringify(response?.data, null, 2));
 
       if (response?.data?.status === true || response?.data?.success === true) {
         setOtpSent(true);
@@ -247,7 +247,7 @@ export default function ServiceStart() {
         setModalVisible(true);
       }
     } catch (error) {
-      console.log("ServiceImages/GenerateOTP error response:", error?.response?.data ?? error?.message);
+      // console.log("ServiceImages/GenerateOTP error response:", error?.response?.data ?? error?.message);
       setModalMessage(error?.response?.data?.message || "Failed to resend OTP. Please try again.");
       setModalVisible(true);
     } finally {
@@ -945,14 +945,14 @@ export default function ServiceStart() {
                       otp: String(otp).trim(),
                       otpType: "Pickup",
                     };
-                    console.log("ServiceImages/VerifyOTP POST data:", JSON.stringify(verifyPayload, null, 2));
+                    // console.log("ServiceImages/VerifyOTP POST data:", JSON.stringify(verifyPayload, null, 2));
                     try {
                       const verifyRes = await axios.post(
                         `${API_BASE_URL}ServiceImages/VerifyOTP`,
                         verifyPayload,
                         { headers: { "Content-Type": "application/json" } }
                       );
-                      console.log("ServiceImages/VerifyOTP response:", JSON.stringify(verifyRes?.data, null, 2));
+                      // console.log("ServiceImages/VerifyOTP response:", JSON.stringify(verifyRes?.data, null, 2));
                       const data = verifyRes?.data;
                       const isInvalid =
                         data?.status === false ||
@@ -970,7 +970,7 @@ export default function ServiceStart() {
                         verifyErr?.response?.data?.message ||
                         verifyErr?.message ||
                         "Invalid OTP. Please try again.";
-                      console.log("ServiceImages/VerifyOTP error:", verifyErr?.response?.data ?? verifyErr?.message);
+                      // console.log("ServiceImages/VerifyOTP error:", verifyErr?.response?.data ?? verifyErr?.message);
                       setError(errMsg);
                       setModalMessage(errMsg);
                       setModalVisible(true);
@@ -1003,7 +1003,7 @@ export default function ServiceStart() {
                         },
                         { headers: { "Content-Type": "application/json" } }
                       );
-                      console.log("InsertTracking posted for ServiceStart");
+                      // console.log("InsertTracking posted for ServiceStart");
                     } catch (trackErr) {
                       console.error("InsertTracking Error:", trackErr?.response?.data || trackErr);
                     }
@@ -1022,13 +1022,13 @@ export default function ServiceStart() {
                         updatedBy: Number(techId),
                         role: "Technician",
                       };
-                      console.log("ServiceImages/UpdateBookingStatus>>>>>>>>>>>>>>>>>>>>>", statusPayload);
+                      // console.log("ServiceImages/UpdateBookingStatus>>>>>>>>>>>>>>>>>>>>>", statusPayload);
                       await axios.post(
                         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
                         statusPayload,
                         { headers: { "Content-Type": "application/json" } }
                       );
-                      console.log("UpdateBookingStatus posted for ServiceStarted");
+                      // console.log("UpdateBookingStatus posted for ServiceStarted");
                     } catch (e) {
                       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
                     }

@@ -552,10 +552,10 @@ export default function ServiceEnd() {
     const addOnsToUpdate = booking?.PickupDelivery?.[0]?.AddOns ?? [];
 
     const completedBy = await AsyncStorage.getItem("techID");
-    console.log("completedBy======", completedBy);
+    // console.log("completedBy======", completedBy);
 
     let authToken = await AsyncStorage.getItem("token");
-    console.log("authToken======", authToken);
+    // console.log("authToken======", authToken);
 
     // const addOnHeaders = {
     //   "Content-Type": "application/json",
@@ -619,10 +619,10 @@ export default function ServiceEnd() {
     // 1️⃣ Update all AddOns
     for (const addOn of addOnsToUpdate) {
       const addOnIdNum = Number(addOn.AddOnID);
-      console.log("addOnIdNum-------------", addOnIdNum);
+      // console.log("addOnIdNum-------------", addOnIdNum);
 
       try {
-        console.log("Calling API for AddOnID:", addOnIdNum);
+        // console.log("Calling API for AddOnID:", addOnIdNum);
 
         const response = await axios.put(
           `${API_BASE_URL}Supervisor/UpdateAddOnCompletion`,
@@ -636,7 +636,7 @@ export default function ServiceEnd() {
           { headers: addOnHeaders },
         );
 
-        console.log("UpdateAddOnCompletion Response:", response.data);
+        // console.log("UpdateAddOnCompletion Response:", response.data);
       } catch (e) {
         console.warn(
           "UpdateAddOnCompletion Error:",
@@ -682,7 +682,7 @@ export default function ServiceEnd() {
         { headers: { "Content-Type": "application/json" } },
       );
 
-      console.log("UpdateBookingStatus Response:", statusResponse.data);
+      // console.log("UpdateBookingStatus Response:", statusResponse.data);
     } catch (e) {
       console.error(
         "UpdateBookingStatus (ServiceComplete) Error:",

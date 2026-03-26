@@ -124,7 +124,7 @@ export default function CustomerInfo() {
   //   booking?.PhoneNumber ??
   //   "";
   const pickupPhoneNumber = displayBooking?.PickupDelivery[0]?.PickFrom?.PersonNumber;
-  console.log("pickupPhoneNumber===============", pickupPhoneNumber);
+  // console.log("pickupPhoneNumber===============", pickupPhoneNumber);
 
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
 
@@ -756,13 +756,13 @@ export default function CustomerInfo() {
         updatedBy: Number(techID),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
+      // console.log("UpdateBookingStatus Payload (pickup_started):", statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for pickup_started");
+      // console.log("UpdateBookingStatus posted for pickup_started");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
@@ -819,8 +819,8 @@ export default function CustomerInfo() {
           generateOtpPayload,
           { headers: { "Content-Type": "application/json" } }
         );
-        console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
-        console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
+        // console.log("ServiceImages/GenerateOTP POST data:", JSON.stringify(generateOtpPayload, null, 2));
+        // console.log("ServiceImages/GenerateOTP response:", JSON.stringify(genOtpRes?.data, null, 2));
       } catch (e) {
         console.error("GenerateOTP Error:", e?.response?.data ?? e);
       }
@@ -840,13 +840,13 @@ export default function CustomerInfo() {
         updatedBy: Number(techID),
         role: "Technician",
       };
-      console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
+      // console.log("ServiceImages/UpdateBookingStatus---:", statusPayload);
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for pickup_reached");
+      // console.log("UpdateBookingStatus posted for pickup_reached");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }

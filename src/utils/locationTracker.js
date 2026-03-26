@@ -14,7 +14,7 @@ const BACKGROUND_FETCH_TASK = "mcbt-background-fetch";
 try {
   TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
     if (error) {
-      console.log("Background location task error:", error);
+      //console.log("Background location task error:", error);
       return;
     }
     try {
@@ -45,12 +45,12 @@ try {
         heading: latest.coords.heading || null,
       });
     } catch (error) {
-      console.log("Background location task error:", error);
+      //console.log("Background location task error:", error);
     }
   });
 } catch (error) {
   // Ignore duplicate definition errors during Fast Refresh
-  console.log("Background location task define skipped:", String(error?.message || error));
+  //console.log("Background location task define skipped:", String(error?.message || error));
 }
 
 // Define background fetch task at module load (always attempt; ignore duplicate errors)
@@ -79,13 +79,13 @@ try {
       }
       return BackgroundFetch.BackgroundFetchResult.NoData;
     } catch (error) {
-      console.log("Background fetch task error:", error);
+      //console.log("Background fetch task error:", error);
       return BackgroundFetch.BackgroundFetchResult.Failed;
     }
   });
 } catch (error) {
   // Ignore duplicate definition errors during Fast Refresh
-  console.log("Background fetch task define skipped:", String(error?.message || error));
+  //console.log("Background fetch task define skipped:", String(error?.message || error));
 }
 
 export async function startTechnicianLocationTracking(technicianId) {
@@ -96,7 +96,7 @@ export async function startTechnicianLocationTracking(technicianId) {
 
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== "granted") {
-    console.log("Foreground location permission denied");
+    //console.log("Foreground location permission denied");
     return;
   }
 
@@ -104,10 +104,10 @@ export async function startTechnicianLocationTracking(technicianId) {
   try {
     const backgroundStatus = await Location.requestBackgroundPermissionsAsync();
     if (backgroundStatus.status !== "granted") {
-      console.log("Background location permission denied, but continuing with foreground tracking");
+      //console.log("Background location permission denied, but continuing with foreground tracking");
     }
   } catch (error) {
-    console.log("Error requesting background permissions:", error);
+    //console.log("Error requesting background permissions:", error);
   }
 
   const locationRef = ref(db, `technicians/${technicianId}`);
@@ -122,7 +122,7 @@ export async function startTechnicianLocationTracking(technicianId) {
       const latitude = Number(coords.latitude);
       const longitude = Number(coords.longitude);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-      
+
       await update(locationRef, {
         latitude,
         longitude,
@@ -135,9 +135,9 @@ export async function startTechnicianLocationTracking(technicianId) {
     } catch (error) {
       const msg = error?.message || String(error);
       if (msg.includes("PERMISSION_DENIED") || msg.includes("permission")) {
-        console.log("Location update skipped (permission or rules):", msg.slice(0, 60));
+        //console.log("Location update skipped (permission or rules):", msg.slice(0, 60));
       } else {
-        console.log("Error updating location:", error);
+        //console.log("Error updating location:", error);
       }
     }
   };
@@ -149,7 +149,7 @@ export async function startTechnicianLocationTracking(technicianId) {
     });
     await writeIfThrottled(current.coords);
   } catch (error) {
-    console.log("Error getting current position:", error);
+    //console.log("Error getting current position:", error);
   }
 
   locationWatcherSubscription = await Location.watchPositionAsync(
@@ -176,12 +176,12 @@ export async function startTechnicianLocationTracking(technicianId) {
           stopOnTerminate: false,
           startOnBoot: true,
         });
-        console.log("Background fetch task registered successfully");
+        //console.log("Background fetch task registered successfully");
       } else {
-        console.log("Background fetch task not defined, skipping registration");
+        //console.log("Background fetch task not defined, skipping registration");
       }
     } catch (error) {
-      console.log("Error registering background fetch task:", error);
+      //console.log("Error registering background fetch task:", error);
     }
   }, 1000); // 1 second delay to ensure task definitions are loaded
 }
@@ -193,48 +193,48 @@ export function stopTechnicianLocationTracking() {
       locationWatcherSubscription = null;
     }
   } catch (error) {
-    console.log("Error stopping location watcher:", error);
+    //console.log("Error stopping location watcher:", error);
   }
-  
+
   // Stop background fetch
   try {
     BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
   } catch (error) {
-    console.log("Error unregistering background fetch task:", error);
+    // console.log("Error unregistering background fetch task:", error);
   }
-  
+
   lastWriteTimestampMs = 0;
 }
 
 export async function startBackgroundTracking(technicianId) {
   if (!technicianId) return;
-  
+
   try {
     await AsyncStorage.setItem("backgroundTechId", String(technicianId));
   } catch (error) {
-    console.log("Error saving background tech ID:", error);
+    //console.log("Error saving background tech ID:", error);
   }
 
   const fg = await Location.requestForegroundPermissionsAsync();
   if (fg.status !== "granted") {
-    console.log("Foreground location permission required for background tracking");
+    //console.log("Foreground location permission required for background tracking");
     return;
   }
-  
+
   try {
     const bgStatus = await Location.requestBackgroundPermissionsAsync();
     if (bgStatus.status !== "granted") {
-      console.log("Background location permission denied, background tracking may not work reliably");
+      // console.log("Background location permission denied, background tracking may not work reliably");
     }
   } catch (error) {
-    console.log("Error requesting background permissions:", error);
+    //console.log("Error requesting background permissions:", error);
   }
 
   const isRunning = await Location.hasStartedLocationUpdatesAsync(
     BACKGROUND_LOCATION_TASK
   );
   if (isRunning) {
-    console.log("Background location updates already running");
+    //console.log("Background location updates already running");
     return;
   }
 
@@ -257,9 +257,9 @@ export async function startBackgroundTracking(technicianId) {
       deferredUpdatesInterval: 10000, // 10 seconds
       deferredUpdatesDistance: 5, // 5 meters
     });
-    console.log("Background location tracking started successfully");
+    // console.log("Background location tracking started successfully");
   } catch (error) {
-    console.log("Error starting background location updates:", error);
+    //console.log("Error starting background location updates:", error);
   }
 }
 
@@ -270,16 +270,16 @@ export async function stopBackgroundTracking() {
     );
     if (isRunning) {
       await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-      console.log("Background location tracking stopped");
+      //console.log("Background location tracking stopped");
     }
   } catch (error) {
-    console.log("Error stopping background location updates:", error);
+    //console.log("Error stopping background location updates:", error);
   }
-  
+
   try {
     await AsyncStorage.removeItem("backgroundTechId");
   } catch (error) {
-    console.log("Error removing background tech ID:", error);
+    //console.log("Error removing background tech ID:", error);
   }
 }
 
@@ -291,7 +291,7 @@ export async function isBackgroundTrackingActive() {
     );
     return isRunning;
   } catch (error) {
-    console.log("Error checking background tracking status:", error);
+    //console.log("Error checking background tracking status:", error);
     return false;
   }
 }
@@ -301,7 +301,7 @@ export async function getTrackingStatus() {
   try {
     const techId = await AsyncStorage.getItem("backgroundTechId");
     const isBackgroundActive = await isBackgroundTrackingActive();
-    
+
     return {
       technicianId: techId,
       backgroundTrackingActive: isBackgroundActive,
@@ -309,7 +309,7 @@ export async function getTrackingStatus() {
       lastUpdate: lastWriteTimestampMs > 0 ? new Date(lastWriteTimestampMs) : null,
     };
   } catch (error) {
-    console.log("Error getting tracking status:", error);
+    //console.log("Error getting tracking status:", error);
     return {
       technicianId: null,
       backgroundTrackingActive: false,

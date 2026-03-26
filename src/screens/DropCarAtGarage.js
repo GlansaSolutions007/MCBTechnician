@@ -70,10 +70,7 @@ export default function DropCarAtGarage() {
     legId ?? booking?.PickupDeliveryId ?? booking?.CarPickupDeliveryId ?? fromArray ?? 0
   );
   const [bookingParam, setBookingParam] = useState(booking);
-  console.log("bookingParam===============00000000000000", bookingParam?.Leads?.Vehicle)
-  console.log('bookingsssssssssss',bookingParam);
-  
-  // console.log("bookingParam===============00000000000000",bookingParam?.Leads?.Vehicle?.RegistrationNumber)
+
   useEffect(() => {
     let mounted = true;
     const fetchAssigned = async () => {
@@ -105,7 +102,6 @@ export default function DropCarAtGarage() {
   const phoneNumber = currentLegParam?.PickFrom?.PersonNumber || bookingParam?.PickupDelivery?.PickFrom?.PersonNumber || "";
   const DropAtphoneNumber = currentLegParam?.DropAt?.PersonNumber || bookingParam?.PickupDelivery?.DropAt?.PersonNumber || "";
   const garageaddress = bookingParam?.PickupDelivery[0]?.DropAt?.Address || "";
-  console.log("DropAtphoneNumber===-----=====-----===:", currentLegParam);
   const profileImage = bookingParam?.ProfileImage || null;
 
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
@@ -289,7 +285,6 @@ export default function DropCarAtGarage() {
         { pickDropId: Number(carPickupDeliveryId) || 0, status: "completed" },
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("Completed status posted successfully");
 
       // Post to UpdateBookingStatus with action "completed"
       try {
@@ -301,13 +296,11 @@ export default function DropCarAtGarage() {
           updatedBy: Number(techId),
           role: "Technician",
         };
-        console.log("UpdateBookingStatus Payload (completed):", statusPayload);
         await axios.post(
           `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
           statusPayload,
           { headers: { "Content-Type": "application/json" } }
         );
-        console.log("UpdateBookingStatus posted for completed");
       } catch (e) {
         console.error("UpdateBookingStatus Error:", e?.response?.data || e);
       }

@@ -316,13 +316,13 @@ export default function ServiceAtGarageMap() {
         updatedBy: Number(techID),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
+      // console.log("UpdateBookingStatus Payload (pickup_started):", JSON.stringify(statusPayload, null, 2));
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for pickup_started");
+      // console.log("UpdateBookingStatus posted for pickup_started");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
@@ -349,7 +349,7 @@ export default function ServiceAtGarageMap() {
     setLoadingReached(true);
     const techID = await AsyncStorage.getItem("techID");
     const phoneNumber = displayBooking?.PickupDelivery[0].PickFrom?.PersonNumber;
-    console.log("phoneNumber===========-----------", phoneNumber)
+    // console.log("phoneNumber===========-----------", phoneNumber)
     try {
       await axios.post(
         `${API_BASE_URL}ServiceImages/InsertTracking`,
@@ -372,19 +372,19 @@ export default function ServiceAtGarageMap() {
         updatedBy: Number(techID),
         role: "Technician",
       };
-      console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
+      // console.log("UpdateBookingStatus Payload (pickup_reached):", JSON.stringify(statusPayload, null, 2));
       await axios.post(
         `${API_BASE_URL}ServiceImages/UpdateBookingStatus`,
         statusPayload,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("UpdateBookingStatus posted for pickup_reached");
+      // console.log("UpdateBookingStatus posted for pickup_reached");
     } catch (e) {
       console.error("UpdateBookingStatus Error:", e?.response?.data || e);
     }
 
     try {
-      console.log("GenerateOTP==================", pickDropId, "Pickup", phoneNumber);
+      // console.log("GenerateOTP==================", pickDropId, "Pickup", phoneNumber);
       await axios.post(
         `${API_BASE_URL}ServiceImages/GenerateOTP`,
         {

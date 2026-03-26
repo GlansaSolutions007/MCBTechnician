@@ -121,8 +121,6 @@ export default function LoginScreen() {
         },
       );
 
-      console.log("Login response:", response.data);
-
       if (response.data?.success) {
         const techID = response.data?.techId;
         const email = response.data?.email || "";
@@ -179,9 +177,7 @@ export default function LoginScreen() {
             //     fcmToken ? "fcm" : expoPushToken ? "expo" : "unknown"
             //   );
             // } catch (_) { }
-            console.log("helloooo", fcmToken);
             try {
-              console.log("Tryyyyyy", fcmToken);
 
               await axios.post(`${API_BASE_URL}Push/register`, {
                 userRole: "technician",
@@ -190,7 +186,6 @@ export default function LoginScreen() {
                 expoToken: expoPushToken || null,
                 platform: Platform.OS,
               });
-              console.log("userRole======", userRole);
             } catch (_) { }
           }
         } catch (_) { }

@@ -68,7 +68,7 @@ class TechnicianNotificationService {
       await this.startNotificationListener();
       
       this.isInitialized = true;
-      console.log('Notification service initialized successfully');
+     // console.log('Notification service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize notification service:', error);
     }
@@ -213,13 +213,13 @@ class TechnicianNotificationService {
   async startNotificationListener() {
     // Listen for incoming notifications
     this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
+     // console.log('Notification received:', notification);
       this.handleNotificationReceived(notification);
     });
 
     // Listen for notification responses (taps, actions)
     this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification response:', response);
+    //  console.log('Notification response:', response);
       this.handleNotificationResponse(response);
     });
   }
@@ -304,7 +304,7 @@ class TechnicianNotificationService {
         trigger: null, // Send immediately
       });
 
-      console.log('Local notification sent:', title);
+     // console.log('Local notification sent:', title);
     } catch (error) {
       console.error('Failed to send local notification:', error);
     }
@@ -333,7 +333,7 @@ class TechnicianNotificationService {
         trigger,
       });
 
-      console.log('Notification scheduled:', identifier);
+     // console.log('Notification scheduled:', identifier);
       return identifier;
     } catch (error) {
       console.error('Failed to schedule notification:', error);
@@ -412,7 +412,7 @@ class TechnicianNotificationService {
       const key = `notifications_${this.technicianId}`;
       await AsyncStorage.removeItem(key);
       await Notifications.setBadgeCountAsync(0);
-      console.log('All notifications cleared');
+      // console.log('All notifications cleared');
     } catch (error) {
       console.error('Failed to clear notifications:', error);
     }
@@ -432,37 +432,37 @@ class TechnicianNotificationService {
   // Navigation handlers (to be implemented based on your navigation structure)
   navigateToBooking(bookingId) {
     // Implement navigation to booking details
-    console.log('Navigate to booking:', bookingId);
+    // console.log('Navigate to booking:', bookingId);
   }
 
   acceptBooking(bookingId) {
     // Implement booking acceptance logic
-    console.log('Accept booking:', bookingId);
+    // console.log('Accept booking:', bookingId);
   }
 
   declineBooking(bookingId) {
     // Implement booking decline logic
-    console.log('Decline booking:', bookingId);
+    // console.log('Decline booking:', bookingId);
   }
 
   navigateToPayment(paymentId) {
     // Implement navigation to payment details
-    console.log('Navigate to payment:', paymentId);
+    // console.log('Navigate to payment:', paymentId);
   }
 
   replyToCustomer(customerId) {
     // Implement customer reply logic
-    console.log('Reply to customer:', customerId);
+    // console.log('Reply to customer:', customerId);
   }
 
   viewCustomerProfile(customerId) {
     // Implement customer profile navigation
-    console.log('View customer profile:', customerId);
+    // console.log('View customer profile:', customerId);
   }
 
   handleDefaultNavigation(data) {
     // Implement default navigation based on notification type
-    console.log('Default navigation for data:', data);
+    // console.log('Default navigation for data:', data);
   }
 
   // Clean up listeners
@@ -478,7 +478,7 @@ class TechnicianNotificationService {
     }
     
     this.isInitialized = false;
-    console.log('Notification service cleaned up');
+    // console.log('Notification service cleaned up');
   }
 }
 

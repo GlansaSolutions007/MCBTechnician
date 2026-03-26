@@ -66,7 +66,7 @@ export default function Bookings() {
         },
       );
 
-      console.log('assigned bookingsssss', response?.data);
+      // console.log('assigned bookingsssss', response?.data);
 
       const bookingsData = Array.isArray(response?.data)
         ? response.data

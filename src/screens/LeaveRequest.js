@@ -92,7 +92,6 @@ export default function LeaveRequest() {
       }
 
       const currentDateTime = new Date();
-      console.log("currentDateTime-------------------------", currentDateTime);
       const payload = {
         techID: parseInt(techID),
         fromDate: formatDate(fromDate),
