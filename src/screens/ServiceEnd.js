@@ -215,6 +215,8 @@ export default function ServiceEnd() {
   const [imageError, setImageError] = useState("");
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [serviceCompleted, setServiceCompleted] = useState(false);
+  const [showServiceCompleteModal, setShowServiceCompleteModal] = useState(false);
+  const [paymentSuccessAfterComplete, setPaymentSuccessAfterComplete] = useState(false);
 
   const MAX_IMAGES = 5;
 
@@ -692,33 +694,18 @@ export default function ServiceEnd() {
 
     setIsLoading(false);
     setServiceCompleted(true);
-    setModalMessage("Service completed successfully!");
-    setModalVisible(true);
+
+    const paymentStatus =
+      booking?.PaymentStatus ??
+      booking?.Payments?.[0]?.PaymentStatus ??
+      null;
+
+    const normalizedStatus =
+      typeof paymentStatus === "string" ? paymentStatus.toLowerCase() : null;
+
+    setPaymentSuccessAfterComplete(normalizedStatus === "success");
+    setShowServiceCompleteModal(true);
   };
-
-
-  // Auto-navigate after service completion:
-  // If payment is already done (PaymentStatus === 'Success') go to Dashboard,
-  // otherwise go to CollectPayment
-  useEffect(() => {
-    if (!serviceCompleted) return;
-    const timer = setTimeout(() => {
-      setModalVisible(false);
-      const paymentStatus =
-        booking?.PaymentStatus ??
-        booking?.Payments?.[0]?.PaymentStatus ??
-        null;
-      if (paymentStatus === "Success") {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "CustomerTabNavigator", params: { screen: "Dashboard" } }],
-        });
-      } else {
-        navigation.navigate("CollectPayment", { booking });
-      }
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [serviceCompleted]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -901,7 +888,6 @@ export default function ServiceEnd() {
                     ))}
                 </View> */}
                 <View style={{ flexDirection: "column" }}>
-                  {booking?.ServiceType === "ServiceAtGarage" ? (
                     <CustomText
                       style={[
                         globalStyles.f10Regular,
@@ -911,22 +897,6 @@ export default function ServiceEnd() {
                     >
                       {assignTime}
                     </CustomText>
-                  ) : (
-                    (getBookingDisplayData(booking).timeSlot || "")
-                      .split(",")
-                      .map((slot, index) => (
-                        <CustomText
-                          key={index}
-                          style={[
-                            globalStyles.f10Regular,
-                            globalStyles.black,
-                            globalStyles.ml1,
-                          ]}
-                        >
-                          {slot.trim()}
-                        </CustomText>
-                      ))
-                  )}
                 </View>
               </View>
             </View>
@@ -1457,15 +1427,68 @@ export default function ServiceEnd() {
                   style={styles.okButton}
                   onPress={() => {
                     setModalVisible(false);
-                    if (serviceCompleted) {
-                      navigation.navigate("CollectPayment", { booking });
-                    }
                   }}
                 >
                   <CustomText
                     style={[globalStyles.textWhite, globalStyles.f14Bold]}
                   >
                     OK
+                  </CustomText>
+                </TouchableOpacity>
+              </Pressable>
+            </Pressable>
+          </Modal>
+
+          {/* Service Completion Modal */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showServiceCompleteModal}
+            onRequestClose={() => {}}
+          >
+            <Pressable style={styles.modalOverlay}>
+              <Pressable style={styles.modalBox} onPress={(e) => e.stopPropagation()}>
+                <View style={styles.modalIconContainer}>
+                  <Ionicons
+                    name={paymentSuccessAfterComplete ? "checkmark-circle" : "cash-outline"}
+                    size={56}
+                    color={paymentSuccessAfterComplete ? color.primary : "#FF9800"}
+                  />
+                </View>
+                <CustomText
+                  style={[globalStyles.f16Bold, globalStyles.textac, globalStyles.mb2]}
+                >
+                  {paymentSuccessAfterComplete ? "Service Completed!" : "Collect Payment"}
+                </CustomText>
+                <CustomText
+                  style={[
+                    globalStyles.f12Regular,
+                    globalStyles.textac,
+                    globalStyles.neutral500,
+                    globalStyles.mb4,
+                    { textAlign: "center" },
+                  ]}
+                >
+                  {paymentSuccessAfterComplete
+                    ? "The service has been completed successfully."
+                    : "Service completed. Please collect the pending payment from the customer."}
+                </CustomText>
+                <TouchableOpacity
+                  style={styles.okButton}
+                  onPress={() => {
+                    setShowServiceCompleteModal(false);
+                    if (paymentSuccessAfterComplete) {
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CustomerTabNavigator", params: { screen: "Dashboard" } }],
+                      });
+                    } else {
+                      navigation.navigate("CollectPayment", { booking });
+                    }
+                  }}
+                >
+                  <CustomText style={[globalStyles.textWhite, globalStyles.f14Bold]}>
+                    {paymentSuccessAfterComplete ? "Go to Dashboard" : "Collect Payment"}
                   </CustomText>
                 </TouchableOpacity>
               </Pressable>

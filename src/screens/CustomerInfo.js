@@ -1236,17 +1236,7 @@ export default function CustomerInfo() {
                     <View style={[globalStyles.flexrow, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
                       <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
                       <View style={{ flexDirection: "column" }}>
-                        {bookingParam?.ServiceType === "ServiceAtGarage" ? (
                           <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignTime}</CustomText>
-                        ) : (
-                          (getBookingDisplayData(bookingParam).timeSlot || "")
-                            .split(",")
-                            .map((slot, index) => (
-                              <CustomText key={index} style={[globalStyles.f10Regular, globalStyles.black]}>
-                                {slot.trim()}
-                              </CustomText>
-                            ))
-                        )}
                       </View>
                     </View>
                   </View>

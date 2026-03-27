@@ -680,19 +680,9 @@ export default function Bookings() {
                                 style={styles.cardMetaIcon}
                               />
                               <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                                {item.ServiceType === "ServiceAtGarage" ? (
                                   <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
                                     {assignTime}
                                   </CustomText>
-                                ) : (
-                                  <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
-                                    {(item.TimeSlot || "")
-                                      .split(",")
-                                      .map((s) => s.trim())
-                                      .filter(Boolean)
-                                      .join("\n") || "N/A"}
-                                  </CustomText>
-                                )}
                               </CustomText>
 
                             </View>

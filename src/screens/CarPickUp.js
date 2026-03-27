@@ -713,7 +713,6 @@ export default function CarPickUp() {
               >
                 <Ionicons name="time-outline" size={16} color={color.primary} />
                 <View style={{ flexDirection: "column" }}>
-                  {bookingParam?.ServiceType === "ServiceAtGarage" ? (
                     <CustomText
                       style={[
                         globalStyles.f10Regular,
@@ -723,22 +722,6 @@ export default function CarPickUp() {
                     >
                       {assignTime}
                     </CustomText>
-                  ) : (
-                    (getBookingDisplayData(bookingParam).timeSlot || "")
-                      .split(",")
-                      .map((slot, index) => (
-                        <CustomText
-                          key={index}
-                          style={[
-                            globalStyles.f10Regular,
-                            globalStyles.black,
-                            globalStyles.ml1,
-                          ]}
-                        >
-                          {slot.trim()}
-                        </CustomText>
-                      ))
-                  )}
                 </View>
               </View>
             </View>

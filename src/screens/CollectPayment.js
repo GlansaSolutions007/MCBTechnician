@@ -10,11 +10,9 @@ import {
   Modal,
   Vibration,
   Linking,
-  Alert,
   BackHandler,
 } from "react-native";
 import CustomText from "../components/CustomText";
-import CustomAlert from "../components/CustomAlert";
 import globalStyles from "../styles/globalStyles";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,21 +40,9 @@ export default function CollectPayment() {
   const [successMessage, setSuccessMessage] = useState("Payment Successful");
   const [proofImages, setProofImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({
-    visible: false,
-    status: "info",
-    title: "",
-    message: "",
-  });
-
-  const showCustomAlert = (title, message, status = "info") => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      status,
-    });
-  };
+  const [imageError, setImageError] = useState("");
+  const [cashPaymentError, setCashPaymentError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   // Amount: from params (Dashboard) or from booking (ServiceEnd etc.)
   const collectAmount =
     amountFromParams != null && amountFromParams !== ""
@@ -93,15 +79,16 @@ export default function CollectPayment() {
   const MAX_SIZE_MB = 5;
 
   const pickImage = async () => {
+    setImageError("");
     if (proofImages.length >= MAX_IMAGES) {
-      showCustomAlert("Limit Reached", "You can upload maximum 2 images only");
+      setImageError("You can upload maximum 2 images only");
       return;
     }
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      showCustomAlert("Permission required", "Please allow access to upload images");
+      setImageError("Please allow access to upload images");
       return;
     }
 
@@ -115,14 +102,14 @@ export default function CollectPayment() {
 
       // ✅ Type validation
       if (!image.mimeType?.startsWith("image/")) {
-        showCustomAlert("Invalid File", "Only image files are allowed");
+        setImageError("Only image files are allowed");
         return;
       }
 
       // ✅ Size validation
       const sizeInMB = image.fileSize / (1024 * 1024);
       if (sizeInMB > MAX_SIZE_MB) {
-        showCustomAlert("File Too Large", "Image must be less than 5MB");
+        setImageError("Image must be less than 5MB");
         return;
       }
 
@@ -137,8 +124,9 @@ export default function CollectPayment() {
   };
 
   const handleCashAddonPayment = async () => {
+    setCashPaymentError("");
     if (proofImages.length === 0) {
-      showCustomAlert("Error", "Please upload at least one proof image");
+      setCashPaymentError("Please upload at least one proof image");
       return;
     }
 
@@ -184,7 +172,7 @@ export default function CollectPayment() {
       }
     } catch (error) {
       console.error("Cash Payment Error:", error?.response?.data || error);
-      showCustomAlert("Error", "Failed to upload payment");
+      setCashPaymentError("Failed to upload payment. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -249,7 +237,7 @@ export default function CollectPayment() {
       try {
         setLoading(true);
         const bookingID = booking.BookingID;
-        const amount = Math.round(Number(collectAmount)) || 0;
+        const amount = Number(collectAmount) || 0;
 
         const qrResponse = await axios.post(
           // `https://api.glansadesigns.com/test/qr-code.php?bookingID=${bookingID}&amount=${amount}`,
@@ -379,7 +367,7 @@ export default function CollectPayment() {
               { marginTop: 4 },
             ]}
           >
-            ₹{collectAmount != null && collectAmount !== "" ? Number(collectAmount) : "—"}
+            ₹{collectAmount != null && collectAmount !== "" ? Number(collectAmount).toFixed(2) : "—"}
           </CustomText>
         </View>
         <View style={styles.sectionCard}>
@@ -465,7 +453,7 @@ export default function CollectPayment() {
               borderRadius: 10,
               padding: 12,
               alignItems: "center",
-              marginBottom: 12,
+              marginBottom: 4,
               backgroundColor: "#fafafa",
             }}
             onPress={pickImage}
@@ -475,27 +463,33 @@ export default function CollectPayment() {
             </CustomText>
           </TouchableOpacity>
 
+          {imageError ? (
+            <CustomText style={[globalStyles.f10Bold, { color: "red", marginBottom: 6, }]}>
+              {imageError}
+            </CustomText>
+          ) : null}
+
           {/* Preview */}
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {proofImages.map((img, index) => (
               <View key={index} style={{ marginRight: 10, marginBottom: 10 }}>
                 <Image
                   source={{ uri: img.uri }}
-                  style={{ width: 90, height: 90, borderRadius: 10 }}
+                  style={{ width: 90, height: 90, borderRadius: 10, marginTop:10 }}
                 />
 
                 <TouchableOpacity
                   onPress={() => removeImage(index)}
                   style={{
                     position: "absolute",
-                    top: -6,
+                    top: 4,
                     right: -6,
-                    backgroundColor: "red",
+                    backgroundColor: "black",
                     borderRadius: 20,
                     paddingHorizontal: 6,
                   }}
                 >
-                  <CustomText style={{ color: "#fff", fontSize: 12 }}>X</CustomText>
+                  <CustomText style={[globalStyles.f10Bold,{ color: "#fff", marginBottom:2 }]}>X</CustomText>
                 </TouchableOpacity>
               </View>
             ))}
@@ -518,6 +512,12 @@ export default function CollectPayment() {
               </CustomText>
             )}
           </TouchableOpacity>
+
+          {cashPaymentError ? (
+            <CustomText style={[globalStyles.f10Bold, { color: "red", marginBottom : 6, }]}>
+              {cashPaymentError}
+            </CustomText>
+          ) : null}
         </View>
 
         <View style={styles.sectionCard}>
@@ -532,6 +532,7 @@ export default function CollectPayment() {
           <TouchableOpacity
             style={styles.callButton}
             onPress={() => {
+              setPhoneError("");
               Vibration.vibrate([0, 200, 100, 300]);
 
               const phoneNumber =
@@ -540,7 +541,7 @@ export default function CollectPayment() {
               if (phoneNumber) {
                 Linking.openURL(`tel:${phoneNumber}`);
               } else {
-                showCustomAlert("Error", "Phone number not available", "error");
+                setPhoneError("Phone number not available");
               }
             }}
           >
@@ -549,6 +550,12 @@ export default function CollectPayment() {
               Call Customer
             </CustomText>
           </TouchableOpacity>
+
+          {phoneError ? (
+            <CustomText style={[globalStyles.f10Bold, { color: "red", marginTop: 6, }]}>
+              {phoneError}
+            </CustomText>
+          ) : null}
 
           {/* Help Line */}
           <TouchableOpacity
@@ -577,16 +584,6 @@ export default function CollectPayment() {
           </CustomText>
         </TouchableOpacity> */}
       </View>
-
-      <CustomAlert
-        visible={alertConfig.visible}
-        status={alertConfig.status}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        onClose={() =>
-          setAlertConfig((prev) => ({ ...prev, visible: false }))
-        }
-      />
 
       <Modal
         animationType="fade"
@@ -795,6 +792,6 @@ const styles = StyleSheet.create({
   orText: {
     marginHorizontal: 10,
     color: "#888",
-    ...globalStyles.f10Bold,
+    ...globalStyles.f12Bold,
   },
 });
