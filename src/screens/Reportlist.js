@@ -212,12 +212,15 @@ function Reportlist() {
                 style={{ marginRight: 6 }}
               />
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                {item.ServiceType
-                  ? item.ServiceType
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/\bAt\b/g, "at")
-                    .trim()
-                  : "N/A"}
+                {(() => {
+                  const pickServiceType = item.PickupDelivery?.[0]?.PickServiceType ?? item.ServiceType;
+                  return pickServiceType
+                    ? pickServiceType
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/\bAt\b/g, "at")
+                      .trim()
+                    : "N/A";
+                })()}
               </CustomText>
             </View>
             <View
@@ -346,7 +349,7 @@ function Reportlist() {
                   ]}
                   numberOfLines={1}
                 >
-                    {assignTime}
+                  {assignTime}
                 </CustomText>
               </View>
             </View>

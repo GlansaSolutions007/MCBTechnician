@@ -89,25 +89,25 @@ function TaskReportsScreen() {
   // Helper function to check if a date is in the future
   const isFutureDate = (dateString) => {
     if (!dateString) return false;
-    
+
     try {
       // Get today's date - set to start of day for comparison
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       today.setMilliseconds(0);
-      
+
       // Parse the date string (handles formats like "2026-02-01" or "2026-01-10T18:01:27.640")
       const bookingDate = new Date(dateString);
-      
+
       // Check if date is valid
       if (isNaN(bookingDate.getTime())) {
         return false;
       }
-      
+
       // Set to start of day for comparison (ignore time)
       bookingDate.setHours(0, 0, 0, 0);
       bookingDate.setMilliseconds(0);
-      
+
       // Return true if booking date is greater than today (future date)
       return bookingDate > today;
     } catch (error) {
@@ -118,13 +118,13 @@ function TaskReportsScreen() {
 
   const getAssignDate = (booking) => {
     const pd = booking?.PickupDelivery;
-        // console.log("getttttt",pd[0]?.AssignDate);
+    // console.log("getttttt",pd[0]?.AssignDate);
     //if (!pd) return booking?.BookingDate ?? booking?.TechAssignDate ?? null;
     if (Array.isArray(pd) && pd.length > 0) {
       const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
       return sorted[0]?.AssignDate ?? null;
     }
-    
+
     return pd[0]?.AssignDate ?? null;
   };
 
@@ -148,12 +148,27 @@ function TaskReportsScreen() {
   // Show only pending bookings whose AssignDate is a future date
   const upcomingBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        const assignDate = getAssignDate(booking);
-        if (!assignDate) return false;
-        if (!isFutureDate(assignDate)) return false;
-        return !isBookingCompleted(booking); // pending only
-      })
-    : [];    
+      const assignDate = getAssignDate(booking);
+      if (!assignDate) return false;
+      if (!isFutureDate(assignDate)) return false;
+      return !isBookingCompleted(booking); // pending only
+    })
+    : [];
+
+  const assignDateTime = Array.isArray(bookings) && bookings.length > 0
+    ? bookings[0]?.PickupDelivery?.[0]?.AssignDate
+    : null;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
+    : "N/A";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "N/A";
 
   const renderBookingCard = ({ item, index }) => {
     const driverStatus = getDriverStatus(item);
@@ -192,9 +207,15 @@ function TaskReportsScreen() {
                 style={{ marginRight: 6 }}
               />
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
-                {item.ServiceType
-                  ? item.ServiceType.replace(/([A-Z])/g, " $1").trim()
-                  : "N/A"}
+                {(() => {
+                  const pickServiceType = item.PickupDelivery?.[0]?.PickServiceType ?? item.ServiceType;
+                  return pickServiceType
+                    ? pickServiceType
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/\bAt\b/g, "at")
+                      .trim()
+                    : "N/A";
+                })()}
               </CustomText>
             </View>
             <View
@@ -300,7 +321,7 @@ function TaskReportsScreen() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {getAssignDate(item)? String(getAssignDate(item)).slice(0, 10)
+                  {getAssignDate(item) ? String(getAssignDate(item)).slice(0, 10)
                     : "N/A"}
                 </CustomText>
               </View>
@@ -319,7 +340,7 @@ function TaskReportsScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {getBookingDisplayData(item).timeSlot}
+                  {assignTime}
                 </CustomText>
               </View>
             </View>
@@ -481,7 +502,7 @@ function TaskReportsScreen() {
             { flex: 1 },
           ]}
         >
-        <Ionicons name="calendar-outline" size={64} color={color.neutral[300]} />
+          <Ionicons name="calendar-outline" size={64} color={color.neutral[300]} />
           <CustomText
             style={[
               globalStyles.f16Medium,

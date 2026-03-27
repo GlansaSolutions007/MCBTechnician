@@ -614,11 +614,14 @@ export default function Bookings() {
                           <CustomText
                             style={[globalStyles.f12Bold, globalStyles.secondary]}
                           >
-                            {item.ServiceType
-                              ? item.ServiceType.replace(/([A-Z])/g, " $1")
-                                .replace(/\bAt\b/g, "at")
-                                .trim()
-                              : "N/A"}
+                            {(() => {
+                              const pickServiceType = item.PickupDelivery?.[0]?.PickServiceType ?? item.ServiceType;
+                              return pickServiceType
+                                ? pickServiceType.replace(/([A-Z])/g, " $1")
+                                  .replace(/\bAt\b/g, "at")
+                                  .trim()
+                                : "N/A";
+                            })()}
                           </CustomText>
 
                           {/* {completed && (
@@ -680,9 +683,9 @@ export default function Bookings() {
                                 style={styles.cardMetaIcon}
                               />
                               <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                                  <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
-                                    {assignTime}
-                                  </CustomText>
+                                <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                  {assignTime}
+                                </CustomText>
                               </CustomText>
 
                             </View>
@@ -705,7 +708,8 @@ export default function Bookings() {
 
                     {/* From / Address / To / Drop card (per sketch) */}
                     {
-                      item.ServiceType === "ServiceAtGarage" && !completed && (
+                      (item.PickupDelivery?.[0]?.PickServiceType ?? item.ServiceType) === "ServiceAtGarage" && !completed &&
+                      (
                         <View style={styles.fromToCard}>
                           <TouchableOpacity
                             onPress={() => {
