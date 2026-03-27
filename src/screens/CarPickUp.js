@@ -680,7 +680,7 @@ export default function CarPickUp() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {getBookingDisplayData(bookingParam).bookingDate}
+                  {assignDate}
                 </CustomText>
               </View>
             </View>

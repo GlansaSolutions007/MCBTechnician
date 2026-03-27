@@ -1219,7 +1219,7 @@ export default function CustomerInfo() {
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
                       <Ionicons name="calendar" size={16} color={color.primary} style={{ marginRight: 6 }} />
                       <View>
-                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{display.bookingDate}</CustomText>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignDate}</CustomText>
                       </View>
                     </View>
                   </View>

@@ -321,8 +321,7 @@ function TaskReportsScreen() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {getAssignDate(item) ? String(getAssignDate(item)).slice(0, 10)
-                    : "N/A"}
+                  {assignDate}
                 </CustomText>
               </View>
               <View style={styles.cardMetaItem}>

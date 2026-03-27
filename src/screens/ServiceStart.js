@@ -605,7 +605,7 @@ export default function ServiceStart() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {getBookingDisplayData(bookingParam).bookingDate}
+                  {assignDate}
                 </CustomText>
               </View>
             </View>

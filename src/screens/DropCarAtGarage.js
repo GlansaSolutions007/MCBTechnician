@@ -436,7 +436,7 @@ export default function DropCarAtGarage() {
               <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
                 <Ionicons name="calendar" size={16} color={color.primary} />
                 <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                  {getBookingDisplayData(bookingParam).bookingDate}
+                  {assignDate}
                 </CustomText>
               </View>
             </View>

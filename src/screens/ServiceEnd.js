@@ -838,7 +838,7 @@ export default function ServiceEnd() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {getBookingDisplayData(booking).bookingDate}
+                  {assignDate}
                 </CustomText>
               </View>
             </View>

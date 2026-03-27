@@ -331,7 +331,7 @@ function Reportlist() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {getBookingDisplayData(item).bookingDate}
+                  {assignDate}
                 </CustomText>
               </View>
               <View style={styles.cardMetaItem}>

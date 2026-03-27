@@ -672,7 +672,7 @@ export default function Bookings() {
                                 style={[globalStyles.f10Regular, globalStyles.black]}
                                 numberOfLines={1}
                               >
-                                {getBookingDisplayData(item).bookingDate}
+                                {assignDate}
                               </CustomText>
                             </View>
                             <View style={styles.cardMetaItem}>
