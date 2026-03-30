@@ -27,6 +27,7 @@ import { encode } from "base64-arraybuffer";
 import helpcall from "../../assets/icons/Customer Care.png";
 import { getBookingDisplayData } from "../utils/bookingDisplay";
 import * as ImagePicker from "expo-image-picker";
+import { StatusBar } from "expo-status-bar";
 
 export default function CollectPayment() {
   const navigation = useNavigation();
@@ -319,7 +320,7 @@ export default function CollectPayment() {
         const normalized = typeof status === "string" ? status.toLowerCase() : status;
         if (normalized === "captured" || normalized === "closed") {
           const idToShow = res?.data?.bookingId ?? booking?.BookingID;
-          setSuccessMessage(`Payment done successfully`);
+          setSuccessMessage(`Payment Done Successfully!`);
           clearInterval(intervalId);
           setShowSuccessModal(true);
         }
@@ -335,6 +336,7 @@ export default function CollectPayment() {
 
   return (
     <ScrollView style={[globalStyles.bgcontainer, globalStyles.flex1]}>
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View style={[globalStyles.container, globalStyles.alineItemscenter]}>
         <View
           style={[
@@ -475,7 +477,7 @@ export default function CollectPayment() {
               <View key={index} style={{ marginRight: 10, marginBottom: 10 }}>
                 <Image
                   source={{ uri: img.uri }}
-                  style={{ width: 90, height: 90, borderRadius: 10, marginTop:10 }}
+                  style={{ width: 90, height: 90, borderRadius: 10, marginTop: 10 }}
                 />
 
                 <TouchableOpacity
@@ -489,7 +491,7 @@ export default function CollectPayment() {
                     paddingHorizontal: 6,
                   }}
                 >
-                  <CustomText style={[globalStyles.f10Bold,{ color: "#fff", marginBottom:2 }]}>X</CustomText>
+                  <CustomText style={[globalStyles.f10Bold, { color: "#fff", marginBottom: 2 }]}>X</CustomText>
                 </TouchableOpacity>
               </View>
             ))}
@@ -514,7 +516,7 @@ export default function CollectPayment() {
           </TouchableOpacity>
 
           {cashPaymentError ? (
-            <CustomText style={[globalStyles.f10Bold, { color: "red", marginBottom : 6, }]}>
+            <CustomText style={[globalStyles.f10Bold, { color: "red", marginBottom: 6, }]}>
               {cashPaymentError}
             </CustomText>
           ) : null}

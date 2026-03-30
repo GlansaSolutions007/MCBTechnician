@@ -19,6 +19,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
+import { StatusBar } from "expo-status-bar";
 import {
   useNavigation,
   useRoute,
@@ -745,6 +746,8 @@ export default function ServiceEnd() {
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
       >
+              <StatusBar backgroundColor='white' barStyle="dark-content" />
+
         <View style={[globalStyles.container]}>
           <View
             style={[
