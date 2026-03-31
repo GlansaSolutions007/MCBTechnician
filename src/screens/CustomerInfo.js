@@ -272,7 +272,24 @@ export default function CustomerInfo() {
             nextBooking = fromApi;
           }
           setUpdatedBookings(nextBooking);
-          navigation.navigate("customerInfo", { booking: nextBooking });
+
+          // Determine the correct screen based on the booking status
+          const getScreenForStatus = (status) => {
+            switch (status) {
+              case 'ServiceStarted':
+                return 'ServiceStart';
+              case 'Completed':
+                return 'ServiceComplete';
+              case 'car_picked':
+                return 'CarPickUp';
+              // Add more cases as needed
+              default:
+                return 'customerInfo';
+            }
+          };
+
+          const targetScreen = getScreenForStatus(apiStatus);
+          navigation.navigate(targetScreen, { booking: nextBooking });
         }
       }
     } catch (error) {
