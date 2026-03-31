@@ -21,6 +21,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
+import { StatusBar } from "expo-status-bar";
 // import AvailabilityHeader from "../components/AvailabilityHeader";
 import { color } from "../styles/theme";
 import helpcall from "../../assets/icons/Customer Care.png";
@@ -496,6 +497,8 @@ export default function ServiceStart() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 100}
     >
+            <StatusBar backgroundColor='white' barStyle="dark-content" />
+
       <ScrollView
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"

@@ -19,6 +19,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import CustomText from "../components/CustomText";
 import globalStyles from "../styles/globalStyles";
+import { StatusBar } from "expo-status-bar";
 import {
   useNavigation,
   useRoute,
@@ -207,7 +208,10 @@ export default function ServiceEnd() {
   const [modalMessage, setModalMessage] = useState("");
   const [otpValid, setOtpValid] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // generic (if still used elsewhere)
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [cooldownTimer, setCooldownTimer] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -373,13 +377,13 @@ export default function ServiceEnd() {
 
   const sendOTP = async () => {
     try {
-      setIsLoading(true);
+      setIsSendingOtp(true);
       if (!carPickupDeliveryId) {
         setModalMessage(
           "Booking pickup/delivery info is missing. Cannot send OTP.",
         );
         setModalVisible(true);
-        setIsLoading(false);
+        setIsSendingOtp(false);
         return;
       }
       const payload = {
@@ -411,13 +415,13 @@ export default function ServiceEnd() {
       );
       setModalVisible(true);
     } finally {
-      setIsLoading(false);
+      setIsSendingOtp(false);
     }
   };
 
   const verifyOTP = async () => {
     try {
-      setIsLoading(true);
+      setIsVerifyingOtp(true);
       const verifyPayload = {
         carPickupDeliveryId: Number(carPickupDeliveryId) || 0,
         otp: String(otp).trim(),
@@ -437,7 +441,7 @@ export default function ServiceEnd() {
         setOtpValid(false);
         setModalMessage(data?.message || "Invalid OTP. Please try again.");
         setModalVisible(true);
-        setIsLoading(false);
+        setIsVerifyingOtp(false);
         return false;
       }
       setOtpValid(true);
@@ -450,29 +454,29 @@ export default function ServiceEnd() {
       setModalVisible(true);
       return false;
     } finally {
-      setIsLoading(false);
+      setIsVerifyingOtp(false);
     }
   };
 
   const Completedservice = async () => {
-    if (isLoading || isUploadingImages) return;
-    setIsLoading(true);
+    if (isCompleting || isUploadingImages || isVerifyingOtp || isSendingOtp) return;
+    setIsCompleting(true);
     setError("");
     setImageError("");
 
     if (images.length < 1) {
       setImageError("Please upload at least 1 post-service image.");
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
     if (images.length > 5) {
       setImageError("You can upload a maximum of 5 post-service images.");
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
     if (!otp || otp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
     if (!carPickupDeliveryId) {
@@ -480,14 +484,14 @@ export default function ServiceEnd() {
         "Booking pickup/delivery info is missing. Please go back and open this booking again.",
       );
       setModalVisible(true);
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
 
     // Verify OTP first — only if valid, then upload images
     const otpValidResult = await verifyOTP();
     if (!otpValidResult) {
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
 
@@ -495,7 +499,7 @@ export default function ServiceEnd() {
     try {
       await uploadAfterServiceImages(true);
     } catch (err) {
-      setIsLoading(false);
+      setIsCompleting(false);
       return;
     }
 
@@ -692,7 +696,7 @@ export default function ServiceEnd() {
       );
     }
 
-    setIsLoading(false);
+    setIsCompleting(false);
     setServiceCompleted(true);
 
     const paymentStatus =
@@ -745,6 +749,8 @@ export default function ServiceEnd() {
         style={globalStyles.bgcontainer}
         keyboardShouldPersistTaps="handled"
       >
+              <StatusBar backgroundColor='white' barStyle="dark-content" />
+
         <View style={[globalStyles.container]}>
           <View
             style={[
@@ -1299,7 +1305,7 @@ export default function ServiceEnd() {
             {otpCooldown === 0 ? (
               <TouchableOpacity
                 onPress={sendOTP}
-                disabled={isLoading}
+                disabled={isSendingOtp}
                 style={[
                   globalStyles.smallyellowButtonotp,
                   globalStyles.alineItemscenter,
@@ -1308,11 +1314,11 @@ export default function ServiceEnd() {
                   globalStyles.px3,
                   {
                     flex: 1,
-                    opacity: isLoading ? 0.6 : 1,
+                    opacity: isSendingOtp ? 0.6 : 1,
                   },
                 ]}
               >
-                {isLoading ? (
+                {isSendingOtp ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
@@ -1354,17 +1360,17 @@ export default function ServiceEnd() {
           {/* {(booking.PaymentMode == "COS" || booking.PaymentMode == "cos") && otpSent && ( */}
           <TouchableOpacity
             onPress={Completedservice}
-            disabled={isLoading || isUploadingImages}
+            disabled={isCompleting || isUploadingImages}
             style={[
               globalStyles.blackButton,
               {
                 marginTop: 16,
                 marginBottom: keyboardVisible ? 130 : 80,
-                opacity: isLoading || isUploadingImages ? 0.6 : 1,
+                opacity: isCompleting || isUploadingImages ? 0.6 : 1,
               },
             ]}
           >
-            {(isLoading || isUploadingImages) ? (
+            {(isCompleting || isUploadingImages) ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <CustomText style={[globalStyles.f12Bold, globalStyles.textWhite]}>
