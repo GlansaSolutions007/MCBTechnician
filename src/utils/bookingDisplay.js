@@ -21,9 +21,31 @@ export function getBookingDisplayData(booking) {
     };
   }
   const v = booking.Leads?.Vehicle;
-  const assignDate = booking.BookingDate
+  const bookingDate = booking.BookingDate
     ? new Date(booking.BookingDate).toLocaleDateString("en-IN")
     : "N/A";
+
+  // Extract assignDateTime from PickupDelivery (array or object)
+  const pd = booking.PickupDelivery;
+  let assignDateTime = null;
+  if (Array.isArray(pd) && pd.length > 0) {
+    // Sort by AssignDate descending to get the latest
+    const sorted = [...pd].sort((a, b) => new Date(b.AssignDate) - new Date(a.AssignDate));
+    assignDateTime = sorted[0]?.AssignDate;
+  } else if (pd?.AssignDate) {
+    assignDateTime = pd.AssignDate;
+  }
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
+    : "N/A";
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "N/A";
+
   const vehicleDisplay =
     booking.VehicleNumber ||
     v?.RegistrationNumber ||
@@ -40,7 +62,9 @@ export function getBookingDisplayData(booking) {
       "N/A",
     vehicleDisplay,
     bookingTrackID: booking.BookingTrackID || `#${booking.BookingID}`,
-    bookingDate: assignDate,  
+    bookingDate: bookingDate,
+    assignDate: assignDate,
+    assignTime: assignTime,
     timeSlot:
       booking.TimeSlot ||
       (booking.PickupDelivery?.PickupTime

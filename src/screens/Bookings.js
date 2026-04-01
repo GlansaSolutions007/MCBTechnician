@@ -535,18 +535,7 @@ export default function Bookings() {
               const driverStatus = getDriverStatus(item);
               const completed = isBookingCompleted(item);
               const carPicked = driverStatus === "car_picked" || driverStatus === "in_transit" || driverStatus === "drop_reached";
-              const assignDateTime = item?.PickupDelivery?.[0]?.AssignDate;
 
-              const assignDate = assignDateTime
-                ? new Date(assignDateTime).toLocaleDateString("en-IN")
-                : "N/A";
-
-              const assignTime = assignDateTime
-                ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-                : "N/A";
               return (
                 <View
                   key={`${item.BookingID ?? "booking"}-${index}`}
@@ -680,7 +669,7 @@ export default function Bookings() {
                                 style={styles.cardMetaIcon}
                               />
                               <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                               {assignDate}, {assignTime}
+                               {getBookingDisplayData(item).assignDate}, {getBookingDisplayData(item).assignTime}
                               </CustomText>
 
                             </View>

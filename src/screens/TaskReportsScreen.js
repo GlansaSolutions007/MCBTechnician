@@ -155,21 +155,6 @@ function TaskReportsScreen() {
     })
     : [];
 
-  const assignDateTime = Array.isArray(bookings) && bookings.length > 0
-    ? bookings[0]?.PickupDelivery?.[0]?.AssignDate
-    : null;
-
-  const assignDate = assignDateTime
-    ? new Date(assignDateTime).toLocaleDateString("en-IN")
-    : "N/A";
-
-  const assignTime = assignDateTime
-    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-    : "N/A";
-
   const renderBookingCard = ({ item, index }) => {
     const driverStatus = getDriverStatus(item);
     return (
@@ -341,7 +326,7 @@ function TaskReportsScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {assignDate}, {assignTime}
+                  {getBookingDisplayData(item).assignDate}, {getBookingDisplayData(item).assignTime}
                 </CustomText>
               </View>
             </View>

@@ -1009,7 +1009,7 @@ export default function Dashboard() {
                                         styles.timeValue,
                                       ]}
                                     >
-                                      {assignDate}, {assignTime}
+                                      {display.assignDate}, {display.assignTime}
                                     </CustomText>
                                   </View>
                                 </View>
@@ -1379,7 +1379,7 @@ export default function Dashboard() {
                                         styles.timeValue,
                                       ]}
                                     >
-                                      {assignDate}, {assignTime}
+                                      {display.assignDate}, {display.assignTime}
                                     </CustomText>
                                   </View>
                                 </View>
