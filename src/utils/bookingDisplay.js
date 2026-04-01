@@ -3,6 +3,7 @@
  * Uses API shape: BookingStatus, PickupDelivery.PickFrom, PickupDelivery.DropAt, Leads, etc.
  */
 export function getBookingDisplayData(booking) {
+
   if (!booking) {
     return {
       customerName: "N/A",
@@ -20,6 +21,9 @@ export function getBookingDisplayData(booking) {
     };
   }
   const v = booking.Leads?.Vehicle;
+  const assignDate = booking.BookingDate
+    ? new Date(booking.BookingDate).toLocaleDateString("en-IN")
+    : "N/A";
   const vehicleDisplay =
     booking.VehicleNumber ||
     v?.RegistrationNumber ||
@@ -36,9 +40,7 @@ export function getBookingDisplayData(booking) {
       "N/A",
     vehicleDisplay,
     bookingTrackID: booking.BookingTrackID || `#${booking.BookingID}`,
-    bookingDate: booking.BookingDate
-      ? String(booking.BookingDate).slice(0, 10)
-      : "—",
+    bookingDate: assignDate,  
     timeSlot:
       booking.TimeSlot ||
       (booking.PickupDelivery?.PickupTime
@@ -53,6 +55,6 @@ export function getBookingDisplayData(booking) {
     pickFrom: booking.PickupDelivery?.PickFrom || null,
     dropAt: booking.PickupDelivery?.DropAt || null,
     profileImage: booking.ProfileImage || null,
-    pickupdate: booking.PickupDelivery?.AssignDate ? String(booking.PickupDelivery?.AssignDate):"-",
+    pickupdate: booking.PickupDelivery?.AssignDate ? String(booking.PickupDelivery?.AssignDate) : "-",
   };
 }

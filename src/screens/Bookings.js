@@ -1,6 +1,5 @@
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -549,9 +548,7 @@ export default function Bookings() {
                 })
                 : "N/A";
               return (
-                <Pressable
-                  onPress={() => openBooking(item)}
-                  // key={item.BookingID?.toString() || `idx-${index}`}
+                <View
                   key={`${item.BookingID ?? "booking"}-${index}`}
                   style={[
                     driverStatus === "completed"
@@ -670,9 +667,9 @@ export default function Bookings() {
                               />
                               <CustomText
                                 style={[globalStyles.f10Regular, globalStyles.black]}
-                                numberOfLines={1}
+                                numberOfLines={2}
                               >
-                                {assignDate}
+                                {getBookingDisplayData(item).bookingDate} ({getBookingDisplayData(item).timeSlot})
                               </CustomText>
                             </View>
                             <View style={styles.cardMetaItem}>
@@ -683,12 +680,11 @@ export default function Bookings() {
                                 style={styles.cardMetaIcon}
                               />
                               <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
-                                <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
-                                  {assignTime}
-                                </CustomText>
+                               {assignDate}, {assignTime}
                               </CustomText>
 
                             </View>
+
                           </View>
 
                           {/* <CustomText
@@ -706,50 +702,83 @@ export default function Bookings() {
                       </View>
                     </View>
 
+                    {/* Start/Continue button - show for ServiceAtGarage only, after booking details */}
+                    {!completed && item.ServiceType === "ServiceAtGarage" && (
+                      <View style={[globalStyles.mt3, { width: "100%" }]}> 
+                        <TouchableOpacity
+                          onPress={() => openBooking(item)}
+                          style={[
+                            styles.startButton,
+                            {
+                              backgroundColor:
+                                driverStatus === "assigned"
+                                  ? color.primary
+                                  : color.yellow,
+                            },
+                          ]}
+                        >
+                          <CustomText
+                            style={[globalStyles.f12Bold, globalStyles.textWhite,{marginBottom: 2}]}
+                          >
+                            {driverStatus === "assigned" ? "Start" : "Continue"}
+                          </CustomText>
+                          <Ionicons
+                            name="play"
+                            size={16}
+                            color={color.white}
+                            style={{ marginLeft: 8 }}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
                     {/* From / Address / To / Drop card (per sketch) */}
                     {
                       (item.PickupDelivery?.[0]?.PickServiceType ?? item.ServiceType) === "ServiceAtGarage" && !completed &&
                       (
                         <View style={styles.fromToCard}>
-                          <TouchableOpacity
-                            onPress={() => {
-                              Vibration.vibrate([0, 200, 100, 300]);
+                          <View style={[globalStyles.flexrow, globalStyles.justifysb, { marginBottom: 8 }]}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                Vibration.vibrate([0, 200, 100, 300]);
 
-                              const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
-                              if (phoneNumber) {
-                                Linking.openURL(`tel:${phoneNumber}`);
-                              } else {
-                                Alert.alert("Error", "Phone number not available");
-                              }
-                            }}
-                            style={[
-                              styles.callbutton,
-                              globalStyles.flexrow,
-                              globalStyles.justifysb,
-                              { backgroundColor: color.primary },
-                            ]}
-                          >
-
-                            <CustomText
+                                const phoneNumber = item.PickupDelivery[0].PickFrom?.PersonNumber;
+                                if (phoneNumber) {
+                                  Linking.openURL(`tel:${phoneNumber}`);
+                                } else {
+                                  Alert.alert("Error", "Phone number not available");
+                                }
+                              }}
                               style={[
-                                globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2, { marginBottom: 2 }
+                                styles.callbutton,
+                                globalStyles.flexrow,
+                                globalStyles.justifysb,
+                                { backgroundColor: color.primary, width: "48%" },
                               ]}
                             >
-                              Pickup
-                            </CustomText>
 
-                            <Ionicons
-                              style={[
-                                globalStyles.p2,
-                                globalStyles.ml2,
-                                globalStyles.bgsecondary,
-                                globalStyles.borderRadiuslarge,
-                              ]}
-                              name="call"
-                              size={20}
-                              color={color.white}
-                            />
-                          </TouchableOpacity>
+                              <CustomText
+                                style={[
+                                  globalStyles.f12Bold, globalStyles.textWhite, globalStyles.ml2, { marginBottom: 2 }
+                                ]}
+                              >
+                                Pickup
+                              </CustomText>
+
+                              <Ionicons
+                                style={[
+                                  globalStyles.p2,
+                                  globalStyles.ml2,
+                                  globalStyles.bgsecondary,
+                                  globalStyles.borderRadiuslarge,
+                                ]}
+                                name="call"
+                                size={20}
+                                color={color.white}
+                              />
+                            </TouchableOpacity>
+
+                          </View>
 
                           {(() => {
                             const routeType = item.PickupDelivery?.[0]?.PickFrom?.RouteType;
@@ -947,7 +976,7 @@ export default function Bookings() {
 
 
                   </View>
-                </Pressable>
+                </View>
               );
             })}
           </Animated.View>
@@ -1063,6 +1092,19 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
     marginVertical: 4
+  },
+  startButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+    paddingHorizontal: 16,
   },
   callbuttontocustomer: {
     alignItems: "center",

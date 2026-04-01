@@ -102,11 +102,7 @@ export default function ServiceStart() {
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
 
   const assignDate = assignDateTime
-    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
     : "";
 
   const assignTime = assignDateTime
@@ -608,7 +604,7 @@ export default function ServiceStart() {
                     globalStyles.ml1,
                   ]}
                 >
-                  {assignDate}
+                  {getBookingDisplayData(bookingParam).bookingDate} ({getBookingDisplayData(bookingParam).timeSlot})
                 </CustomText>
               </View>
             </View>
@@ -648,7 +644,7 @@ export default function ServiceStart() {
                         globalStyles.ml1,
                       ]}
                     >
-                      {assignTime}
+                     {assignDate}, {assignTime}
                     </CustomText>
                 </View>
               </View>

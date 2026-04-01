@@ -384,6 +384,36 @@ export default function Dashboard() {
     outputRange: [color.neutral[200], color.neutral[100]],
   });
 
+  const getRouteIcons = (routeType) => {
+    switch (routeType) {
+      case "CustomerToDealer":
+        return { pickIcon: "person-outline", dropIcon: "garage", pickLib: "Ionicons", dropLib: "MaterialCommunityIcons" };
+      case "DealerToDealer":
+        return { pickIcon: "garage", dropIcon: "garage", pickLib: "MaterialCommunityIcons", dropLib: "MaterialCommunityIcons" };
+      case "DealerToCustomer":
+        return { pickIcon: "garage", dropIcon: "person-outline", pickLib: "MaterialCommunityIcons", dropLib: "Ionicons" };
+      default:
+        return { pickIcon: "person-outline", dropIcon: "map-marker", pickLib: "Ionicons", dropLib: "MaterialCommunityIcons" };
+    }
+  };
+
+   const assignDateTime = Array.isArray(bookings) && bookings.length > 0
+    ? getAssignDate(bookings[0])
+    : Array.isArray(activeServices) && activeServices.length > 0
+    ? getAssignDate(activeServices[0])
+    : null;
+
+  const assignDate = assignDateTime
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
+    : "N/A";
+
+  const assignTime = assignDateTime
+    ? new Date(assignDateTime).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "N/A";
+
   const SkeletonStatCard = ({ wide }) => (
     <View
       style={[
@@ -819,6 +849,7 @@ export default function Dashboard() {
             <View style={[globalStyles.mt3]}>
               {(activeServices || []).map((item, index) => {
                 const driverStatus = getDriverStatus(item);
+                const completed = isBookingCompleted(item);
                 const lastPaymentStatus = getLastPaymentStatus(item);
                 const totalPaid = (item?.Payments || []).reduce(
                   (sum, p) =>
@@ -837,9 +868,7 @@ export default function Dashboard() {
                     {item.ServiceType === "ServiceAtGarage" &&
                       item.PickupDelivery?.[0] && (
 
-                        <Pressable
-                          onPress={() => openBooking(item)}
-                          // key={item.BookingID?.toString() || `idx-${index}`}
+                        <View
                           key={`${item.BookingID ?? "active"}-${index}`}
                           style={[
                             driverStatus === "completed"
@@ -963,7 +992,7 @@ export default function Dashboard() {
                                       ]}
                                       numberOfLines={1}
                                     >
-                                      {display.bookingDate}
+                                      {display.bookingDate} ({display.timeSlot})
                                     </CustomText>
                                   </View>
                                   <View style={styles.cardMetaItem}>
@@ -980,11 +1009,7 @@ export default function Dashboard() {
                                         styles.timeValue,
                                       ]}
                                     >
-                                      {(display.timeSlot || "")
-                                        .split(",")
-                                        .map((s) => s.trim())
-                                        .filter(Boolean)
-                                        .join("\n") || "N/A"}
+                                      {assignDate}, {assignTime}
                                     </CustomText>
                                   </View>
                                 </View>
@@ -1030,6 +1055,36 @@ export default function Dashboard() {
                               </View>
                             </View>
 
+                            {/* Start/Continue button - show for ServiceAtGarage only, after booking details */}
+                            {!completed && item.ServiceType === "ServiceAtGarage" && (
+                              <View style={[globalStyles.mt3, { width: "100%" }]}>
+                                <TouchableOpacity
+                                  onPress={() => openBooking(item)}
+                                  style={[
+                                    styles.startButton,
+                                    {
+                                      backgroundColor:
+                                        driverStatus === "assigned"
+                                          ? color.primary
+                                          : color.yellow,
+                                    },
+                                  ]}
+                                >
+                                  <CustomText
+                                    style={[globalStyles.f12Bold, globalStyles.textWhite, { marginBottom: 2 }]}
+                                  >
+                                    {driverStatus === "assigned" ? "Start" : "Continue"}
+                                  </CustomText>
+                                  <Ionicons
+                                    name="play"
+                                    size={16}
+                                    color={color.white}
+                                    style={{ marginLeft: 8 }}
+                                  />
+                                </TouchableOpacity>
+                              </View>
+                            )}
+
                             <View style={styles.fromToCard}>
                               <TouchableOpacity
                                 onPress={() => {
@@ -1073,39 +1128,51 @@ export default function Dashboard() {
                                   color={color.white}
                                 />
                               </TouchableOpacity>
-                              <View style={styles.addressLine}>
-                                <View style={styles.addressIconWrap}>
-                                  <MaterialCommunityIcons
-                                    name="map-marker"
-                                    size={18}
-                                    color={color.primary}
-                                  />
-                                </View>
-                                <CustomText
-                                  style={styles.addressValue}
-                                  numberOfLines={2}
-                                >
-                                  {item.PickupDelivery?.[0]?.PickFrom
-                                    ?.Address || "N/A"}
-                                </CustomText>
-                              </View>
-                              <View style={styles.addressUnderline} />
-                              <View style={styles.addressLine}>
-                                <View style={styles.addressIconWrap}>
-                                  <MaterialCommunityIcons
-                                    name="map-marker"
-                                    size={18}
-                                    color={color.primary}
-                                  />
-                                </View>
-                                <CustomText
-                                  style={styles.addressValue}
-                                  numberOfLines={2}
-                                >
-                                  {item.PickupDelivery?.[0]?.DropAt?.Address ||
-                                    "N/A"}
-                                </CustomText>
-                              </View>
+                              {(() => {
+                                const routeType = item.PickupDelivery?.[0]?.PickFrom?.RouteType;
+                                const { pickIcon, dropIcon, pickLib, dropLib } = getRouteIcons(routeType);
+
+                                const PickIcon = pickLib === "Ionicons" ? Ionicons : MaterialCommunityIcons;
+                                const DropIcon = dropLib === "Ionicons" ? Ionicons : MaterialCommunityIcons;
+
+                                return (
+                                  <>
+                                    {/* Pickup */}
+                                    <View style={{ flex: 1, marginBottom: 2,marginTop: 8 }}>
+                                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { marginBottom: 2 }]}>
+                                        <PickIcon name={pickIcon} size={13} color={color.primary} style={{ marginRight: 4 }} />
+                                        <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                          {item.PickupDelivery?.[0]?.PickFrom?.PersonName || "N/A"}
+                                        </CustomText>
+                                      </View>
+                                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { alignItems: "flex-start" }]}>
+                                        <MaterialCommunityIcons name="map-marker" size={14} color={color.primary} style={{ marginRight: 4, marginTop: 1 }} />
+                                        <CustomText style={[styles.addressValue, { flex: 1 }]} numberOfLines={2}>
+                                          {item.PickupDelivery?.[0]?.PickFrom?.Address || "N/A"}
+                                        </CustomText>
+                                      </View>
+                                    </View>
+
+                                    <View style={styles.addressUnderline} />
+
+                                    {/* Drop */}
+                                    <View style={{ flex: 1, marginTop: 2 }}>
+                                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { marginBottom: 2 }]}>
+                                        <DropIcon name={dropIcon} size={13} color={color.primary} style={{ marginRight: 4 }} />
+                                        <CustomText style={[globalStyles.f10Bold, globalStyles.black]}>
+                                          {item.PickupDelivery?.[0]?.DropAt?.PersonName || "N/A"}
+                                        </CustomText>
+                                      </View>
+                                      <View style={[globalStyles.flexrow, globalStyles.alineItemscenter, { alignItems: "flex-start" }]}>
+                                        <MaterialCommunityIcons name="map-marker" size={14} color={color.primary} style={{ marginRight: 4, marginTop: 1 }} />
+                                        <CustomText style={[styles.addressValue, { flex: 1 }]} numberOfLines={2}>
+                                          {item.PickupDelivery?.[0]?.DropAt?.Address || "N/A"}
+                                        </CustomText>
+                                      </View>
+                                    </View>
+                                  </>
+                                );
+                              })()}
                               <View
                                 style={[
                                   globalStyles.flexrow,
@@ -1166,7 +1233,7 @@ export default function Dashboard() {
                               </View>
                             </View>
                           </View>
-                        </Pressable>
+                        </View>
                       )}
 
 
@@ -1295,7 +1362,7 @@ export default function Dashboard() {
                                       ]}
                                       numberOfLines={1}
                                     >
-                                      {display.bookingDate}
+                                      {display.bookingDate} ({display.timeSlot})
                                     </CustomText>
                                   </View>
                                   <View style={styles.cardMetaItem}>
@@ -1312,11 +1379,7 @@ export default function Dashboard() {
                                         styles.timeValue,
                                       ]}
                                     >
-                                      {(display.timeSlot || "")
-                                        .split(",")
-                                        .map((s) => s.trim())
-                                        .filter(Boolean)
-                                        .join("\n") || "N/A"}
+                                      {assignDate}, {assignTime}
                                     </CustomText>
                                   </View>
                                 </View>
@@ -1744,7 +1807,7 @@ const styles = StyleSheet.create({
   addressValue: {
     flex: 1,
     color: color.black,
-    ...globalStyles.f12Regular,
+    ...globalStyles.f10Medium,
   },
   addressUnderline: {
     height: 1,
@@ -1768,11 +1831,14 @@ const styles = StyleSheet.create({
 
   startButton: {
     backgroundColor: "#000",
-    padding: 16,
+    padding: 10,
     borderRadius: 8,
     flex: 1,
     marginRight: 8,
     alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   denyButton: {
     backgroundColor: "#FDB827",

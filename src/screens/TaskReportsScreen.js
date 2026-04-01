@@ -260,9 +260,11 @@ function TaskReportsScreen() {
               >
                 Route Type:{" "}
                 <CustomText style={globalStyles.black}>
-                  {item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
+                  {(item?.PickupDelivery?.[0]?.PickFrom?.[0]?.RouteType ||
                     item?.PickupDelivery?.[0]?.DropAt?.RouteType ||
-                    "N/A"}
+                    "N/A")?.replace(/([A-Z])/g, " $1")
+                    .replace(/\bTo\b/g, "to")
+                    .trim()}
                 </CustomText>
               </CustomText>
               <CustomText
@@ -321,7 +323,7 @@ function TaskReportsScreen() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {assignDate}
+                  {getBookingDisplayData(item).bookingDate} ({getBookingDisplayData(item).timeSlot})
                 </CustomText>
               </View>
               <View style={styles.cardMetaItem}>
@@ -339,7 +341,7 @@ function TaskReportsScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {assignTime}
+                  {assignDate}, {assignTime}
                 </CustomText>
               </View>
             </View>

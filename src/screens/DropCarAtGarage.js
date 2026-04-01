@@ -107,11 +107,7 @@ export default function DropCarAtGarage() {
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
 
   const assignDate = assignDateTime
-    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
     : "";
 
   const assignTime = assignDateTime
@@ -436,7 +432,7 @@ export default function DropCarAtGarage() {
               <View style={[globalStyles.flexrow, globalStyles.mt2, globalStyles.alineItemscenter]}>
                 <Ionicons name="calendar" size={16} color={color.primary} />
                 <CustomText style={[globalStyles.f10Regular, globalStyles.black, globalStyles.ml1]}>
-                  {assignDate}
+                  {getBookingDisplayData(bookingParam).bookingDate} ({getBookingDisplayData(bookingParam).timeSlot})
                 </CustomText>
               </View>
             </View>
@@ -457,7 +453,7 @@ export default function DropCarAtGarage() {
                         globalStyles.ml1,
                       ]}
                     >
-                      {assignTime}
+                     {assignDate}, {assignTime}
                     </CustomText>
                  
                 </View>

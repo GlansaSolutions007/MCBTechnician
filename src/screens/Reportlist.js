@@ -161,11 +161,7 @@ function Reportlist() {
     const assignDateTime = item?.PickupDelivery?.[0]?.AssignDate;
 
     const assignDate = assignDateTime
-      ? new Date(assignDateTime).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
+      ? new Date(assignDateTime).toLocaleDateString("en-IN")
       : "";
 
     const assignTime = assignDateTime
@@ -331,7 +327,7 @@ function Reportlist() {
                 <CustomText
                   style={[globalStyles.f10Regular, globalStyles.black]}
                 >
-                  {assignDate}
+                  {getBookingDisplayData(item).bookingDate} ({getBookingDisplayData(item).timeSlot})
                 </CustomText>
               </View>
               <View style={styles.cardMetaItem}>
@@ -349,7 +345,7 @@ function Reportlist() {
                   ]}
                   numberOfLines={1}
                 >
-                  {assignTime}
+                {assignDate}, {assignTime}
                 </CustomText>
               </View>
             </View>

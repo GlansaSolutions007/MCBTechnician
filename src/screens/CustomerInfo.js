@@ -129,11 +129,7 @@ export default function CustomerInfo() {
   const assignDateTime = bookingParam?.PickupDelivery?.[0]?.AssignDate;
 
   const assignDate = assignDateTime
-    ? new Date(assignDateTime).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
+    ? new Date(assignDateTime).toLocaleDateString("en-IN")
     : "";
 
   const assignTime = assignDateTime
@@ -1236,7 +1232,9 @@ export default function CustomerInfo() {
                     <View style={[globalStyles.flexrow, globalStyles.alineItemscenter]}>
                       <Ionicons name="calendar" size={16} color={color.primary} style={{ marginRight: 6 }} />
                       <View>
-                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignDate}</CustomText>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                          {display.bookingDate} ({display.timeSlot})
+                        </CustomText>
                       </View>
                     </View>
                   </View>
@@ -1253,7 +1251,9 @@ export default function CustomerInfo() {
                     <View style={[globalStyles.flexrow, { flex: 1, minWidth: 0, alignItems: "flex-start" }]}>
                       <Ionicons name="time-outline" size={16} color={color.primary} style={{ marginRight: 6, marginTop: 2 }} />
                       <View style={{ flexDirection: "column" }}>
-                          <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>{assignTime}</CustomText>
+                        <CustomText style={[globalStyles.f10Regular, globalStyles.black]}>
+                         {assignDate}, {assignTime}
+                        </CustomText>
                       </View>
                     </View>
                   </View>
