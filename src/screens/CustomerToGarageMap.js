@@ -18,6 +18,7 @@ import globalStyles from "../styles/globalStyles";
 import { color } from "../styles/theme";
 import { API_BASE_URL, GOOGLE_MAPS_APIKEY } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
 
 function decodePolyline(t) {
   const points = [];
@@ -363,7 +364,7 @@ export default function CustomerToGarageMap() {
   };
 
   const handleReached = async () => {
-    setLoadingReached(true);  
+    setLoadingReached(true);
     const techID = await AsyncStorage.getItem("techID");
     try {
       await axios.post(
@@ -400,25 +401,25 @@ export default function CustomerToGarageMap() {
     }
 
     if (routeType !== "DealerToCustomer") {
-    const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
-    // console.log("phoneNumber===============", phoneNumber);
-    try {
-      const payload = {
-        // CarPickupDeliveryId: Number(carPickupDeliveryId),
-        carPickupDeliveryId: Number(carPickupDeliveryId),
-        otpType: "Delivery",
-        phoneNumber: String(phoneNumber).trim(),
-      };
-      const response = await axios.post(
-        `${API_BASE_URL}ServiceImages/GenerateOTP`,
-        payload,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      // console.log("GenerateOTP response:", response?.data);
-    } catch (e) {
-      console.error("GenerateOTP Error:", e?.response?.data || e);
+      const phoneNumber = displayBooking?.PickupDelivery[0]?.DropAt?.PersonNumber || "";
+      // console.log("phoneNumber===============", phoneNumber);
+      try {
+        const payload = {
+          // CarPickupDeliveryId: Number(carPickupDeliveryId),
+          carPickupDeliveryId: Number(carPickupDeliveryId),
+          otpType: "Delivery",
+          phoneNumber: String(phoneNumber).trim(),
+        };
+        const response = await axios.post(
+          `${API_BASE_URL}ServiceImages/GenerateOTP`,
+          payload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        // console.log("GenerateOTP response:", response?.data);
+      } catch (e) {
+        console.error("GenerateOTP Error:", e?.response?.data || e);
+      }
     }
-  }
     setLoadingReached(false);
     navigation.navigate("DropCarAtGarage", {
       booking: displayBooking,
@@ -438,11 +439,12 @@ export default function CustomerToGarageMap() {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View style={styles.mapWrap}>
         {(dropAt && (addressForDrop || hasDropCoords)) || dropAddressCoords || addressCoords || isGeocoding ? (
           isGeocoding && !addressCoords && !dropAddressCoords && !hasDropCoords ? (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: color.background, justifyContent: "center", alignItems: "center" }]}>
-              <CustomText style={globalStyles.f14Medium}>Loading location...</CustomText>
+              <CustomText style={globalStyles.f16Medium}>Loading location...</CustomText>
             </View>
           ) : (
             <MapView

@@ -308,13 +308,14 @@ export default function ServiceEnd() {
           `${baseUrl}ServiceImages/InsertPickupDeliveryImages`,
           {
             method: "POST",
-            headers: { Accept: "application/json" },
+            headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
             body: formData,
           },
         );
+        const result = await res.json();
+        console.log(`After-service image ${i + 1} upload response:`, result);
         if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText || `Upload failed ${res.status}`);
+          throw new Error(result?.message || `Upload failed ${res.status}`);
         }
       }
       setImages([]);

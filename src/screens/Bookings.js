@@ -415,7 +415,7 @@ export default function Bookings() {
           : { paddingBottom: 30 }
       }
     >
-      <StatusBar style="dark" />
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View style={globalStyles.container}>
         {/* Filter Section */}
         {todaysBookings.length > 0 && (

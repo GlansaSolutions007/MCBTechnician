@@ -225,7 +225,7 @@ export default function DropCarAtGarage() {
 
   const uploadDeliveryImages = async () => {
     const techId = await AsyncStorage.getItem("techID");
-    const regNo = carRegistrationNumber?.trim() || "";
+    const regNo = bookingParam?.Leads?.Vehicle?.RegistrationNumber?.trim() || "";
     for (let i = 0; i < images.length; i++) {
       const formData = new FormData();
       formData.append("CarPickupDeliveryId", Number(carPickupDeliveryId) || 0);
@@ -240,11 +240,23 @@ export default function DropCarAtGarage() {
         type: "image/jpeg",
         name: `delivery_${i + 1}.jpg`,
       });
-      await fetch(`${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`, {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
-        body: formData,
-      });
+      try {
+        const response = await fetch(`${API_BASE_URL}ServiceImages/InsertPickupDeliveryImages`, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "multipart/form-data" },
+          body: formData,
+        });
+        const result = await response.json();
+        console.log(`Image ${i + 1} upload response:`, result);
+        console.log("formadataaaaaa---",formData);
+        
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status}`);
+        }
+      } catch (error) {
+        console.error(`Error uploading image ${i + 1}:`, error);
+        throw error;
+      }
     }
   };
 

@@ -45,7 +45,7 @@ export default function CustomerInfo() {
   if (!bookingParam) {
     return (
       <View style={[globalStyles.bgcontainer, globalStyles.justifycenter, globalStyles.alineItemscenter, { flex: 1 }]}>
-        <StatusBar style="dark" />
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
         <CustomText style={[globalStyles.f16Bold]}>No booking data.</CustomText>
       </View>
     );
@@ -1118,7 +1118,7 @@ export default function CustomerInfo() {
 
   const CustomerInfoSkeleton = () => (
     <ScrollView style={[globalStyles.bgcontainer]}>
-      <StatusBar style="dark" />
+      <StatusBar backgroundColor='white' barStyle="dark-content" />
       <View>
         <View style={[globalStyles.container, globalStyles.pb4]}>
           <SkeletonCustomerCard />

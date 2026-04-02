@@ -83,14 +83,10 @@ export default function Dashboard() {
     }
   };
   const isBookingCompleted = (booking) => {
-    const status = booking?.PickupDelivery?.[0]?.DriverStatus;
-    return (
-      status === "completed" ||
-      status === "ServiceComplete" ||
-      status === "car_picked" ||
-      status === "in_transit" ||
-      status === "drop_reached"
-    );
+    const status = booking?.BookingStatus;
+    if (status === "Completed" || status === "ServiceComplete") return true;
+    const driverStatus = getDriverStatus(booking);
+    return driverStatus === "completed" || driverStatus === "ServiceComplete";
   };
 
   const getAssignDate = (booking) => {
@@ -166,7 +162,10 @@ export default function Dashboard() {
       : 0;
 
     let actualTime = 0;
-
+    if (item.ServiceStartedAt) {
+      const startTime = new Date(item.ServiceStartedAt);
+      actualTime = Math.floor((new Date() - startTime) / 1000);
+    }
 
     const driverStatus = getDriverStatus(item);
 
@@ -187,7 +186,6 @@ export default function Dashboard() {
     } else {
       navigation.navigate("ServiceAtGarageMap", { booking: item });
     }
-
   };
 
 
